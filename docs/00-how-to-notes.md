@@ -42,6 +42,11 @@ Every new note file must strictly follow this exact 4-part structure:
 ---
 
 ## 3. Rules of Engagement
-1. **Never dump secrets:** Never write actual passwords, secret keys, or tokens in documentation. Use placeholders (`<password>`, `your_api_key`).
-2. **Update on feature completion:** After building a new milestone, create or update the corresponding split note file before moving to the next phase.
-3. **Keep it scannable:** A developer should be able to review the entire concept in **under 2 minutes** before an interview or code review.
+1. **Real-Time API & Postman Documentation:** Whenever any backend API route or endpoint is created or modified, it MUST be documented immediately in `docs/postman/API_REFERENCE.md`. Every endpoint entry must specify:
+   * **Endpoint & HTTP Method** (`GET`, `POST`, `PUT`, `DELETE`)
+   * **Consumer / Who Uses It** (e.g. `Storefront Guest Checkout`, `Admin Dashboard`, `DevOps Monitor`)
+   * **Request Payload / Params** (Headers, Query string, or Body JSON)
+   * **Response Payload (Success & Error)** with HTTP status codes.
+2. **Never dump secrets:** Never write actual passwords, secret keys, or tokens in documentation. Use placeholders (`<password>`, `your_api_key`).
+3. **Update on feature completion:** After building a new milestone, create or update the corresponding split note file before moving to the next phase.
+4. **Keep it scannable:** A developer should be able to review the entire concept in **under 2 minutes** before an interview or code review.
