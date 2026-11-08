@@ -14,7 +14,7 @@ interface NavbarProps {
 export default function Navbar({ storeName, accentColor }: NavbarProps) {
   const pathname = usePathname();
   const { totalItems, setIsCartOpen } = useCart();
-  const brandNameFirst = storeName.split(' ')[0] || 'VectroFit';
+  const brandNameFirst = storeName.split(' ')[0] || 'Aurem';
 
   const isHome = pathname === '/';
   const isHoodies = pathname?.includes('hoodies');

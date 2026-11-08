@@ -20,7 +20,7 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: 'VectroFit Luxury | Engineered Minimal Garments',
+  title: 'Aurem Luxury | Engineered Minimal Garments',
   description: 'Premium Bangladeshi Streetwear & Luxury Apparel',
 };
 

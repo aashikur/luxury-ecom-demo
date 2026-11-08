@@ -13,7 +13,7 @@ interface HeroBannerProps {
 }
 
 export default function HeroBanner({
-  storeName = 'VectroFit Luxury',
+  storeName = 'Aurem Luxury',
   title = 'Winter Luxury Drop 2026',
   subtitle,
   description = 'Premium Acid-Wash & Heavyweight Fleece',

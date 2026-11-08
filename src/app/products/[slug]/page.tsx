@@ -21,7 +21,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const config = await StoreConfig.findOne({ isActive: true }).lean();
 
   const branding = config?.branding || {
-    storeName: 'VectroFit Luxury',
+    storeName: 'Aurem Luxury',
     tagline: 'Engineered Streetwear & Minimal Garments',
     colors: { accent: '#B8860B' },
   };

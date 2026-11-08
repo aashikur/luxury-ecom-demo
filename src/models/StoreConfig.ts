@@ -149,7 +149,7 @@ export interface IStoreConfig extends Document {
 const StoreConfigSchema = new Schema<IStoreConfig>(
   {
     branding: {
-      storeName: { type: String, default: 'VectroFit Luxury' },
+      storeName: { type: String, default: 'Aurem Luxury' },
       tagline: { type: String, default: 'Engineered Streetwear & Minimal Garments' },
       logo: {
         url: { type: String, default: '' },
@@ -159,13 +159,13 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
         url: { type: String, default: '' },
         key: { type: String, default: '' },
       },
-      themeMode: { type: String, enum: ['DARK', 'LIGHT'], default: 'DARK' },
+      themeMode: { type: String, enum: ['DARK', 'LIGHT'], default: 'LIGHT' },
       colors: {
-        primary: { type: String, default: '#0F172A' },
-        accent: { type: String, default: '#E11D48' },
-        bg: { type: String, default: '#09090B' },
-        surface: { type: String, default: '#18181B' },
-        fg: { type: String, default: '#FAFAFA' },
+        primary: { type: String, default: '#111111' },
+        accent: { type: String, default: '#B8860B' },
+        bg: { type: String, default: '#FFFFFF' },
+        surface: { type: String, default: '#F9FAFB' },
+        fg: { type: String, default: '#09090B' },
         muted: { type: String, default: '#71717A' },
       },
       heroVariant: {
