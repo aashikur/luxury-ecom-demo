@@ -5,14 +5,25 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
  * LESSON: Production-Grade StoreConfig Schema (Mongoose + TypeScript)
  * ============================================================================
  * 
- * WHY A SINGLETON STORE CONFIG?
- * In multi-tenant or white-label e-commerce, this single document dictates:
- * - Store identity (name, logo, theme colors)
- * - Logistics & Courier automation (Steadfast, Fraud detection, Delivery fees)
- * - Marketing & tracking (Meta Pixel + CAPI token, TikTok, GTM)
- * - Payment Gateways (COD, Manual MFS with TrxID, Automated bKash PGW)
- * - Feature switches (toggling features ON/OFF without code changes)
+ * Includes the Shopify-Style "homeSections" architecture:
+ * Admin can add, remove, and reorder (DND) sections on the storefront homepage
+ * (e.g. Trending Category -> Promo Banner -> Winter Drop Collection).
  */
+
+export interface IHomeSection {
+  id: string;
+  type: 'CATEGORY_SLIDER' | 'CATEGORY_GRID' | 'PROMO_BANNER' | 'HERO_CAROUSEL';
+  title?: string;
+  subtitle?: string;
+  collectionSlug?: string; // Query products matching this collection tag
+  bannerImage?: {
+    url: string;
+    key: string;
+  };
+  linkUrl?: string; // Where clicking the banner redirects
+  order: number;    // Reordering index (1, 2, 3...)
+  isActive: boolean;
+}
 
 export interface IStoreConfig extends Document {
   branding: {
@@ -37,6 +48,7 @@ export interface IStoreConfig extends Document {
     };
     heroVariant: 'SPLIT' | 'CENTER' | 'FULL_SLIDER';
   };
+  homeSections: IHomeSection[];
   logistics: {
     supportPhone: string;
     whatsappNumber: string;
@@ -158,6 +170,28 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
       },
     },
 
+    // Shopify-style dynamic reorderable homepage blocks
+    homeSections: [
+      {
+        id: { type: String, required: true },
+        type: {
+          type: String,
+          enum: ['CATEGORY_SLIDER', 'CATEGORY_GRID', 'PROMO_BANNER', 'HERO_CAROUSEL'],
+          default: 'CATEGORY_GRID',
+        },
+        title: { type: String, default: '' },
+        subtitle: { type: String, default: '' },
+        collectionSlug: { type: String, default: '' },
+        bannerImage: {
+          url: { type: String, default: '' },
+          key: { type: String, default: '' },
+        },
+        linkUrl: { type: String, default: '' },
+        order: { type: Number, default: 1 },
+        isActive: { type: Boolean, default: true },
+      },
+    ],
+
     logistics: {
       supportPhone: { type: String, default: '01700000000' },
       whatsappNumber: { type: String, default: '8801700000000' },
@@ -194,7 +228,7 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
       },
       fraudCheck: {
         apiKey: { type: String, default: '' },
-        riskThresholdRatio: { type: Number, default: 0.3 }, // Alert if return ratio > 30%
+        riskThresholdRatio: { type: Number, default: 0.3 },
       },
       advancePayment: {
         requiredForOutsideDhaka: { type: Boolean, default: false },
@@ -268,11 +302,10 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
     isActive: { type: Boolean, default: true },
   },
   {
-    timestamps: true, // Automatically manages createdAt & updatedAt
+    timestamps: true,
   }
 );
 
-// Prevent recompilation in Next.js development Hot-Module-Reloading
 export const StoreConfig: Model<IStoreConfig> =
   mongoose.models.StoreConfig || mongoose.model<IStoreConfig>('StoreConfig', StoreConfigSchema);
 
