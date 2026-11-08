@@ -48,7 +48,11 @@ export default function CollectionSection({
     >
       <div className={isDarkBand ? 'max-w-[1360px] mx-auto px-4 sm:px-8' : ''}>
         {/* Section Header: Left Title + Right Button */}
-        <div className="flex items-end justify-between mb-10 pb-4 border-b border-zinc-200/20">
+        <div
+          className={`flex items-end justify-between mb-10 pb-4 ${
+            isDarkBand ? 'border-b border-zinc-800' : 'border-b border-zinc-200'
+          }`}
+        >
           <div>
             <h2
               className={`text-xl sm:text-2xl font-bold uppercase tracking-[0.12em] ${
@@ -70,7 +74,7 @@ export default function CollectionSection({
 
           <Link
             href={buttonLink}
-            className={`px-5 py-2 text-[11px] font-bold uppercase tracking-[0.16em] border transition ${
+            className={`px-5 py-2 text-[11px] font-bold uppercase tracking-[0.16em] border transition cursor-pointer ${
               isDarkBand
                 ? 'border-zinc-700 text-white hover:bg-white hover:text-zinc-950'
                 : 'border-zinc-900 text-zinc-900 hover:bg-zinc-950 hover:text-white'

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
@@ -11,34 +12,51 @@ interface NavbarProps {
 }
 
 export default function Navbar({ storeName, accentColor }: NavbarProps) {
+  const pathname = usePathname();
   const { totalItems, setIsCartOpen } = useCart();
   const brandNameFirst = storeName.split(' ')[0] || 'VectroFit';
+
+  const isHome = pathname === '/';
+  const isHoodies = pathname?.includes('hoodies');
+  const isTees = pathname?.includes('t-shirts');
 
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-200/80 bg-white/95 backdrop-blur-md">
       <div className="max-w-[1360px] mx-auto px-4 sm:px-8 h-20 grid grid-cols-3 items-center">
         {/* Left Navigation Links */}
         <nav className="flex items-center gap-6 text-xs font-semibold uppercase tracking-[0.14em]">
-          <Link href="/" className="hover:opacity-70 transition text-zinc-900">
+          <Link
+            href="/"
+            style={{ color: isHome ? accentColor : undefined }}
+            className={`transition cursor-pointer ${
+              isHome ? 'font-bold' : 'text-zinc-800 hover:opacity-70'
+            }`}
+          >
             HOME
           </Link>
           <Link
             href="/shop?collection=hoodies"
-            className="hidden md:inline-block hover:opacity-70 transition text-zinc-600 hover:text-zinc-950"
+            style={{ color: isHoodies ? accentColor : undefined }}
+            className={`hidden md:inline-block transition cursor-pointer ${
+              isHoodies ? 'font-bold' : 'text-zinc-800 hover:opacity-70'
+            }`}
           >
             HOODIES
           </Link>
           <Link
             href="/shop?collection=t-shirts"
-            className="hidden md:inline-block hover:opacity-70 transition text-zinc-600 hover:text-zinc-950"
+            style={{ color: isTees ? accentColor : undefined }}
+            className={`hidden md:inline-block transition cursor-pointer ${
+              isTees ? 'font-bold' : 'text-zinc-800 hover:opacity-70'
+            }`}
           >
             OVERSIZED TEES
           </Link>
           <Link
             href="/shop"
-            className="hidden lg:inline-block hover:opacity-70 transition text-zinc-600 hover:text-zinc-950"
+            className="hidden lg:inline-block transition text-zinc-800 hover:opacity-70 cursor-pointer"
           >
-            ALL PRODUCTS
+            ARCHIVE
           </Link>
         </nav>
 

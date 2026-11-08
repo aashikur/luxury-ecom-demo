@@ -91,37 +91,38 @@ export default async function HomePage() {
       {/* 3. Shopify-Style Dynamic Sections Engine */}
       <main className="flex-1 pb-16">
         {activeSections.map((section: IHomeSection) => {
-          // Block 1: Hero Banner (Image 2)
+          // Block 1: Hero Banner
           if (section.type === 'HERO_BANNER' || (section.type as string) === 'HERO_CAROUSEL') {
             return (
               <HeroBanner
                 key={section.id}
+                storeName={branding.storeName}
                 title={section.title || 'Winter Luxury Drop 2026'}
-                subtitle={section.subtitle || 'VECTROFIT LUXURY ARCHIVE'}
-                description={section.description || 'Premium Acid-Wash & Heavyweight Fleece'}
+                subtitle={`${branding.storeName.toUpperCase()} // ARCHIVE`}
+                description={section.subtitle || section.description || 'Premium Acid-Wash & Heavyweight Fleece'}
                 buttonText={section.buttonText || 'SHOP NOW'}
-                buttonLink={section.buttonLink || '/shop'}
+                buttonLink={section.buttonLink || section.linkUrl || '/shop'}
                 imageUrl={section.bannerImage?.url}
                 accentColor={branding.colors?.accent}
               />
             );
           }
 
-          // Block 2: Promo / Shipping CTA Card (Image 1)
+          // Block 2: Promo / Shipping CTA Card
           if (section.type === 'PROMO_CTA_CARD' || (section.type as string) === 'PROMO_BANNER') {
             return (
               <PromoCard
                 key={section.id}
-                subtitle={section.subtitle || 'STEADFAST EXPRESS DISPATCH'}
+                subtitle={`${config?.courier?.provider || 'STEADFAST'} EXPRESS DISPATCH`}
                 title={section.title || 'FREE EXPRESS SHIPPING ACROSS BANGLADESH'}
-                description={section.description || `On all orders above ৳${logistics.freeShippingThreshold.toLocaleString()} • Inside Dhaka ৳${logistics.insideDhakaFee} • Outside Dhaka ৳${logistics.outsideDhakaFee}`}
+                description={section.subtitle || section.description || `On all orders above ৳${logistics.freeShippingThreshold.toLocaleString()} • Inside Dhaka ৳${logistics.insideDhakaFee} • Outside Dhaka ৳${logistics.outsideDhakaFee}`}
                 buttonText={section.buttonText || 'VIEW BAG & SHIPPING'}
                 accentColor={branding.colors?.accent}
               />
             );
           }
 
-          // Block 3: Category / Collection Product Section (Images 3 & 4)
+          // Block 3: Category / Collection Product Section
           if (
             section.type === 'COLLECTION_SECTION' ||
             (section.type as string) === 'CATEGORY_GRID' ||
@@ -142,7 +143,7 @@ export default async function HomePage() {
               <CollectionSection
                 key={section.id}
                 title={section.title || 'Collection'}
-                description={section.description}
+                description={section.subtitle || section.description}
                 buttonText={section.buttonText || 'VIEW ALL'}
                 buttonLink={section.buttonLink || `/shop?collection=${section.collectionSlug}`}
                 products={matchedProducts.length > 0 ? matchedProducts : cleanProducts}

@@ -228,9 +228,9 @@ export default function ProductDetailView({
             onClick={() => handleAdd(true)}
             disabled={isOutOfStock}
             style={{ backgroundColor: accentColor }}
-            className="w-full py-4 text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:opacity-95 cursor-pointer disabled:opacity-40 mb-6"
+            className="w-full py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:opacity-95 cursor-pointer disabled:opacity-40 mb-5"
           >
-            ORDER NOW (CASH ON DELIVERY)
+            ORDER NOW
           </button>
 
           {/* Delivery & Showroom Info */}
