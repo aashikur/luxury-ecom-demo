@@ -97,7 +97,7 @@ export default function Footer({
       <div className="max-w-[1360px] mx-auto px-4 sm:px-8 pt-8 flex flex-col sm:flex-row items-center justify-between text-zinc-600 text-[11px] gap-4">
         <p>© 2026 {storeName}. All rights reserved.</p>
         <p className="tracking-widest uppercase">
-          POWERED BY{' '}
+          DESIGNED & DEVELOPED BY{' '}
           <a
             href="https://wa.me/8801580563883"
             target="_blank"
