@@ -3,7 +3,10 @@
 ## 1. What We Built
 * **StoreConfig Model:** `src/models/StoreConfig.ts`
   * `branding`: Dynamic logo, theme colors, dark/light mode
-  * `homeSections`: Shopify-style reorderable array for homepage sections
+  * `homeSections`: Shopify-style dynamic block builder array:
+    * `HERO_BANNER`: `subtitle`, `title`, `description`, `buttonText`, `buttonLink`, `bannerImage`
+    * `COLLECTION_SECTION`: `title`, `description`, `collectionSlug`, `buttonText`, `themeStyle ('LIGHT' | 'DARK_BAND')`
+    * `PROMO_CTA_CARD`: `subtitle`, `title`, `description`, `buttonText`, `buttonLink`
   * `payment`: COD, Manual bKash/Nagad (Sender Phone + TrxID), Automated bKash PGW & SSLCommerz
   * `tracking`: Meta Pixel + CAPI token, GTM, GA4, TikTok Pixel
   * `features`: Master switchboard for feature gating
@@ -15,11 +18,24 @@
 * **Order Model:** `src/models/Order.ts`
   * Zero-login guest checkout with 11-digit BD phone validation
   * Supported payment methods: `COD`, `MANUAL_BKASH`, `MANUAL_NAGAD`, `BKASH_PGW`, `SSLCOMMERZ`
-  * Full lifecycle order status with business rationale
+  * Full lifecycle order status with business rationale (`INCOMPLETE` to `DELIVERED`)
 
 ---
 
-## 2. Order Lifecycle States (The Bangladesh E-Commerce Standard)
+## 2. Page Architecture Pattern (Builder Engine vs Store Catalog)
+
+1. **Page Pattern A: Builder Engine (`/` Homepage & Landing Pages)**  
+   * Driven by dynamic DND sections (`homeSections`).
+   * No hardcoded content; renders whatever blocks the admin configures.
+2. **Page Pattern B: Master Store Catalog (`/shop` or `/products`)**  
+   * Dedicated e-commerce catalog page.
+   * Focuses on live filtering (by size S/M/L/XL, category, price range, and sorting).
+3. **Page Pattern C: Product Detail Page (`/products/[slug]`)**  
+   * 3:4 / 4:5 portrait media gallery, size boxes, instant COD checkout.
+
+---
+
+## 3. Order Lifecycle States (The Bangladesh E-Commerce Standard)
 
 | Status | Business Meaning & Trigger |
 | :--- | :--- |
@@ -33,13 +49,13 @@
 
 ---
 
-## 3. Key Concepts Checklist
+## 4. Key Concepts Checklist
+* **ThemeStyle Banding:** `themeStyle: 'DARK_BAND'` allows dark high-contrast product sections on a light luxury storefront (as seen in luxury references).
 * **Compound Indexing:** `ProductSchema.index({ isPinned: -1, priority: -1, createdAt: -1 })` gives blazing-fast sorting.
-* **Single Source of Truth:** `StoreConfig` is a singleton document that drives the storefront without code redeployments.
 * **Hot-Reload Model Guard:** `mongoose.models.Product || mongoose.model(...)` prevents Next.js from throwing `OverwriteModelError`.
 
 ---
 
-## 4. Official Docs & Sources
+## 5. Official Docs & Sources
 * 📖 [Mongoose Compound Indexes](https://mongoosejs.com/docs/guide.html#indexes)
-* 📖 [SSLCommerz Integration Docs](https://developer.sslcommerz.com/)
+* 📖 [Shopify Theme Architecture & Dynamic Sections](https://shopify.dev/docs/themes/architecture/sections)

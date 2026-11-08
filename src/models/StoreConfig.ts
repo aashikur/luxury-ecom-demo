@@ -6,22 +6,27 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
  * ============================================================================
  * 
  * Includes the Shopify-Style "homeSections" architecture:
- * Admin can add, remove, and reorder (DND) sections on the storefront homepage
- * (e.g. Trending Category -> Promo Banner -> Winter Drop Collection).
+ * Admin can add, remove, and reorder (DND) sections on the storefront:
+ * 1. HERO_BANNER: Large campaign visual with title, subtitle, description, button, link.
+ * 2. COLLECTION_SECTION: Product grid with themeStyle ('LIGHT' or 'DARK_BAND').
+ * 3. PROMO_CTA_CARD: Clean horizontal banner with subtitle, title, description, button.
  */
 
 export interface IHomeSection {
   id: string;
-  type: 'CATEGORY_SLIDER' | 'CATEGORY_GRID' | 'PROMO_BANNER' | 'HERO_CAROUSEL';
+  type: 'HERO_BANNER' | 'COLLECTION_SECTION' | 'PROMO_CTA_CARD';
   title?: string;
   subtitle?: string;
+  description?: string;
+  buttonText?: string;     // e.g. "SHOP NOW", "VIEW ALL", "VIEW BAG & SHIPPING"
+  buttonLink?: string;     // e.g. "/products?collection=winter-drop"
   collectionSlug?: string; // Query products matching this collection tag
   bannerImage?: {
     url: string;
     key: string;
   };
-  linkUrl?: string; // Where clicking the banner redirects
-  order: number;    // Reordering index (1, 2, 3...)
+  themeStyle?: 'LIGHT' | 'DARK_BAND'; // Normal white surface or high-contrast dark band
+  order: number;           // Reordering index (1, 2, 3...)
   isActive: boolean;
 }
 
@@ -145,7 +150,7 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
   {
     branding: {
       storeName: { type: String, default: 'VectroFit Luxury' },
-      tagline: { type: String, default: 'Premium Bangladeshi Streetwear' },
+      tagline: { type: String, default: 'Engineered Streetwear & Minimal Garments' },
       logo: {
         url: { type: String, default: '' },
         key: { type: String, default: '' },
@@ -170,23 +175,30 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
       },
     },
 
-    // Shopify-style dynamic reorderable homepage blocks
+    // Shopify-style dynamic reorderable sections
     homeSections: [
       {
         id: { type: String, required: true },
         type: {
           type: String,
-          enum: ['CATEGORY_SLIDER', 'CATEGORY_GRID', 'PROMO_BANNER', 'HERO_CAROUSEL'],
-          default: 'CATEGORY_GRID',
+          enum: ['HERO_BANNER', 'COLLECTION_SECTION', 'PROMO_CTA_CARD'],
+          default: 'COLLECTION_SECTION',
         },
         title: { type: String, default: '' },
         subtitle: { type: String, default: '' },
+        description: { type: String, default: '' },
+        buttonText: { type: String, default: '' },
+        buttonLink: { type: String, default: '' },
         collectionSlug: { type: String, default: '' },
         bannerImage: {
           url: { type: String, default: '' },
           key: { type: String, default: '' },
         },
-        linkUrl: { type: String, default: '' },
+        themeStyle: {
+          type: String,
+          enum: ['LIGHT', 'DARK_BAND'],
+          default: 'LIGHT',
+        },
         order: { type: Number, default: 1 },
         isActive: { type: Boolean, default: true },
       },
@@ -240,7 +252,7 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
     payment: {
       cod: {
         enabled: { type: Boolean, default: true },
-        note: { type: String, default: 'Cash on delivery across Bangladesh' },
+        note: { type: String, default: 'Cash on delivery across 64 districts in Bangladesh' },
       },
       manualBkash: {
         enabled: { type: Boolean, default: true },
