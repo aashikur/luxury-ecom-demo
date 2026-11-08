@@ -59,8 +59,10 @@ export default function ProductCard({
     <div
       className={`group flex flex-col justify-between rounded-sm transition-all duration-300 ${
         darkSurface
-          ? 'bg-zinc-900/90 border border-zinc-800 p-3.5'
-          : 'bg-white border border-zinc-200/80 p-3.5 hover:shadow-xl hover:border-zinc-300'
+        // ? 'bg-zinc-900/90 border border-zinc-800 p-3.5'
+        // : 'bg-white border border-zinc-200/80 p-3.5 hover:shadow-xl hover:border-zinc-300'
+        ? 'bg-zinc-900/90'
+        : 'bg-white'
       }`}
     >
       <div>
