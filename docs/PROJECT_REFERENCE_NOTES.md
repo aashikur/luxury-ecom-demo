@@ -1,7 +1,7 @@
 # 📚 Developer Learning Notes & Project Reference Guide
 
 > **Project:** Luxury Garments E-Commerce (Config-Driven MVP)  
-> **Tech Stack:** Next.js (App Router), TypeScript, Tailwind CSS, MongoDB (Mongoose), Cloudinary  
+> **Tech Stack:** Next.js (App Router), TypeScript, Tailwind CSS, MongoDB (Mongoose), Cloudflare R2 (S3 SDK), Cloudinary  
 > **Author & Learner:** Ashik Rahaman  
 > **Date Started:** November 2026
 
@@ -12,77 +12,79 @@
 Traditional e-commerce projects hardcode brand names, colors, and shipping fees directly in the UI code. If a new store owner comes along, a developer has to edit code files and redeploy.
 
 In this architecture, we follow a **Zero-Hardcode / Config-Driven Architecture**:
-1. **The Store Configuration lives in MongoDB:** The brand name, logo URL, dark/light theme colors, delivery fees (inside/outside Dhaka), and banners are stored in a single database document called `StoreConfig`.
+1. **The Store Configuration lives in MongoDB:** The brand name, logo URL, dark/light theme colors, delivery fees (inside/outside Dhaka), payment options, tracking tokens, and homepage layout blocks live in a single document called `StoreConfig`.
 2. **The Codebase is 100% DRY (Don't Repeat Yourself):** One master codebase can be deployed for different brands simply by changing environment variables and DB records.
-3. **Optimized Media Pipeline:** Product images are uploaded to **Cloudinary** (CDN storage). MongoDB stores only `{ url, publicId }`, keeping the database fast, lightweight, and clean.
-4. **Frictionless Bangladesh COD Checkout:** Zero-login guest checkout optimized for high conversion (Name, Phone number, Delivery Zone, Cash on Delivery).
+3. **High-Scale Media Pipeline:** 
+   * **Cloudflare R2 (Primary Storage):** S3-compatible, **\$0 Egress bandwidth fees** engineered for 1M+ monthly users.
+   * **Cloudinary (Transformations):** On-the-fly image transformations and fast fallback CDN.
+   * **YouTube Iframe Player:** \$0 bandwidth video streaming for reels and shorts.
+   * **MongoDB:** Stores only `{ url, key }`, keeping the database ultra-fast and lightweight.
+4. **Shopify-Style Homepage Customizer:** Dynamic `homeSections` array allowing the admin to reorder, add, or remove banner and category blocks without writing code.
+5. **Flexible Product Collections:** Tag-based collections (`collections: ["hoodies", "winter-drop", "featured"]`) replacing rigid boolean flags.
+6. **Frictionless Bangladesh COD Checkout:** Zero-login guest checkout with 11-digit BD phone validation, auto-lead capture for abandoned carts (`INCOMPLETE`), and manual MFS verification (`senderPhone`, `trxId`).
 
 ---
 
 ## 2. Directory Structure & Folder-by-Folder Guide
 
-Here is a map of the project structure and the exact responsibility of every folder:
-
 ```text
 e-com/
-├── docs/                       # Project documentation, learning notes & guides
+├── docs/                       # Project documentation & split modular learning notes
+│   ├── 00-how-to-notes.md      # Note-taking standard protocol (AI & developer guideline)
+│   ├── 01-database-mongodb.md  # MongoDB singleton & connection lifecycle guide
+│   ├── 02-storage-cloudinary-vs-r2.md # Cloudinary vs Cloudflare R2 evaluation & S3 setup
+│   ├── 03-schemas-and-models.md # StoreConfig, Product, and Order data architecture
+│   └── PROJECT_REFERENCE_NOTES.md # This master reference document
+│
 ├── public/                     # Static public assets (SVGs, favicon, public icons)
 ├── src/
 │   ├── app/                    # Next.js App Router (Pages, Layouts & API Routes)
-│   │   ├── api/                # Backend HTTP API endpoints (CRUD operations, uploads)
-│   │   ├── layout.tsx          # Root layout wrapping the entire app (HTML, fonts, global providers)
+│   │   ├── api/                # Backend HTTP API endpoints
+│   │   │   └── health/route.ts # Multi-service live health check (DB + Cloudinary + R2)
+│   │   ├── layout.tsx          # Root layout wrapping the entire app
 │   │   ├── page.tsx            # Main storefront home page
 │   │   └── globals.css         # Global Tailwind CSS styles and custom theme variables
 │   │
 │   ├── components/             # Reusable React UI Components
-│   │   ├── shared/             # Components used across storefront & admin (ImageUploader, Modal)
+│   │   ├── shared/             # Cross-cutting components (ImageUploader, FeatureGate)
 │   │   ├── storefront/         # Customer-facing UI (Navbar, Hero, ProductCard, CartDrawer)
 │   │   └── admin/              # Merchant Dashboard UI (ProductForm, OrdersTable)
 │   │
-│   ├── lib/                    # Server-side utilities, connection singletons & SDK clients
+│   ├── lib/                    # Server-side utilities, singletons & cloud SDK clients
 │   │   ├── db.ts               # Mongoose connection manager with global singleton caching
-│   │   └── cloudinary.ts       # Cloudinary SDK configuration for uploads & asset deletion
+│   │   ├── cloudinary.ts       # Cloudinary SDK client configuration
+│   │   ├── r2.ts               # Cloudflare R2 S3 SDK client initialization
+│   │   └── storage.ts          # Upload & delete helpers for Cloudflare R2
 │   │
-│   └── models/                 # Database Schema definitions (Mongoose)
-│       ├── StoreConfig.ts      # Branding, delivery charges, theme colors, feature flags
-│       ├── Product.ts          # Garment catalog, sizes, variants, pricing, and images
-│       └── Order.ts            # Customer orders, cart items, COD status, delivery address
+│   └── models/                 # Database Schema definitions (Mongoose + TypeScript)
+│       ├── StoreConfig.ts      # Branding, homeSections, logistics, payments, tracking, features
+│       ├── Product.ts          # Garment catalog, collections, variants (sizes/stock), sizeChart, priority
+│       └── Order.ts            # Guest checkout, 7 lifecycle states, COD, manual bKash/Nagad, courier
 │
 ├── .env.example                # Safe template showing required environment variable names
 ├── .env.local                  # Local secrets (NEVER committed to Git!)
-├── .gitignore                  # Tells Git which files/folders to never track (like node_modules, .env.local)
+├── .gitignore                  # Tells Git which files/folders to never track
 ├── package.json                # Defines installed dependencies and executable npm scripts
 ├── tsconfig.json               # TypeScript compiler options and "@/*" path alias definitions
-└── next.config.ts              # Next.js framework configuration (image domains, redirects)
+└── next.config.ts              # Next.js config with remotePatterns whitelisting for R2 & Cloudinary
 ```
 
 ---
 
-## 3. Deep-Dive: What Each Root Configuration File Does
+## 3. Deep-Dive: Core Configuration & Packages
 
-### 1. `package.json`
-* **`dependencies`**: The packages required when the app is actively running:
-  * `next`, `react`, `react-dom`: The core React web framework.
-  * `mongoose`: The MongoDB object modeling library.
-  * `cloudinary`: SDK to upload and delete images on Cloudinary.
-  * `lucide-react`: Lightweight SVG icon set.
-* **`devDependencies`**: Tools only used by developers during coding:
-  * `typescript`, `@types/*`: Type definitions for compile-time checking.
-  * `tailwindcss`: Generates CSS classes on demand.
-  * `eslint`: Checks for syntax bugs and code smells.
-* **`scripts`**:
-  * `npm run dev`: Boots the local server on `http://localhost:3000`.
-  * `npm run build`: Compiles optimized production bundle.
-  * `npm start`: Runs the production server after building.
+### 1. `package.json` Dependencies
+* **`next`, `react`, `react-dom`:** Modern React web framework with App Router & Turbopack.
+* **`mongoose`:** MongoDB Object Data Modeling with strict schemas and connection pooling.
+* **`@aws-sdk/client-s3`:** Official AWS S3 SDK used to communicate with Cloudflare R2.
+* **`cloudinary`:** SDK for media uploads and dynamic optimizations.
+* **`lucide-react`:** Lightweight SVG icon set.
 
-### 2. `src/lib/db.ts` (The Mongoose Connection Singleton)
-* **Problem:** In Next.js App Router, every file save in development triggers a rebuild, and serverless functions spin up dynamically. If you call `mongoose.connect()` directly inside routes, each reload spawns a brand new database connection until MongoDB Atlas crashes with `Connection pool exhausted`.
-* **Solution:** We cache the active Mongoose connection promise in Node’s `global` object (`global.mongooseCache`). On every request, `connectDB()` reuses the existing cached connection.
-
-### 3. `.env.local` vs `.env.example`
-* **Security Golden Rule:** Never commit passwords, database connection strings, or API secrets to GitHub.
-* `.gitignore` automatically blocks `.env*.local` from ever being uploaded to Git.
-* `.env.example` is committed to Git as a blank template so other developers know which keys the app requires without revealing actual secrets.
+### 2. Live Cloud Infrastructure
+* **MongoDB Atlas Cluster:** Target database `ecom_demo` running on AWS (Singapore region), firewall configured with `0.0.0.0/0`.
+* **Cloudflare R2 Bucket:** `ecom-demo` with custom domain `cdn-demo.vectorfitlab.com` and public dev URL enabled.
+* **Cloudinary:** Account active (`dlfrd8scy`).
+* **Health Check API:** Verified via `GET /api/health` returning live status for all 3 cloud services.
 
 ---
 
@@ -90,9 +92,9 @@ e-com/
 
 | Command | Purpose | Why We Used It |
 | :--- | :--- | :--- |
-| `npx create-next-app@latest . ...` | Project Scaffolding | Generated the Next.js app with TypeScript, Tailwind CSS, App Router, and `@/*` alias directly in this directory. |
-| `npm install mongoose cloudinary lucide-react` | Dependency Installation | Added MongoDB ORM (`mongoose`), image CDN SDK (`cloudinary`), and UI icons (`lucide-react`). |
-| `git status` | Source Control Check | Inspects which files have been modified, created, or deleted since the last commit. |
-| `git add <files>` | Staging Changes | Prepares selected files to be included in the next snapshot (commit). |
-| `git commit -m "..."` | Saving Snapshot | Records a permanent snapshot of the staged files with an explanatory commit message. |
-| `git push -u origin <branch>` | Remote Upload | Uploads your local commits to a remote hosting platform like GitHub. |
+| `npx create-next-app@latest . ...` | Project Scaffolding | Next.js with TypeScript, Tailwind CSS, App Router, and `@/*` alias. |
+| `npm install mongoose cloudinary lucide-react` | Core Dependencies | Added DB ORM, Cloudinary SDK, and UI icons. |
+| `npm install @aws-sdk/client-s3` | S3 SDK Installation | Added AWS S3 client to communicate directly with Cloudflare R2. |
+| `npm run test:db` | Database Test | Runs `scripts/test-db.mjs` to measure MongoDB latency and connectivity. |
+| `curl http://localhost:3000/api/health` | Health Check | Validates that DB, Cloudinary, and R2 are operational in a single call. |
+| `git status / add / commit / push` | Source Control | Tracks changes locally and pushes commits to the remote GitHub repository. |
