@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
+import { HeadBucketCommand } from '@aws-sdk/client-s3';
 import { connectDB } from '@/lib/db';
 import cloudinary from '@/lib/cloudinary';
+import { r2 } from '@/lib/r2';
 
 /**
  * ============================================================================
- * LESSON: Multi-Service Production Health Check
+ * LESSON: Production Multi-Cloud Infrastructure Health Check
  * ============================================================================
  * 
- * In real-world enterprise apps, /api/health verifies ALL external infrastructure:
- * 1. Database (MongoDB) - checks readyState and ping
- * 2. Media Storage (Cloudinary) - verifies API signature with cloudinary.api.ping()
- * 
- * If any critical service fails, the response status code changes from 200 to 503
- * so DevOps alerts are triggered immediately.
+ * Verifies all 3 critical cloud components:
+ * 1. Database: MongoDB Atlas (via Mongoose readyState)
+ * 2. Media Transform: Cloudinary (via cloudinary.api.ping)
+ * 3. High-Scale Storage: Cloudflare R2 (via AWS S3 HeadBucketCommand)
  */
 
 export async function GET() {
@@ -54,18 +54,37 @@ export async function GET() {
     cloudinaryStatus.status = err instanceof Error ? err.message : 'failed';
   }
 
-  // 3. Determine Overall Health
-  const isHealthy = dbStatus.readyStateCode === 1 && cloudinaryStatus.status === 'connected';
+  // 3. Verify Cloudflare R2
+  let r2Status = { status: 'disconnected', bucket: '', latency: '0ms' };
+  try {
+    const r2Start = Date.now();
+    const bucket = process.env.R2_BUCKET_NAME || 'ecom-demo';
+    await r2.send(new HeadBucketCommand({ Bucket: bucket }));
+    r2Status = {
+      status: 'connected',
+      bucket: bucket,
+      latency: `${Date.now() - r2Start}ms`,
+    };
+  } catch (err) {
+    r2Status.status = err instanceof Error ? err.message : 'failed';
+  }
+
+  // Determine overall system health
+  const isHealthy =
+    dbStatus.readyStateCode === 1 &&
+    cloudinaryStatus.status === 'connected' &&
+    r2Status.status === 'connected';
 
   return NextResponse.json(
     {
       status: isHealthy ? 'healthy' : 'degraded',
       message: isHealthy
-        ? 'All systems operational (MongoDB + Cloudinary connected).'
-        : 'One or more systems are not operational.',
+        ? 'All cloud services operational (MongoDB + Cloudinary + Cloudflare R2).'
+        : 'One or more cloud services failed.',
       services: {
         database: dbStatus,
         cloudinary: cloudinaryStatus,
+        cloudflareR2: r2Status,
       },
       totalLatency: `${Date.now() - startTime}ms`,
       timestamp: new Date().toISOString(),
