@@ -40,19 +40,19 @@ export interface IOrder extends Document {
     advanceAmount: number;
   };
   payment: {
-    method: 'COD' | 'MANUAL_BKASH' | 'MANUAL_NAGAD' | 'BKASH_PGW';
+    method: 'COD' | 'MANUAL_BKASH' | 'MANUAL_NAGAD' | 'BKASH_PGW' | 'SSLCOMMERZ';
     senderPhone?: string;
     trxId?: string;
     status: 'UNPAID' | 'PENDING_VERIFICATION' | 'PAID';
   };
   status:
-    | 'INCOMPLETE' // Abandoned cart lead
-    | 'PENDING'    // New order, waiting merchant call
-    | 'CONFIRMED'  // Approved for packing
-    | 'SHIPPED'    // In transit with courier
-    | 'DELIVERED'  // Successfully completed
-    | 'CANCELLED'  // Cancelled by buyer or merchant
-    | 'RETURNED';  // Returned by courier
+    | 'INCOMPLETE' // Abandoned cart lead (customer entered phone number but dropped off)
+    | 'PENDING'    // New order submitted by buyer; awaiting merchant call/confirmation
+    | 'CONFIRMED'  // Order approved by merchant; packed and ready for handover
+    | 'SHIPPED'    // Parcel handed over to courier (e.g. Steadfast) with tracking code
+    | 'DELIVERED'  // Successfully received by customer and COD cash collected
+    | 'CANCELLED'  // Cancelled by customer or rejected by merchant (e.g. fake lead/fraud)
+    | 'RETURNED';  // Customer rejected parcel at doorstep; courier returning goods
   courier?: {
     provider: 'STEADFAST' | 'PATHAO' | 'REDX' | null;
     consignmentId?: string;
@@ -98,7 +98,7 @@ const OrderSchema = new Schema<IOrder>(
     payment: {
       method: {
         type: String,
-        enum: ['COD', 'MANUAL_BKASH', 'MANUAL_NAGAD', 'BKASH_PGW'],
+        enum: ['COD', 'MANUAL_BKASH', 'MANUAL_NAGAD', 'BKASH_PGW', 'SSLCOMMERZ'],
         default: 'COD',
       },
       senderPhone: { type: String, default: '' },
@@ -112,12 +112,26 @@ const OrderSchema = new Schema<IOrder>(
     status: {
       type: String,
       enum: [
+        // ১. INCOMPLETE: কাস্টমার চেকআউটে শুধু ফোন নাম্বার টাইপ করেছে কিন্তু "অর্ডার করুন" বাটনে ক্লিক করেনি।
+        // এতে কাস্টমারের লিড ডাটাবেজে ড্রাফট হয়ে যায় যাতে কল সেন্টারের এজেন্ট ফোন দিয়ে সেল কনভার্ট করতে পারে (Abandoned Cart Recovery)।
         'INCOMPLETE',
+
+        // ২. PENDING: কাস্টমার সফলভাবে অর্ডার প্লেস করেছে। এখন মার্চেন্ট বা কল সেন্টার টিম কাস্টমারকে ফোন দিয়ে অর্ডার ভেরিফাই করবে।
         'PENDING',
+
+        // ৩. CONFIRMED: মার্চেন্ট কাস্টমারের সাথে কথা বলে অর্ডার কনফার্ম করেছে। পার্সেল প্যাকিং হয়ে কুরিয়ারের জন্য রেডি।
         'CONFIRMED',
+
+        // ৪. SHIPPED: পার্সেলটি কুরিয়ার কোম্পানির (e.g. Steadfast/Pathao) কাছে হ্যান্ডওভার করা হয়েছে এবং ট্র্যাকিং কোড জেনারেট হয়েছে।
         'SHIPPED',
+
+        // ৫. DELIVERED: কাস্টমার প্রোডাক্ট হাতে পেয়েছে এবং ক্যাশ টাকা কুরিয়ার ডেলিভারি বয়কে বুঝিয়ে দিয়েছে (সাকসেসফুল সেল)।
         'DELIVERED',
+
+        // ৬. CANCELLED: কাস্টমার ফোনে বলেছে অর্ডার লাগবে না, অথবা ভুয়া/ফেইক অর্ডার ধরা পড়ায় মার্চেন্ট ক্যান্সেল করে দিয়েছে।
         'CANCELLED',
+
+        // ৭. RETURNED: কুরিয়ার ডেলিভারি করতে গিয়ে কাস্টমারকে পায়নি বা কাস্টমার পার্সেল রিসিভ করতে অস্বীকৃতি জানিয়েছে, ফলে পার্সেলটি মার্চেন্টের কাছে ফেরত আসছে।
         'RETURNED',
       ],
       default: 'PENDING',
