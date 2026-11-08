@@ -92,13 +92,13 @@ export default async function HomePage() {
       <main className="flex-1 pb-16">
         {activeSections.map((section: IHomeSection) => {
           // Block 1: Hero Banner (Image 2)
-          if (section.type === 'HERO_BANNER') {
+          if (section.type === 'HERO_BANNER' || (section.type as string) === 'HERO_CAROUSEL') {
             return (
               <HeroBanner
                 key={section.id}
-                title={section.title}
-                subtitle={section.subtitle}
-                description={section.description}
+                title={section.title || 'Winter Luxury Drop 2026'}
+                subtitle={section.subtitle || 'VECTROFIT LUXURY ARCHIVE'}
+                description={section.description || 'Premium Acid-Wash & Heavyweight Fleece'}
                 buttonText={section.buttonText || 'SHOP NOW'}
                 buttonLink={section.buttonLink || '/shop'}
                 imageUrl={section.bannerImage?.url}
@@ -108,13 +108,13 @@ export default async function HomePage() {
           }
 
           // Block 2: Promo / Shipping CTA Card (Image 1)
-          if (section.type === 'PROMO_CTA_CARD') {
+          if (section.type === 'PROMO_CTA_CARD' || (section.type as string) === 'PROMO_BANNER') {
             return (
               <PromoCard
                 key={section.id}
-                subtitle={section.subtitle}
-                title={section.title}
-                description={section.description}
+                subtitle={section.subtitle || 'STEADFAST EXPRESS DISPATCH'}
+                title={section.title || 'FREE EXPRESS SHIPPING ACROSS BANGLADESH'}
+                description={section.description || `On all orders above ৳${logistics.freeShippingThreshold.toLocaleString()} • Inside Dhaka ৳${logistics.insideDhakaFee} • Outside Dhaka ৳${logistics.outsideDhakaFee}`}
                 buttonText={section.buttonText || 'VIEW BAG & SHIPPING'}
                 accentColor={branding.colors?.accent}
               />
@@ -122,13 +122,21 @@ export default async function HomePage() {
           }
 
           // Block 3: Category / Collection Product Section (Images 3 & 4)
-          if (section.type === 'COLLECTION_SECTION') {
+          if (
+            section.type === 'COLLECTION_SECTION' ||
+            (section.type as string) === 'CATEGORY_GRID' ||
+            (section.type as string) === 'CATEGORY_SLIDER'
+          ) {
             // Filter products matching this section's collection
             const matchedProducts = section.collectionSlug
               ? cleanProducts.filter((p: { collections?: string[] }) =>
                   p.collections?.includes(section.collectionSlug || '')
                 )
               : cleanProducts;
+
+            const isDarkBand =
+              section.themeStyle === 'DARK_BAND' ||
+              (section.type as string) === 'CATEGORY_SLIDER';
 
             return (
               <CollectionSection
@@ -137,8 +145,8 @@ export default async function HomePage() {
                 description={section.description}
                 buttonText={section.buttonText || 'VIEW ALL'}
                 buttonLink={section.buttonLink || `/shop?collection=${section.collectionSlug}`}
-                products={matchedProducts}
-                themeStyle={section.themeStyle || 'LIGHT'}
+                products={matchedProducts.length > 0 ? matchedProducts : cleanProducts}
+                themeStyle={isDarkBand ? 'DARK_BAND' : 'LIGHT'}
                 accentColor={branding.colors?.accent}
               />
             );
