@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Product from '@/models/Product';
+import { deleteFromR2 } from '@/lib/storage';
 
 /**
  * ============================================================================
@@ -104,10 +105,21 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Cascade delete associated image assets from Cloudflare R2 (skip seed assets)
+    if (deleted.images && deleted.images.length > 0) {
+      const keysToDelete = deleted.images
+        .map((img: { key?: string }) => img.key)
+        .filter((key): key is string => Boolean(key && !key.startsWith('seed/')));
+
+      if (keysToDelete.length > 0) {
+        await Promise.allSettled(keysToDelete.map((key) => deleteFromR2(key)));
+      }
+    }
+
     return NextResponse.json(
       {
         success: true,
-        message: 'Product deleted successfully',
+        message: 'Product and associated storage assets deleted successfully',
         deletedImageKeys: deleted.images.map((img) => img.key),
       },
       { status: 200 }

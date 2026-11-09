@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
@@ -24,6 +24,38 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
   const totalStock = product?.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
 
   const [images, setImages] = useState<MediaItem[]>(product?.images || []);
+  const initialKeys = useRef<Set<string>>(
+    new Set((product?.images || []).map((img: MediaItem) => img.key))
+  );
+  const sessionUploadedKeys = useRef<string[]>([]);
+
+  const handleImagesChange = (newImages: MediaItem[]) => {
+    // Track any newly uploaded keys in this active session
+    newImages.forEach((img) => {
+      if (img.key && !initialKeys.current.has(img.key) && !sessionUploadedKeys.current.includes(img.key)) {
+        sessionUploadedKeys.current.push(img.key);
+      }
+    });
+    setImages(newImages);
+  };
+
+  const handleCancel = async () => {
+    // Garbage collect unsaved session uploads from Cloudflare R2
+    if (sessionUploadedKeys.current.length > 0) {
+      const keysToClean = [...sessionUploadedKeys.current];
+      sessionUploadedKeys.current = [];
+      await Promise.allSettled(
+        keysToClean
+          .filter((k) => !k.startsWith('seed/'))
+          .map((key) =>
+            fetch(`/api/upload?key=${encodeURIComponent(key)}`, {
+              method: 'DELETE',
+            })
+          )
+      );
+    }
+    router.push('/admin/products');
+  };
 
   const [form, setForm] = useState({
     title: product?.title || '',
@@ -64,6 +96,7 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
 
         const data = await res.json();
         if (data.success) {
+          sessionUploadedKeys.current = [];
           setToast('Product updated successfully!');
           setTimeout(() => {
             router.push('/admin/products');
@@ -103,6 +136,7 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
 
         const data = await res.json();
         if (data.success) {
+          sessionUploadedKeys.current = [];
           setToast('Product created successfully!');
           setTimeout(() => {
             router.push('/admin/products');
@@ -234,7 +268,7 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
           {/* Card 2: Reusable Universal Media & Gallery Card with Browser Compressor */}
           <MediaUploader
             value={images}
-            onChange={setImages}
+            onChange={handleImagesChange}
             multiple={true}
             maxFiles={8}
             aspectRatio="3:4"
@@ -296,12 +330,14 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
                   : isEdit ? 'Save Changes' : 'Create Product'}
               </button>
 
-              <Link
-                href="/admin/products"
-                className="w-full block py-2.5 px-4 text-center rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold transition cursor-pointer shadow-2xs"
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={isSaving}
+                className="w-full block py-2.5 px-4 text-center rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold transition cursor-pointer shadow-2xs disabled:opacity-50"
               >
                 Cancel
-              </Link>
+              </button>
             </div>
           </div>
         </div>

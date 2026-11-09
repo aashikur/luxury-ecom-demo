@@ -139,9 +139,23 @@ export default function MediaUploader({
     }
   };
 
-  const handleRemove = (indexToRemove: number) => {
+  const handleRemove = async (indexToRemove: number) => {
     if (disabled) return;
+    const itemToRemove = value[indexToRemove];
+
+    // 1. Optimistic UI update: remove from display immediately
     onChange(value.filter((_, idx) => idx !== indexToRemove));
+
+    // 2. Asynchronously cleanup storage in Cloudflare R2 (skip seed assets)
+    if (itemToRemove?.key && !itemToRemove.key.startsWith('seed/')) {
+      try {
+        await fetch(`/api/upload?key=${encodeURIComponent(itemToRemove.key)}`, {
+          method: 'DELETE',
+        });
+      } catch (err) {
+        console.error('Failed to cleanup R2 asset on remove:', err);
+      }
+    }
   };
 
   const handleSetCover = (index: number) => {
