@@ -9,7 +9,7 @@ import {
   Loader2,
   ImagePlus,
 } from 'lucide-react';
-import { compressImageInBrowser } from '@/lib/imageCompressor';
+import { optimizeImageRuleBased, CompressionResult } from '@/lib/imageCompressor';
 
 export interface MediaItem {
   url: string;
@@ -43,6 +43,7 @@ export default function MediaUploader({
 }: MediaUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [optimizationFeedbacks, setOptimizationFeedbacks] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Map aspect ratio string to CSS tailwind class
@@ -75,8 +76,10 @@ export default function MediaUploader({
 
     const filesToUpload = Array.from(files).slice(0, availableSlots);
     setIsUploading(true);
+    setOptimizationFeedbacks([]);
 
     const uploadedItems: MediaItem[] = [];
+    const newFeedbacks: string[] = [];
 
     for (const rawFile of filesToUpload) {
       if (!rawFile.type.startsWith('image/')) {
@@ -85,15 +88,13 @@ export default function MediaUploader({
       }
 
       try {
-        // 1. Client-Side Browser Compression (HTML5 Canvas Engine)
-        const compression = await compressImageInBrowser(rawFile, {
-          maxWidth: aspectRatio === '16:9' ? 1920 : 1600,
-          maxHeight: aspectRatio === '16:9' ? 1080 : 2133,
-          quality: 0.82,
-          outputFormat: 'image/webp',
-        });
+        // 1. Client-Side Rule-Based Optimization Engine (HTML5 Canvas)
+        // Max dimension cap 1200px, Target under 200KB, WebP format
+        const compression: CompressionResult = await optimizeImageRuleBased(rawFile, 1200);
 
-        // 2. Upload Compressed WebP to Cloudflare R2 API
+        newFeedbacks.push(compression.feedback);
+
+        // 2. Upload Optimized WebP File to Cloudflare R2 API
         const formData = new FormData();
         formData.append('file', compression.file);
         if (folder) {
@@ -115,9 +116,13 @@ export default function MediaUploader({
           alert(data.error || `Failed to upload "${rawFile.name}"`);
         }
       } catch (err) {
-        console.error('Upload error:', err);
+        console.error('Optimization/Upload error:', err);
         alert(`Upload error for "${rawFile.name}"`);
       }
+    }
+
+    if (newFeedbacks.length > 0) {
+      setOptimizationFeedbacks(newFeedbacks);
     }
 
     if (uploadedItems.length > 0) {
@@ -217,6 +222,21 @@ export default function MediaUploader({
           <p className="text-[11px] text-slate-400 mt-1">
             Accepted ratio {aspectRatio} · Max size 500 KB · WebP, PNG, JPG
           </p>
+        </div>
+      )}
+
+      {/* Live Optimization Feedback Pills */}
+      {optimizationFeedbacks.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+          {optimizationFeedbacks.map((fb, idx) => (
+            <span
+              key={idx}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-mono font-medium"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>{fb}</span>
+            </span>
+          ))}
         </div>
       )}
 
