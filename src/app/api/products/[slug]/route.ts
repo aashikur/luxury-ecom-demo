@@ -24,7 +24,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     await connectDB();
     const { slug } = await params;
 
-    const product = await Product.findOne({ slug, isActive: true }).lean();
+    // Search by ObjectId if valid 24-char hex, otherwise by slug
+    const query = slug.match(/^[0-9a-fA-F]{24}$/)
+      ? { $or: [{ _id: slug }, { slug }] }
+      : { slug };
+
+    const product = await Product.findOne(query).lean();
 
     if (!product) {
       return NextResponse.json(
@@ -50,8 +55,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { slug } = await params;
     const body = await request.json();
 
+    const query = slug.match(/^[0-9a-fA-F]{24}$/)
+      ? { $or: [{ _id: slug }, { slug }] }
+      : { slug };
+
     const updated = await Product.findOneAndUpdate(
-      { slug },
+      query,
       { $set: body },
       { new: true }
     );
@@ -82,7 +91,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     await connectDB();
     const { slug } = await params;
 
-    const deleted = await Product.findOneAndDelete({ slug });
+    const query = slug.match(/^[0-9a-fA-F]{24}$/)
+      ? { $or: [{ _id: slug }, { slug }] }
+      : { slug };
+
+    const deleted = await Product.findOneAndDelete(query);
 
     if (!deleted) {
       return NextResponse.json(
