@@ -22,6 +22,7 @@
 
 ## 3. Checklist
 - [x] Create `src/app/(admin)/admin/layout.tsx` with Apex-style dark sidebar.
+- [x] Implement responsive mobile slide-over drawer (`AdminShellClient.tsx`) with backdrop, hamburger trigger, route auto-close, and close button matching Apex reference.
 - [x] Refine branding to strictly use Lucide vector icons (`Zap`) with `#00C885` rounded container and typography (`AUREM` + `DASHBOARD`), strictly eliminating emoji characters across admin views.
 - [x] Implement `src/components/admin/SettingsFormClient.tsx` with 5 reactive tabs.
 - [x] Wire server component `src/app/(admin)/admin/settings/page.tsx` with live DB data.
