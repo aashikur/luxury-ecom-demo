@@ -207,14 +207,14 @@ export default function ProductDetailClient({ product }: { product: any }) {
 
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
-                <span className="text-slate-500 font-medium">$ Price</span>
+                <span className="text-slate-500 font-medium">Price</span>
                 <span className="text-base font-bold text-slate-900 font-mono">
                   {product.basePrice?.toLocaleString()}৳
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
-                <span className="text-slate-500 font-medium">📦 Stock</span>
+                <span className="text-slate-500 font-medium">Stock</span>
                 <span className="text-base font-bold text-slate-900 font-mono">
                   {totalStock}
                 </span>

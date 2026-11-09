@@ -11,10 +11,11 @@ import {
   Moon,
   Command,
   Plus,
+  Zap,
 } from 'lucide-react';
 
 export const metadata = {
-  title: 'Apex Dashboard | Aurem Admin',
+  title: 'Aurem Dashboard | Management',
   description: 'Enterprise E-Commerce Management Dashboard',
 };
 
@@ -28,15 +29,19 @@ export default function AdminLayout({
       {/* 1. Left Fixed Enterprise Jet-Black Sidebar (Matching Reference Image 1 & 2) */}
       <aside className="w-64 border-r border-zinc-900 bg-[#09090B] text-zinc-300 flex flex-col justify-between shrink-0 hidden md:flex z-20">
         <div>
-          {/* Top Brand Monogram */}
-          <div className="h-16 px-5 border-b border-zinc-850 flex items-center justify-between">
-            <Link href="/admin" className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-emerald-500 text-zinc-950 font-black flex items-center justify-center text-sm shadow-md">
-                ⚡
-              </span>
-              <div>
-                <h1 className="text-sm font-bold tracking-tight text-white uppercase">Apex</h1>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">DASHBOARD</p>
+          {/* Top Brand Monogram (Clean Vector Icon + AUREM DASHBOARD) */}
+          <div className="h-16 px-5 border-b border-zinc-900 flex items-center justify-between">
+            <Link href="/admin" className="flex items-center gap-3 group">
+              <div className="w-8 h-8 rounded-lg bg-[#00C885] flex items-center justify-center shrink-0 shadow-sm">
+                <Zap className="w-4 h-4 text-zinc-950 fill-amber-400 stroke-zinc-950 stroke-[2]" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-black tracking-tight text-white uppercase leading-none">
+                  Aurem
+                </span>
+                <span className="text-[10px] text-zinc-400 font-bold tracking-wider uppercase mt-1 leading-none">
+                  DASHBOARD
+                </span>
               </div>
             </Link>
           </div>
