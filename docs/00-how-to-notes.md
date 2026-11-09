@@ -50,3 +50,6 @@ Every new note file must strictly follow this exact 4-part structure:
 2. **Never dump secrets:** Never write actual passwords, secret keys, or tokens in documentation. Use placeholders (`<password>`, `your_api_key`).
 3. **Update on feature completion:** After building a new milestone, create or update the corresponding split note file before moving to the next phase.
 4. **Keep it scannable:** A developer should be able to review the entire concept in **under 2 minutes** before an interview or code review.
+
+dashboard UI inspiration:
+https://apex-shadcn.dashboardpack.com/products/prod-1

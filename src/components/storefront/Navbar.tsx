@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
@@ -11,54 +11,96 @@ interface NavbarProps {
   accentColor: string;
 }
 
-export default function Navbar({ storeName, accentColor }: NavbarProps) {
+function NavLinks({ accentColor }: { accentColor: string }) {
   const pathname = usePathname();
-  const { totalItems, setIsCartOpen } = useCart();
-  const brandNameFirst = storeName.split(' ')[0] || 'Aurem';
+  const searchParams = useSearchParams();
+  const collection = searchParams?.get('collection');
 
   const isHome = pathname === '/';
-  const isHoodies = pathname?.includes('hoodies');
-  const isTees = pathname?.includes('t-shirts');
+  const isHoodies = pathname === '/shop' && collection === 'hoodies';
+  const isTees = pathname === '/shop' && collection === 't-shirts';
+  const isArchive = pathname === '/shop' && !collection;
+
+  return (
+    <nav className="flex items-center gap-6 text-xs uppercase tracking-[0.14em]">
+      <Link
+        href="/"
+        style={{
+          color: isHome ? accentColor : undefined,
+          borderColor: isHome ? accentColor : 'transparent',
+        }}
+        className={`py-1 transition cursor-pointer ${
+          isHome
+            ? 'font-black border-b-2'
+            : 'font-medium text-zinc-600 hover:text-zinc-950'
+        }`}
+      >
+        HOME
+      </Link>
+      <Link
+        href="/shop?collection=hoodies"
+        style={{
+          color: isHoodies ? accentColor : undefined,
+          borderColor: isHoodies ? accentColor : 'transparent',
+        }}
+        className={`hidden md:inline-block py-1 transition cursor-pointer ${
+          isHoodies
+            ? 'font-black border-b-2'
+            : 'font-medium text-zinc-600 hover:text-zinc-950'
+        }`}
+      >
+        HOODIES
+      </Link>
+      <Link
+        href="/shop?collection=t-shirts"
+        style={{
+          color: isTees ? accentColor : undefined,
+          borderColor: isTees ? accentColor : 'transparent',
+        }}
+        className={`hidden md:inline-block py-1 transition cursor-pointer ${
+          isTees
+            ? 'font-black border-b-2'
+            : 'font-medium text-zinc-600 hover:text-zinc-950'
+        }`}
+      >
+        OVERSIZED TEES
+      </Link>
+      <Link
+        href="/shop"
+        style={{
+          color: isArchive ? accentColor : undefined,
+          borderColor: isArchive ? accentColor : 'transparent',
+        }}
+        className={`hidden lg:inline-block py-1 transition cursor-pointer ${
+          isArchive
+            ? 'font-black border-b-2'
+            : 'font-medium text-zinc-600 hover:text-zinc-950'
+        }`}
+      >
+        ARCHIVE
+      </Link>
+    </nav>
+  );
+}
+
+export default function Navbar({ storeName, accentColor }: NavbarProps) {
+  const { totalItems, setIsCartOpen } = useCart();
+  const brandNameFirst = storeName.split(' ')[0] || 'Aurem';
 
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-200/80 bg-white/95 backdrop-blur-md">
       <div className="max-w-[1360px] mx-auto px-4 sm:px-8 h-20 grid grid-cols-3 items-center">
         {/* Left Navigation Links */}
-        <nav className="flex items-center gap-6 text-xs font-semibold uppercase tracking-[0.14em]">
-          <Link
-            href="/"
-            style={{ color: isHome ? accentColor : undefined }}
-            className={`transition cursor-pointer ${
-              isHome ? 'font-bold' : 'text-zinc-800 hover:opacity-70'
-            }`}
-          >
-            HOME
-          </Link>
-          <Link
-            href="/shop?collection=hoodies"
-            style={{ color: isHoodies ? accentColor : undefined }}
-            className={`hidden md:inline-block transition cursor-pointer ${
-              isHoodies ? 'font-bold' : 'text-zinc-800 hover:opacity-70'
-            }`}
-          >
-            HOODIES
-          </Link>
-          <Link
-            href="/shop?collection=t-shirts"
-            style={{ color: isTees ? accentColor : undefined }}
-            className={`hidden md:inline-block transition cursor-pointer ${
-              isTees ? 'font-bold' : 'text-zinc-800 hover:opacity-70'
-            }`}
-          >
-            OVERSIZED TEES
-          </Link>
-          <Link
-            href="/shop"
-            className="hidden lg:inline-block transition text-zinc-800 hover:opacity-70 cursor-pointer"
-          >
-            ARCHIVE
-          </Link>
-        </nav>
+        <Suspense
+          fallback={
+            <nav className="flex items-center gap-6 text-xs uppercase tracking-[0.14em]">
+              <span className="font-bold text-zinc-950">HOME</span>
+              <span className="hidden md:inline-block text-zinc-600">HOODIES</span>
+            </nav>
+          }
+        >
+          <NavLinks accentColor={accentColor} />
+        </Suspense>
 
         {/* Centered Luxury Brand Monogram */}
         <div className="text-center">

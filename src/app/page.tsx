@@ -24,25 +24,13 @@ import Footer from '@/components/storefront/Footer';
 async function getStoreData() {
   await connectDB();
 
-  // 1. Fetch StoreConfig
-  let config = await StoreConfig.findOne({ isActive: true }).lean();
-  if (!config) {
-    // If not seeded yet, fetch from our API
-    const res = await fetch('http://localhost:3000/api/config', { cache: 'no-store' });
-    const json = await res.json();
-    config = json.data;
-  }
+  // 1. Fetch StoreConfig directly from MongoDB
+  const config = await StoreConfig.findOne({ isActive: true }).lean();
 
-  // 2. Fetch Products
-  let products = await Product.find({ isActive: true })
+  // 2. Fetch Products directly from MongoDB
+  const products = await Product.find({ isActive: true })
     .sort({ isPinned: -1, priority: -1, createdAt: -1 })
     .lean();
-
-  if (products.length === 0) {
-    const res = await fetch('http://localhost:3000/api/products', { cache: 'no-store' });
-    const json = await res.json();
-    products = json.data;
-  }
 
   return { config, products };
 }

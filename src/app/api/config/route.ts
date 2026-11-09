@@ -18,7 +18,7 @@ import StoreConfig from '@/models/StoreConfig';
 
 const DEFAULT_CONFIG_SEED = {
   branding: {
-    storeName: 'VectroFit Luxury',
+    storeName: 'Aurem Luxury',
     tagline: 'Engineered Streetwear & Minimal Garments',
     logo: {
       url: 'https://cdn-demo.vectorfitlab.com/branding/logo.png',
@@ -28,51 +28,53 @@ const DEFAULT_CONFIG_SEED = {
       url: '',
       key: '',
     },
-    themeMode: 'DARK',
+    themeMode: 'LIGHT' as const,
     colors: {
-      primary: '#0F172A',
-      accent: '#E11D48',
-      bg: '#09090B',
-      surface: '#18181B',
-      fg: '#FAFAFA',
+      primary: '#111111',
+      accent: '#B8860B',
+      bg: '#FFFFFF',
+      surface: '#F9FAFB',
+      fg: '#09090B',
       muted: '#71717A',
     },
-    heroVariant: 'CENTER',
+    heroVariant: 'CENTER' as const,
   },
   homeSections: [
     {
       id: 'sec_hero_1',
-      type: 'HERO_CAROUSEL',
+      type: 'HERO_BANNER' as const,
       title: 'Winter Luxury Drop 2026',
       subtitle: 'Premium Acid-Wash & Heavyweight Fleece',
-      linkUrl: '/products',
+      buttonLink: '/shop',
       order: 1,
       isActive: true,
     },
     {
       id: 'sec_cat_hoodies',
-      type: 'CATEGORY_GRID',
+      type: 'COLLECTION_SECTION' as const,
       title: 'Heavyweight Hoodies',
       subtitle: '450 GSM French Terry Fleece',
       collectionSlug: 'hoodies',
+      themeStyle: 'LIGHT' as const,
       order: 2,
       isActive: true,
     },
     {
       id: 'sec_banner_promo',
-      type: 'PROMO_BANNER',
+      type: 'PROMO_CTA_CARD' as const,
       title: 'Free Express Shipping Across Bangladesh',
       subtitle: 'On all orders above 2,500 BDT',
-      linkUrl: '/products',
+      buttonLink: '/shop',
       order: 3,
       isActive: true,
     },
     {
       id: 'sec_cat_tees',
-      type: 'CATEGORY_SLIDER',
+      type: 'COLLECTION_SECTION' as const,
       title: 'Oversized Tees',
       subtitle: '240 GSM Combed Cotton',
       collectionSlug: 't-shirts',
+      themeStyle: 'DARK_BAND' as const,
       order: 4,
       isActive: true,
     },
@@ -168,7 +170,8 @@ export async function GET() {
 
     if (!config) {
       console.log('⚡ No StoreConfig found. Seeding default configuration to MongoDB...');
-      config = await StoreConfig.create(DEFAULT_CONFIG_SEED);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      config = await StoreConfig.create(DEFAULT_CONFIG_SEED as any);
     }
 
     return NextResponse.json({ success: true, data: config }, { status: 200 });

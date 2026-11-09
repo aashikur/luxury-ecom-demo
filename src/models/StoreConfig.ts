@@ -20,6 +20,7 @@ export interface IHomeSection {
   description?: string;
   buttonText?: string;     // e.g. "SHOP NOW", "VIEW ALL", "VIEW BAG & SHIPPING"
   buttonLink?: string;     // e.g. "/products?collection=winter-drop"
+  linkUrl?: string;        // Legacy alias for buttonLink
   collectionSlug?: string; // Query products matching this collection tag
   bannerImage?: {
     url: string;
