@@ -57,7 +57,47 @@
 
 ---
 
-## 5. Orders & Bangladesh 1-Page Checkout
+## 5. Taxonomy & Collection Engine (Dynamic Categories & Marketing Drops)
+
+### `GET /api/categories`
+* **Consumer:** Storefront Navigation Menu, Shop Filter Accordion, Admin Cascading Selectors.
+* **Query Parameters:**
+  * `?tree=true`: Returns hierarchical nested tree (`ICategoryTreeNode[]` with `.children`).
+  * `?featured=true`: Returns categories flagged with `isFeaturedHome: true` for the homepage.
+  * `?parentId=<id|null>`: Returns direct child categories of a given parent.
+* **Success Response (`200 OK`):** `{ success: true, count: number, data: ICategory[] | ICategoryTreeNode[] }`
+
+### `POST /api/categories`
+* **Consumer:** Admin Category Manager & In-line Quick Add Modal.
+* **Payload:** `{ name: string, parentId?: string, description?: string, image?: { url, key }, isFeaturedHome?: boolean, displayOrder?: number }`
+* **Behavior:** Auto-generates unique `slug`, computes `level` (parent.level + 1), and derives `ancestors` array.
+
+### `PUT /api/categories`
+* **Consumer:** Admin Category Manager.
+* **Payload:** `{ id: string, name?: string, parentId?: string, ... }`
+* **Safeguard:** Circular hierarchy protection (blocks setting a descendant or self as parent).
+
+### `DELETE /api/categories?id=<id>`
+* **Consumer:** Admin Category Manager.
+* **Safeguards:** 
+  * Aborts with `400` if child subcategories exist under it.
+  * Aborts with `400` if active products are assigned to this category.
+
+### `GET /api/collections`
+* **Consumer:** Storefront Homepage Campaign Sliders, Shop Filter Drawer, Admin Product Form.
+* **Query Parameters:** `?featured=true` for homepage drops.
+
+### `POST /api/collections`
+* **Consumer:** Admin Marketing Manager.
+* **Payload:** `{ title: string, badgeText?: string, bannerImage?: { url, key }, isFeaturedHome?: boolean, startDate?: Date, endDate?: Date }`
+
+### `DELETE /api/collections?id=<id>`
+* **Consumer:** Admin Marketing Manager.
+* **Behavior:** Deletes collection and unlinks collection slug from all associated products.
+
+---
+
+## 6. Orders & Bangladesh 1-Page Checkout
 
 ### `POST /api/orders`
 * **Consumer / Who uses it:** Customer Cart Drawer (Guest 1-Page COD Checkout).

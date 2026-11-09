@@ -18,10 +18,11 @@
 | **04** | **Storage Garbage Collection** | Lifecycle asset cleanup: instant R2 deletion on media remove (✕), batch purge of uncommitted draft uploads on form cancel, and cascade deletion on product delete. | ✅ **DONE** | `src/components/admin/MediaUploader.tsx`<br>`src/components/admin/ProductFormClient.tsx`<br>`DELETE /api/products/[slug]` |
 | **05** | **Admin Navigation & Shell** | Full-width edge-to-edge admin layout, responsive mobile header, mobile slide-over navigation drawer with backdrop blur, route auto-close. | ✅ **DONE** | `src/app/(admin)/admin/layout.tsx`<br>`src/components/admin/AdminShellClient.tsx` |
 | **06** | **Product Management Suite** | Unified 2-column Product Form for Create (`/admin/products/new`) & Edit (`/admin/products/[id]/edit`), auto-slug generation, stock badges, instant client search, 3:4 portrait uploader. | ✅ **DONE** | `src/app/(admin)/admin/products/`<br>`src/components/admin/ProductFormClient.tsx` |
-| **07** | **Store Settings Engine** | 6-module configuration dashboard: General & Brand, Logistics & Shipping, Payment Gateways, Courier & Fraud Shield, Marketing & Pixels, Storefront & Layout. | 🟡 **IN PROGRESS** | `src/app/(admin)/admin/settings/`<br>`src/components/admin/SettingsFormClient.tsx` |
-| **08** | **Orders & Fulfillment Suite** | Manual order entry (`/admin/orders/new`), live orders table with status badges (`PENDING` to `DELIVERED`), Steadfast courier 1-click booking, customer phone search. | ⏳ **PENDING** | `src/app/(admin)/admin/orders/`<br>`src/models/Order.ts` |
-| **09** | **Storefront Catalog & Discovery** | Luxury garments storefront homepage (`/`), Shop catalog (`/shop`), 3:4 portrait cards, sticky filters, responsive cart drawer, size guide modal, product detail page (`/products/[slug]`). | ⏳ **PENDING** | `src/app/(storefront)/`<br>`src/components/storefront/` |
-| **10** | **Frictionless 1-Page BD Checkout** | Zero-login guest checkout, 11-digit BD phone validation (`01XXXXXXXXX`), auto-lead capture for abandoned carts (`INCOMPLETE`), inside/outside Dhaka logistics, advance payment rules. | ⏳ **PENDING** | `src/app/(storefront)/checkout/`<br>`POST /api/orders` |
+| **07** | **Category & Collection Engine** | Managed taxonomy tree (Infinite depth, ancestors materialized path, circular safeguard, delete protection), marketing collections, cascading selectors in Admin, and quick-add modal. | ✅ **DONE** | `src/models/Category.ts`<br>`src/models/Collection.ts`<br>`/api/categories`<br>`/api/collections` |
+| **08** | **Store Settings Engine** | 6-module configuration dashboard: General & Brand, Logistics & Shipping, Payment Gateways, Courier & Fraud Shield, Marketing & Pixels, Storefront & Layout. | 🟡 **IN PROGRESS** | `src/app/(admin)/admin/settings/`<br>`src/components/admin/SettingsFormClient.tsx` |
+| **09** | **Orders & Fulfillment Suite** | Manual order entry (`/admin/orders/new`), live orders table with status badges (`PENDING` to `DELIVERED`), Steadfast courier 1-click booking, customer phone search. | ⏳ **PENDING** | `src/app/(admin)/admin/orders/`<br>`src/models/Order.ts` |
+| **10** | **Storefront Catalog & Discovery** | Luxury garments storefront homepage (`/`), Shop catalog (`/shop`), 3:4 portrait cards, sticky filters, responsive cart drawer, size guide modal, product detail page (`/products/[slug]`). | ⏳ **PENDING** | `src/app/(storefront)/`<br>`src/components/storefront/` |
+| **11** | **Frictionless 1-Page BD Checkout** | Zero-login guest checkout, 11-digit BD phone validation (`01XXXXXXXXX`), auto-lead capture for abandoned carts (`INCOMPLETE`), inside/outside Dhaka logistics, advance payment rules. | ⏳ **PENDING** | `src/app/(storefront)/checkout/`<br>`POST /api/orders` |
 
 ---
 
@@ -83,3 +84,8 @@ The single-document `StoreConfig` architecture controls 6 distinct store modules
 ### Task #03: Pipeline Specification Standard & Documentation Sync
 * **Files Modified:** `docs/00-how-to-notes.md`, `docs/pipeline/scope.md`.
 * **Changes:** Established Rule #5 in documentation standard. Authored complete Project Scope and Technical Specification Pipeline tracking all 10 platform modules.
+
+### Task #04: Enterprise Dynamic Category & Collection Engine
+* **Files Created/Modified:** `src/models/Category.ts`, `src/models/Collection.ts`, `src/models/Product.ts`, `src/app/api/categories/route.ts`, `src/app/api/collections/route.ts`, `src/components/admin/ProductFormClient.tsx`, `scripts/seed-taxonomies.mjs`.
+* **Changes:** Replaced static category strings with database-driven taxonomy tree (Materialized Path `ancestors`, circular dependency guard, delete protection against assigned products). Integrated 3-level cascading category selector in Admin Product Form with live path breadcrumbs (`Men › Tops › Hoodies`), in-line "+ Quick Add Category" modal, and multi-select marketing collection tags. Seeded production categories and collections. All 16 routes verified and compiling cleanly with Next.js Turbopack.
+

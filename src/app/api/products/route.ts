@@ -130,6 +130,8 @@ export async function GET(request: NextRequest) {
 
     const collection = searchParams.get('collection');
     const category = searchParams.get('category');
+    const categorySlug = searchParams.get('categorySlug');
+    const all = searchParams.get('all') === 'true';
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const page = parseInt(searchParams.get('page') || '1', 10);
 
@@ -142,13 +144,21 @@ export async function GET(request: NextRequest) {
 
     // 2. Build MongoDB query filter
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filter: Record<string, any> = { isActive: true };
+    const filter: Record<string, any> = {};
+    if (!all) {
+      filter.isActive = true;
+    }
 
     if (collection) {
       filter.collections = collection;
     }
 
-    if (category) {
+    if (categorySlug) {
+      filter.$or = [
+        { categorySlug: categorySlug },
+        { categoryPath: categorySlug },
+      ];
+    } else if (category) {
       filter.primaryCategory = new RegExp(`^${category}$`, 'i');
     }
 

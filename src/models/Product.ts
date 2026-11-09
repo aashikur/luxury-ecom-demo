@@ -37,8 +37,12 @@ export interface IProduct extends Document {
   title: string;
   slug: string;
   description: string;
-  primaryCategory: string; // e.g. "Hoodie", "T-Shirt", "Panjabi"
-  collections: string[];   // e.g. ["hoodies", "winter-drop", "featured", "flash-sale"]
+  categoryId?: mongoose.Types.ObjectId; // Strict reference to Category model
+  categorySlug?: string;                 // Normalized slug (e.g. "men-hoodies", "hijab")
+  categoryPath?: string[];               // Ancestor slugs ['men', 'men-tops', 'men-hoodies']
+  primaryCategory: string; // e.g. "Hoodie", "T-Shirt", "Panjabi" (kept for display & backward compatibility)
+  collections: string[];   // e.g. ["hoodies", "winter-drop-2026", "featured", "flash-sale"]
+  tags?: string[];         // Granular product attributes e.g. ["fleece", "heavyweight", "oversized"]
   basePrice: number;
   discountPrice?: number;
   images: IProductImage[];
@@ -61,8 +65,12 @@ const ProductSchema = new Schema<IProduct>(
     title: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
     description: { type: String, default: '' },
+    categoryId: { type: Schema.Types.ObjectId, ref: 'Category', default: null, index: true },
+    categorySlug: { type: String, default: '', index: true },
+    categoryPath: [{ type: String, index: true }],
     primaryCategory: { type: String, required: true, index: true },
     collections: [{ type: String, index: true }], // Indexed for lightning-fast collection queries
+    tags: [{ type: String, index: true }],
     basePrice: { type: Number, required: true },
     discountPrice: { type: Number },
     images: [
@@ -113,6 +121,9 @@ const ProductSchema = new Schema<IProduct>(
 // Compound index for optimal storefront catalog ordering:
 // Sorts by isPinned (top) -> priority (descending) -> newest first (createdAt descending)
 ProductSchema.index({ isPinned: -1, priority: -1, createdAt: -1 });
+ProductSchema.index({ categorySlug: 1, isActive: 1 });
+ProductSchema.index({ categoryPath: 1, isActive: 1 });
+ProductSchema.index({ collections: 1, isActive: 1 });
 
 export const Product: Model<IProduct> =
   mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);
