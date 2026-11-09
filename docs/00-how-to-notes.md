@@ -50,6 +50,13 @@ Every new note file must strictly follow this exact 4-part structure:
 2. **Never dump secrets:** Never write actual passwords, secret keys, or tokens in documentation. Use placeholders (`<password>`, `your_api_key`).
 3. **Update on feature completion:** After building a new milestone, create or update the corresponding split note file before moving to the next phase.
 4. **Keep it scannable:** A developer should be able to review the entire concept in **under 2 minutes** before an interview or code review.
+5. **Continuous Pipeline & Scope Tracking (`docs/pipeline/scope.md`):**
+   * Whenever any task, feature, or refactor is implemented, `docs/pipeline/scope.md` **MUST be updated continuously in the same work cycle**.
+   * It serves as the single source of truth for the platform's overarching scope, granular module completion status, technical specifications (APIs, data models, constraints), and per-task changelog.
+   * Every AI agent or engineer must verify and update `docs/pipeline/scope.md` upon completing any milestone before marking the task complete.
 
-dashboard UI inspiration:
-https://apex-shadcn.dashboardpack.com/products/prod-1
+---
+
+## 4. UI Design & Engineering References
+* **Dashboard UI Inspiration:** [Apex Shadcn Dashboard](https://apex-shadcn.dashboardpack.com/products/prod-1)
+* **Tone & Styling Standard:** Ultra-clean, minimalistic senior-engineer UI. No decorative notice fluff, emojis, sparkles, or excessive AI badges.
