@@ -4,11 +4,12 @@
 - **Apex High-Contrast Workspace Lock**: Standardized layout with a Jet-Black left sidebar (`#09090B`) paired with a high-clarity Light canvas (`#F8FAFC`, `#FFFFFF` cards, `#EAECF0` borders) matching the reference design.
 - **Three-Dots Floating Action Popover ([Image 1])**: Row-level popover containing `View` (`Eye`), `Edit` (`Pencil`), and `Delete` (`Trash`, red).
 - **Inline Stock Quick-Edit Stepper ([Image 3])**: Table stock column supports live clicking to activate an inline stepper input box (`[ 999 ⇅ ] ✓ ✕`) for real-time inventory updates without opening a modal or navigating away.
+- **Unified DRY Product Form (`ProductFormClient.tsx`)**: Consolidated New Product (`/admin/products/new`) and Edit Product (`/admin/products/[id]/edit`) into a single 2-column component supporting both `create` and `edit` modes, eliminating code duplication while preserving 1:1 visual fidelity with the reference screenshots.
 - **Dedicated 2-Column Edit Route (`/admin/products/[id]/edit`) ([Image 2])**:
   - *Left Card*: Product Information (Title, Description, Price ৳, and Stock side-by-side).
   - *Right Card*: Organization (Category dropdown, Status dropdown, full-width `Save Changes` & `Cancel`).
 - **Product Inspection View (`/admin/products/[id]`) ([Image 4])**: High-clarity 2-column breakdown of garment specs, Cloudflare R2 gallery, and size variant matrix.
-- **Garment Upload Page (`/admin/products/new`)**: Upload and publish new garments with custom-milled fleece specs and stock matrices.
+- **Garment Upload Page (`/admin/products/new`)**: Driven by unified `ProductFormClient` in create mode.
 
 ---
 
@@ -31,6 +32,6 @@
 
 ## 4. Sources & Cross References
 - Products Table: [`src/components/admin/ProductsTableClient.tsx`](file:///e:/WebDevs/Testing/e-com/src/components/admin/ProductsTableClient.tsx)
-- Edit Product Form: [`src/components/admin/EditProductClient.tsx`](file:///e:/WebDevs/Testing/e-com/src/components/admin/EditProductClient.tsx)
+- Unified Product Form: [`src/components/admin/ProductFormClient.tsx`](file:///e:/WebDevs/Testing/e-com/src/components/admin/ProductFormClient.tsx)
 - Product Detail: [`src/components/admin/ProductDetailClient.tsx`](file:///e:/WebDevs/Testing/e-com/src/components/admin/ProductDetailClient.tsx)
 - Admin Layout: [`src/app/(admin)/admin/layout.tsx`](file:///e:/WebDevs/Testing/e-com/src/app/(admin)/admin/layout.tsx)

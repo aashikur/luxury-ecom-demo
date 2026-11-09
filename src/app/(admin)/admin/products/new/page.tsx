@@ -1,11 +1,11 @@
 import React from 'react';
-import NewProductClient from '@/components/admin/NewProductClient';
+import ProductFormClient from '@/components/admin/ProductFormClient';
 
 export const metadata = {
-  title: 'Add New Garment | Aurem Admin',
-  description: 'Upload new luxury garments to Cloudflare R2 and catalog',
+  title: 'New Product | Aurem Admin',
+  description: 'Add a new product to the catalog',
 };
 
 export default function NewProductPage() {
-  return <NewProductClient />;
+  return <ProductFormClient mode="create" />;
 }

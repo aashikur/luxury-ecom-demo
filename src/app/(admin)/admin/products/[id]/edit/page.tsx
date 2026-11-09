@@ -2,7 +2,7 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { connectDB } from '@/lib/db';
 import Product from '@/models/Product';
-import EditProductClient from '@/components/admin/EditProductClient';
+import ProductFormClient from '@/components/admin/ProductFormClient';
 
 interface EditProductPageProps {
   params: Promise<{ id: string }>;
@@ -10,7 +10,7 @@ interface EditProductPageProps {
 
 export const metadata = {
   title: 'Edit Product | Aurem Admin',
-  description: 'Update garment details, pricing, and stock',
+  description: 'Update product details, pricing, and stock',
 };
 
 export default async function EditProductPage({ params }: EditProductPageProps) {
@@ -30,5 +30,5 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
 
   const product = JSON.parse(JSON.stringify(rawProduct));
 
-  return <EditProductClient product={product} />;
+  return <ProductFormClient mode="edit" product={product} />;
 }
