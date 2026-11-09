@@ -57,7 +57,7 @@ export default async function AdminDashboardPage() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="w-full space-y-8">
       {/* Welcome Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-850">
         <div>

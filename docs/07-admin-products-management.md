@@ -21,6 +21,7 @@
 
 ## 3. Checklist
 - [x] Lock Admin Layout to Jet-Black Sidebar + Crisp Light Workspace canvas.
+- [x] Full-width workspace normalization (`w-full` replacing restrictive `max-w-*` wrappers) matching edge-to-edge reference layout.
 - [x] Implement row-level Three-Dots popover menu (`View`, `Edit`, `Delete`).
 - [x] Implement Inline Stock Quick-Edit Stepper (`[ 999 ⇅ ] ✓ ✕`) with live `PUT /api/products/[slug]`.
 - [x] Create dedicated Edit Page at `src/app/(admin)/admin/products/[id]/edit/page.tsx`.

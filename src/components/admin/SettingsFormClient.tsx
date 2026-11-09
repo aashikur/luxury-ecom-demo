@@ -87,7 +87,7 @@ export default function SettingsFormClient({ initialConfig }: { initialConfig: a
   ];
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="w-full space-y-8">
       {/* Toast Notification */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 bg-zinc-900 border border-zinc-700 text-white text-xs uppercase tracking-widest shadow-2xl rounded-md animate-fade-in">
