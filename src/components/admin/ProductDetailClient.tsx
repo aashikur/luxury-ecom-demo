@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Trash2, Edit, ArrowLeft, Check, Sparkles, Tag } from 'lucide-react';
+import { Trash2, Edit, ArrowLeft, Tag } from 'lucide-react';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function ProductDetailClient({ product }: { product: any }) {
@@ -41,32 +41,32 @@ export default function ProductDetailClient({ product }: { product: any }) {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* 1. Breadcrumb & Top Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-850">
+      {/* 1. Breadcrumb & Top Actions (Matching Reference Image 4) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
         <div>
-          <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
-            <Link href="/admin" className="hover:text-zinc-300 transition">Dashboard</Link>
+          <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+            <Link href="/admin" className="hover:text-slate-800 transition">Dashboard</Link>
             <span>&gt;</span>
-            <Link href="/admin/products" className="hover:text-zinc-300 transition">Products</Link>
+            <Link href="/admin/products" className="hover:text-slate-800 transition">Products</Link>
             <span>&gt;</span>
-            <span className="text-zinc-300 font-medium truncate max-w-xs">{product.title}</span>
+            <span className="text-slate-900 font-medium truncate max-w-xs">{product.title}</span>
           </div>
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-white">{product.title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{product.title}</h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <Link
-            href="/admin/products"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-zinc-900 hover:bg-zinc-850 text-zinc-300 text-xs font-semibold border border-zinc-800 transition"
+            href={`/admin/products/${product._id}/edit`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back</span>
+            <Edit className="w-3.5 h-3.5 text-slate-500" />
+            <span>Edit</span>
           </Link>
 
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-500/30 text-xs font-bold uppercase tracking-wider transition cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
@@ -77,69 +77,59 @@ export default function ProductDetailClient({ product }: { product: any }) {
       {/* 2. Main Two-Column Layout (Matching Apex Image 4) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Product Details Card */}
-        <div className="lg:col-span-7 bg-zinc-900/60 border border-zinc-850 rounded-lg p-6 space-y-6">
-          <div className="border-b border-zinc-850 pb-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-white">Product Details</h2>
+        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-2xs">
+          <div className="border-b border-slate-100 pb-3">
+            <h2 className="text-sm font-bold text-slate-900">Product Details</h2>
           </div>
 
           <div className="space-y-4 text-xs">
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block mb-1">
+              <label className="text-[11px] font-semibold text-slate-400 block mb-1">
                 Name
               </label>
-              <p className="text-sm font-semibold text-white">{product.title}</p>
+              <p className="text-sm font-semibold text-slate-900">{product.title}</p>
             </div>
 
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block mb-1">
-                Slug (URL Identifier)
-              </label>
-              <code className="text-xs font-mono text-emerald-400 bg-zinc-950 px-2 py-1 rounded border border-zinc-800 inline-block">
-                /products/{product.slug}
-              </code>
-            </div>
-
-            <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block mb-1">
+              <label className="text-[11px] font-semibold text-slate-400 block mb-1">
                 Description
               </label>
-              <p className="text-zinc-300 leading-relaxed bg-zinc-950/60 p-3 rounded-md border border-zinc-850">
-                {product.description || 'No description provided.'}
+              <p className="text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+                {product.description || 'Full-featured luxury minimal garment with custom-milled fleece.'}
               </p>
             </div>
 
-            {/* Status & Category Row */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-zinc-850">
+            {/* Status, Category & Created Row */}
+            <div className="grid grid-cols-3 gap-4 pt-3 border-t border-slate-100">
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block mb-1">
+                <label className="text-[11px] font-semibold text-slate-400 block mb-1">
                   Status
                 </label>
                 <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
                     product.isActive
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-amber-500 text-white'
                   }`}
                 >
-                  <span className={`w-1.5 h-1.5 rounded-full ${product.isActive ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                  <span>{product.isActive ? 'Active' : 'Draft'}</span>
+                  {product.isActive ? 'Active' : 'Draft'}
                 </span>
               </div>
 
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block mb-1">
+                <label className="text-[11px] font-semibold text-slate-400 block mb-1">
                   Category
                 </label>
-                <span className="px-2.5 py-1 rounded bg-zinc-800 text-[11px] font-medium text-zinc-200 uppercase tracking-wide inline-block border border-zinc-700">
-                  {product.primaryCategory || 'Garment'}
+                <span className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium border border-slate-200 inline-block">
+                  {product.primaryCategory || 'Templates'}
                 </span>
               </div>
 
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block mb-1">
+                <label className="text-[11px] font-semibold text-slate-400 block mb-1">
                   Created
                 </label>
-                <span className="text-zinc-400 font-medium">
+                <span className="text-slate-600 font-medium">
                   {new Date(product.createdAt).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -151,17 +141,17 @@ export default function ProductDetailClient({ product }: { product: any }) {
 
             {/* Collection Tags */}
             {product.collections?.length > 0 && (
-              <div className="pt-4 border-t border-zinc-850">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block mb-2">
+              <div className="pt-3 border-t border-slate-100">
+                <label className="text-[11px] font-semibold text-slate-400 block mb-2">
                   Tagged Collections
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {product.collections.map((tag: string) => (
                     <span
                       key={tag}
-                      className="px-2.5 py-1 rounded bg-zinc-950 text-zinc-400 border border-zinc-800 text-[11px] font-mono flex items-center gap-1"
+                      className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-mono border border-slate-200 flex items-center gap-1"
                     >
-                      <Tag className="w-3 h-3 text-zinc-500" />
+                      <Tag className="w-3 h-3 text-slate-400" />
                       <span>{tag}</span>
                     </span>
                   ))}
@@ -174,15 +164,15 @@ export default function ProductDetailClient({ product }: { product: any }) {
         {/* Right Column: Image & Pricing Cards */}
         <div className="lg:col-span-5 space-y-6">
           {/* Card 1: Image Showcase */}
-          <div className="bg-zinc-900/60 border border-zinc-850 rounded-lg p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-850 pb-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-white">Garment Photo</h2>
-              <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-mono">
-                {activeImageIdx + 1} / {images.length}
+          <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-2xs">
+            <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-slate-900">Image</h2>
+              <span className="text-[10px] text-slate-400 font-mono">
+                {activeImageIdx + 1} of {images.length}
               </span>
             </div>
 
-            <div className="relative aspect-[3/4] w-full bg-zinc-950 rounded-lg overflow-hidden border border-zinc-800">
+            <div className="relative aspect-[4/5] w-full bg-slate-50 rounded-lg overflow-hidden border border-slate-100">
               <Image
                 src={currentImage}
                 alt={product.title}
@@ -198,8 +188,8 @@ export default function ProductDetailClient({ product }: { product: any }) {
                   <button
                     key={i}
                     onClick={() => setActiveImageIdx(i)}
-                    className={`relative w-14 aspect-[3/4] rounded overflow-hidden border cursor-pointer ${
-                      activeImageIdx === i ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-zinc-800 opacity-60'
+                    className={`relative w-14 aspect-[3/4] rounded-md overflow-hidden border cursor-pointer ${
+                      activeImageIdx === i ? 'border-emerald-600 ring-1 ring-emerald-600' : 'border-slate-200 opacity-60'
                     }`}
                   >
                     <Image src={img.url} alt="" fill className="object-cover" />
@@ -210,41 +200,41 @@ export default function ProductDetailClient({ product }: { product: any }) {
           </div>
 
           {/* Card 2: Pricing & Inventory */}
-          <div className="bg-zinc-900/60 border border-zinc-850 rounded-lg p-6 space-y-4">
-            <div className="border-b border-zinc-850 pb-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-white">Pricing & Inventory</h2>
+          <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-2xs">
+            <div className="border-b border-slate-100 pb-3">
+              <h2 className="text-sm font-bold text-slate-900">Pricing & Inventory</h2>
             </div>
 
-            <div className="space-y-4 text-xs">
-              <div className="flex items-center justify-between p-3 rounded-md bg-zinc-950 border border-zinc-800">
-                <span className="text-zinc-400 font-medium">Selling Price:</span>
-                <span className="text-lg font-bold text-white font-mono">
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
+                <span className="text-slate-500 font-medium">$ Price</span>
+                <span className="text-base font-bold text-slate-900 font-mono">
                   {product.basePrice?.toLocaleString()}৳
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-md bg-zinc-950 border border-zinc-800">
-                <span className="text-zinc-400 font-medium">Total In-Stock:</span>
-                <span className="text-lg font-bold text-emerald-400 font-mono">
-                  {totalStock} units
+              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
+                <span className="text-slate-500 font-medium">📦 Stock</span>
+                <span className="text-base font-bold text-slate-900 font-mono">
+                  {totalStock}
                 </span>
               </div>
 
               {/* Variant breakdown table */}
               {product.variants?.length > 0 && (
                 <div className="pt-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block mb-2">
-                    Stock By Size Matrix
+                  <span className="text-[11px] font-semibold text-slate-400 block mb-2">
+                    Size Matrix Breakdown
                   </span>
                   <div className="grid grid-cols-4 gap-2">
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {product.variants.map((v: any) => (
                       <div
                         key={v.size}
-                        className="p-2.5 rounded bg-zinc-950 border border-zinc-800 text-center"
+                        className="p-2 rounded-md bg-slate-50 border border-slate-100 text-center"
                       >
-                        <span className="text-xs font-bold text-zinc-400 block">{v.size}</span>
-                        <strong className="text-sm font-mono text-white block mt-0.5">
+                        <span className="text-xs font-bold text-slate-500 block">{v.size}</span>
+                        <strong className="text-xs font-mono text-slate-900 block mt-0.5">
                           {v.stock}
                         </strong>
                       </div>
