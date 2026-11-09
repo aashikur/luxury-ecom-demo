@@ -26,6 +26,7 @@ export interface IOrder extends Document {
   customer: {
     name: string;
     phone: string;
+    email?: string;
     address: string;
     deliveryZone: 'INSIDE_DHAKA' | 'OUTSIDE_DHAKA';
     note?: string;
@@ -59,6 +60,8 @@ export interface IOrder extends Document {
     trackingCode?: string;
     status?: string;
   };
+  createdBy?: string; // 'CUSTOMER' or admin operator identifier e.g. 'ADMIN: Ashikur Rahaman'
+  updatedBy?: string; // Audit trail of last admin operator who touched or approved order
   createdAt: Date;
   updatedAt: Date;
 }
@@ -69,6 +72,7 @@ const OrderSchema = new Schema<IOrder>(
     customer: {
       name: { type: String, required: true, trim: true },
       phone: { type: String, required: true, index: true, trim: true },
+      email: { type: String, default: '', trim: true },
       address: { type: String, required: true, trim: true },
       deliveryZone: {
         type: String,
@@ -147,6 +151,8 @@ const OrderSchema = new Schema<IOrder>(
       trackingCode: { type: String, default: '' },
       status: { type: String, default: '' },
     },
+    createdBy: { type: String, default: 'CUSTOMER' },
+    updatedBy: { type: String, default: 'SYSTEM' },
   },
   {
     timestamps: true,

@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
       customer: {
         name: customer.name,
         phone: customer.phone,
+        email: customer.email || '',
         address: customer.address,
         deliveryZone: customer.deliveryZone || 'INSIDE_DHAKA',
         note: note || '',
@@ -96,6 +97,8 @@ export async function POST(request: NextRequest) {
         provider: config?.courier?.provider || 'STEADFAST',
         consignmentId: `SF-${Date.now().toString().slice(-6)}`,
       },
+      createdBy: body.createdBy || 'CUSTOMER',
+      updatedBy: body.updatedBy || 'CUSTOMER',
     });
 
     return NextResponse.json(
