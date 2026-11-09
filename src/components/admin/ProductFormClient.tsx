@@ -1,10 +1,23 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, Plus, Tag, Layers, ChevronRight, X } from 'lucide-react';
+import { Check, Plus, X } from 'lucide-react';
 import MediaUploader, { MediaItem } from '@/components/admin/MediaUploader';
+import { ProductType, ProductStatus, StockStatus } from '@/models/Product';
+import {
+  Button,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Input,
+  Select,
+  Textarea,
+  Badge,
+  Breadcrumb,
+} from '@/components/ui';
 
 interface CategoryNode {
   _id: string;
@@ -55,9 +68,12 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
   // Custom collection tag input
   const [customTagInput, setCustomTagInput] = useState('');
 
-  // Calculate existing stock or default to 0
+  // Total stock calculation
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const totalStock = product?.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
+  const existingVariants = product?.variants || [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const variantsSumStock = existingVariants.reduce((sum: number, v: any) => sum + (v.stock || 0), 0);
+  const totalStock = product?.totalStock ?? (existingVariants.length > 0 ? variantsSumStock : 0);
 
   const [images, setImages] = useState<MediaItem[]>(product?.images || []);
   const initialKeys = useRef<Set<string>>(
@@ -69,14 +85,20 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
   const [form, setForm] = useState({
     title: product?.title || '',
     description: product?.description || '',
+    productType: (product?.productType as ProductType) || 'CLOTHING',
+    hasVariants: product?.hasVariants !== undefined ? Boolean(product.hasVariants) : existingVariants.length > 0,
     price: product?.basePrice ?? (isEdit ? 0 : ''),
-    stock: isEdit ? totalStock : '',
+    discountPrice: product?.discountPrice ?? '',
+    sku: product?.sku || '',
+    stock: isEdit ? totalStock : 0,
+    stockStatus: (product?.stockStatus as StockStatus) || 'AUTO',
+    brandName: product?.brandName || '',
     categoryId: product?.categoryId || '',
     categorySlug: product?.categorySlug || '',
-    categoryPath: product?.categoryPath || [],
-    primaryCategory: product?.primaryCategory || (isEdit ? 'Heavyweight Hoodies' : ''),
+    categoryPath: (product?.categoryPath as string[]) || [],
+    primaryCategory: product?.primaryCategory || (isEdit ? 'Garments' : ''),
     collections: (product?.collections as string[]) || ['winter-drop-2026'],
-    status: isEdit ? (product?.isActive ? 'Active' : 'Draft') : 'Draft',
+    status: (product?.status as ProductStatus) || (product?.isActive ? 'PUBLISHED' : 'DRAFT'),
   });
 
   // Fetch Category Tree and Collections from Database
@@ -110,7 +132,6 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
   // Sync Category Hierarchy if Editing an existing product
   useEffect(() => {
     if (categoryTree.length > 0 && product?.categoryId) {
-      // Find where this categoryId sits in the tree
       for (const root of categoryTree) {
         if (root._id === product.categoryId) {
           setSelectedRootId(root._id);
@@ -148,49 +169,61 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
     if (sessionUploadedKeys.current.length > 0) {
       const keysToClean = [...sessionUploadedKeys.current];
       sessionUploadedKeys.current = [];
-      await Promise.allSettled(
-        keysToClean
-          .filter((k) => !k.startsWith('seed/'))
-          .map((key) =>
-            fetch(`/api/upload?key=${encodeURIComponent(key)}`, {
-              method: 'DELETE',
-            })
+      try {
+        await Promise.all(
+          keysToClean.map((key) =>
+            fetch(`/api/upload?key=${encodeURIComponent(key)}`, { method: 'DELETE' })
           )
-      );
+        );
+      } catch (e) {
+        console.error('Failed to cleanup uncommitted uploaded keys:', e);
+      }
     }
     router.push('/admin/products');
   };
 
-  // Derive child categories dynamically based on selected parent
-  const activeRoot = categoryTree.find((r) => r._id === selectedRootId);
+  const findCategoryInTree = (nodes: CategoryNode[], id: string): CategoryNode | null => {
+    for (const node of nodes) {
+      if (node._id === id) return node;
+      if (node.children?.length > 0) {
+        const found = findCategoryInTree(node.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const activeRoot = selectedRootId ? findCategoryInTree(categoryTree, selectedRootId) : null;
   const activeParentList = activeRoot?.children || [];
-  const activeParent = activeParentList.find((p) => p._id === selectedParentId);
+  const activeParent = selectedParentId ? findCategoryInTree(activeParentList, selectedParentId) : null;
   const activeSubList = activeParent?.children || [];
-  const activeSub = activeSubList.find((s) => s._id === selectedSubId);
+  const activeSub = selectedSubId ? findCategoryInTree(activeSubList, selectedSubId) : null;
 
-  // Compute final selected category object
-  const finalCategory = activeSub || activeParent || activeRoot;
-
-  // Update Form Category Fields when Cascading Selection changes
   const applyCategorySelection = (rootId: string, parentId: string, subId: string) => {
-    const root = categoryTree.find((r) => r._id === rootId);
-    const parent = root?.children?.find((p) => p._id === parentId);
-    const sub = parent?.children?.find((s) => s._id === subId);
+    const root = rootId ? findCategoryInTree(categoryTree, rootId) : null;
+    const parent = parentId && root ? findCategoryInTree(root.children || [], parentId) : null;
+    const sub = subId && parent ? findCategoryInTree(parent.children || [], subId) : null;
+    const active = sub || parent || root;
 
-    const target = sub || parent || root;
-    if (target) {
-      const path = [...(target.ancestors || []), target.slug];
+    if (active) {
+      const pathSlugs = [...(active.ancestors || []), active.slug];
       setForm((prev) => ({
         ...prev,
-        categoryId: target._id,
-        categorySlug: target.slug,
-        categoryPath: path,
-        primaryCategory: target.name,
+        categoryId: active._id,
+        categorySlug: active.slug,
+        categoryPath: pathSlugs,
+        primaryCategory: active.name,
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        categoryId: '',
+        categorySlug: '',
+        categoryPath: [],
       }));
     }
   };
 
-  // Quick Create New Category handler
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
@@ -223,7 +256,6 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
     }
   };
 
-  // Toggle Collection selection pill
   const handleToggleCollection = (slug: string) => {
     setForm((prev) => {
       const exists = prev.collections.includes(slug);
@@ -234,7 +266,6 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
     });
   };
 
-  // Add custom collection tag
   const handleAddCustomTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
@@ -266,33 +297,74 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
     setIsSaving(true);
 
     try {
+      const fallbackSlug =
+        product?.slug ||
+        form.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)+/g, '') ||
+        'new-product';
+
       const payload = {
         title: form.title,
         description: form.description,
+        productType: form.productType,
+        hasVariants: form.hasVariants,
         basePrice: Number(form.price) || 0,
+        discountPrice: form.discountPrice !== '' ? Number(form.discountPrice) : undefined,
+        sku: form.sku.trim(),
+        brandName: form.brandName.trim(),
+        stockStatus: form.stockStatus,
         categoryId: form.categoryId || undefined,
         categorySlug: form.categorySlug || undefined,
         categoryPath: form.categoryPath.length > 0 ? form.categoryPath : undefined,
-        primaryCategory: form.primaryCategory || 'Heavyweight Hoodies',
+        primaryCategory: form.primaryCategory || 'Garments',
         collections: form.collections,
-        isActive: form.status === 'Active',
+        status: form.status,
+        isActive: form.status === 'PUBLISHED',
       };
 
-      if (isEdit && product) {
-        // Edit Mode: PUT /api/products/[id]
-        const currentVariants = product.variants || [];
-        const updatedVariants = currentVariants.length > 0
-          ? currentVariants.map((v: { size: string; stock: number; sku: string }, idx: number) =>
-              idx === 0 ? { ...v, stock: Number(form.stock) || 0 } : v
-            )
-          : [{ size: 'M', stock: Number(form.stock) || 0, sku: `${(product.slug || 'product').toUpperCase()}-M` }];
+      let finalVariants = existingVariants;
+      let finalTotalStock = Number(form.stock) || 0;
 
+      if (!form.hasVariants) {
+        finalVariants = [];
+        finalTotalStock = Number(form.stock) || 0;
+      } else {
+        if (existingVariants.length > 0) {
+          if (existingVariants.length === 1) {
+            finalVariants = [
+              {
+                ...existingVariants[0],
+                stock: Number(form.stock) || 0,
+                stockStatus: form.stockStatus,
+              },
+            ];
+          } else {
+            finalVariants = existingVariants;
+          }
+        } else {
+          finalVariants = [
+            {
+              size: form.productType === 'CLOTHING' ? 'M' : '',
+              label: form.productType === 'CLOTHING' ? 'M' : 'Default Variant',
+              stock: Number(form.stock) || 0,
+              sku: `${fallbackSlug.toUpperCase()}-DEF`,
+              stockStatus: form.stockStatus,
+              isActive: true,
+            },
+          ];
+        }
+      }
+
+      if (isEdit && product) {
         const res = await fetch(`/api/products/${product._id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ...payload,
-            variants: updatedVariants,
+            totalStock: finalTotalStock,
+            variants: finalVariants,
             images: images,
           }),
         });
@@ -310,20 +382,13 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
           setIsSaving(false);
         }
       } else {
-        // Create Mode: POST /api/products
-        const fallbackSlug = form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') || 'new-product';
         const res = await fetch('/api/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ...payload,
-            variants: [
-              {
-                size: 'M',
-                stock: Number(form.stock) || 0,
-                sku: `${fallbackSlug.toUpperCase()}-M`,
-              },
-            ],
+            totalStock: finalTotalStock,
+            variants: finalVariants,
             images: images.length > 0 ? images : [
               {
                 url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80',
@@ -353,296 +418,288 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
     }
   };
 
+  const breadcrumbs = [
+    { label: 'Dashboard', href: '/admin' },
+    { label: 'Products', href: '/admin/products' },
+    ...(isEdit && product?.title ? [{ label: product.title }] : []),
+    { label: isEdit ? 'Edit' : 'New Product' },
+  ];
+
   return (
     <div className="w-full space-y-6">
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-emerald-950 text-emerald-200 border border-emerald-800 rounded-lg shadow-xl text-xs font-medium animate-in fade-in slide-in-from-top-4">
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 bg-emerald-950 text-emerald-200 border border-emerald-800 rounded-lg shadow-xl text-xs font-medium animate-in fade-in slide-in-from-top-4">
           <Check className="w-4 h-4 text-emerald-400" />
           <span>{toast}</span>
         </div>
       )}
 
-      {/* Header with Title and Breadcrumb */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
-            <Link href="/admin/products" className="hover:text-slate-800 transition">
-              Products
-            </Link>
-            <span>/</span>
-            <span className="text-slate-800 font-medium">
-              {isEdit ? 'Edit Product' : 'Add New Product'}
-            </span>
-          </div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
-            {isEdit ? `Edit: ${product?.title || 'Product'}` : 'New Product'}
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={handleCancel}
-            disabled={isSaving}
-            className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSaving}
-            className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
-          >
-            {isSaving ? 'Saving...' : isEdit ? 'Save Changes' : 'Publish Product'}
-          </button>
-        </div>
+      {/* Page Header (Matching Image 1: Locked Hierarchy) */}
+      <div>
+        <Breadcrumb items={breadcrumbs} />
+        <h1 className="text-2xl font-bold tracking-tight text-[#060d11]">
+          {isEdit ? `Edit ${product?.title || 'Product'}` : 'New Product'}
+        </h1>
+        <p className="text-sm text-slate-500 mt-1">
+          {isEdit ? 'Update the product details below.' : 'Add a new product to your catalog.'}
+        </p>
       </div>
 
       {/* Unified 2-Column Form Layout */}
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Product Info & Media Uploader */}
+        {/* Left Column: Product Information & Media */}
         <div className="lg:col-span-8 space-y-6">
           {/* Card 1: Product Information */}
-          <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-2xs">
-            <div className="border-b border-slate-100 pb-3">
-              <h2 className="text-sm font-bold text-slate-900">Product Information</h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Set core garment title, description, retail price, and inventory stock.
-              </p>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              {/* Title */}
-              <div className="space-y-1.5">
-                <label className="font-semibold text-slate-700 block">Product Title</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Vintage Heavyweight Acid-Wash Hoodie 450 GSM"
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 text-xs shadow-2xs font-medium"
-                />
-              </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Information</CardTitle>
+              <CardDescription>
+                Update the product details and save your changes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Product Title */}
+              <Input
+                label="Name"
+                required
+                placeholder="Product name"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+              />
 
               {/* Description */}
-              <div className="space-y-1.5">
-                <label className="font-semibold text-slate-700 block">Description</label>
-                <textarea
-                  rows={4}
-                  placeholder="Specify fabric weight (GSM), wash technique, fit profile, and care instructions..."
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 text-xs leading-relaxed shadow-2xs"
+              <Textarea
+                label="Description"
+                rows={4}
+                placeholder="Product description"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+
+              {/* Price & Stock Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Price ($)"
+                  type="number"
+                  required
+                  min="0"
+                  step="any"
+                  placeholder="0.00"
+                  value={form.price}
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
+                />
+
+                <Input
+                  label="Stock"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={form.stock}
+                  onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
                 />
               </div>
 
-              {/* Price & Stock Row */}
-              <div className="grid grid-cols-2 gap-4 pt-1">
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-slate-700 block">Price (৳)</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    step="any"
-                    placeholder="0.00"
-                    value={form.price}
-                    onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-900 font-mono text-xs focus:outline-none focus:border-emerald-500 shadow-2xs"
-                  />
-                </div>
+              {/* Secondary Details (Clean & Minimal) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-100">
+                <Input
+                  label="Discount Price"
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="Optional"
+                  value={form.discountPrice}
+                  onChange={(e) => setForm({ ...form, discountPrice: e.target.value })}
+                />
 
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-slate-700 block">Stock</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    placeholder="0"
-                    value={form.stock}
-                    onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-900 font-mono text-xs focus:outline-none focus:border-emerald-500 shadow-2xs"
-                  />
+                <Input
+                  label="SKU"
+                  placeholder="e.g. PRO-001"
+                  value={form.sku}
+                  onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                />
+
+                <Input
+                  label="Brand"
+                  placeholder="e.g. Apple"
+                  value={form.brandName}
+                  onChange={(e) => setForm({ ...form, brandName: e.target.value })}
+                />
+              </div>
+
+              {/* Product Type & Variant Mode (Minimal & Clean) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                <Select
+                  label="Product Type"
+                  value={form.productType}
+                  onChange={(e) => setForm({ ...form, productType: e.target.value as ProductType })}
+                >
+                  <option value="CLOTHING">Clothing & Apparel</option>
+                  <option value="GADGET">Gadgets & Tech</option>
+                  <option value="REGULAR">Regular Product</option>
+                  <option value="FOOD">Food & Beverage</option>
+                  <option value="SERVICE">Service</option>
+                </Select>
+
+                <div className="space-y-1.5 text-xs">
+                  <label className="block font-semibold text-slate-700">Variants</label>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, hasVariants: !form.hasVariants })}
+                    className="flex h-10 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
+                  >
+                    <span>{form.hasVariants ? 'Multi-Variant Matrix' : 'Single SKU'}</span>
+                    <Badge variant={form.hasVariants ? 'success' : 'secondary'}>
+                      {form.hasVariants ? 'Variants On' : 'Regular'}
+                    </Badge>
+                  </button>
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          {/* Card 2: Reusable Universal Media & Gallery Card with Browser Compressor */}
+          {/* Card 2: Media Uploader */}
           <MediaUploader
             value={images}
             onChange={handleImagesChange}
             multiple={true}
             maxFiles={8}
             aspectRatio="3:4"
-            label="Product Media & Gallery"
-            description="Add high-resolution garment photos. The first image will be used as the primary display cover."
-            folder="products"
-            disabled={isSaving}
           />
         </div>
 
-        {/* Right Column: Taxonomy & Organization Card */}
-        <div className="lg:col-span-4 bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-2xs h-fit">
-          <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">Organization & Taxonomy</h2>
-              <p className="text-[11px] text-slate-400 mt-0.5">Database-driven categories & collections</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowAddCategoryModal(true)}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded-md transition"
-              title="Add a new category"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>New Category</span>
-            </button>
-          </div>
-
-          <div className="space-y-4 text-xs">
-            {/* 1. Cascading Category Tree Selectors */}
-            <div className="space-y-3 p-3 bg-slate-50 border border-slate-200/80 rounded-lg">
-              <div className="flex items-center gap-1.5 font-semibold text-slate-800">
-                <Layers className="w-3.5 h-3.5 text-slate-500" />
-                <span>Category Hierarchy</span>
-              </div>
-
-              {/* Level 0: Department / Root */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-medium text-slate-500">1. Department (Root)</label>
-                <select
-                  value={selectedRootId}
-                  disabled={isLoadingTaxonomies}
-                  onChange={(e) => {
-                    const newRootId = e.target.value;
-                    setSelectedRootId(newRootId);
-                    setSelectedParentId('');
-                    setSelectedSubId('');
-                    applyCategorySelection(newRootId, '', '');
-                  }}
-                  className="w-full px-3 py-2 rounded-md bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-emerald-500 cursor-pointer"
+        {/* Right Column: Organization (Simplified, Clean, Unboxed) */}
+        <div className="lg:col-span-4 space-y-6">
+          <Card>
+            <CardHeader bordered={false} className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle>Organization</CardTitle>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCategoryModal(true)}
+                  className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition"
                 >
-                  <option value="">Select Department...</option>
-                  {categoryTree.map((cat) => (
+                  + New
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Category (Clean, Direct Selects - No Icons, No Nested Backgrounds) */}
+              <Select
+                label="Category"
+                value={selectedRootId}
+                disabled={isLoadingTaxonomies}
+                onChange={(e) => {
+                  const newRootId = e.target.value;
+                  setSelectedRootId(newRootId);
+                  setSelectedParentId('');
+                  setSelectedSubId('');
+                  applyCategorySelection(newRootId, '', '');
+                }}
+              >
+                <option value="">Select Category...</option>
+                {categoryTree.map((cat) => (
+                  <option key={cat._id} value={cat._id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </Select>
+
+              {/* Sub-Category (Only shown if root has children) */}
+              {activeParentList.length > 0 && (
+                <Select
+                  label="Subcategory"
+                  value={selectedParentId}
+                  onChange={(e) => {
+                    const newParentId = e.target.value;
+                    setSelectedParentId(newParentId);
+                    setSelectedSubId('');
+                    applyCategorySelection(selectedRootId, newParentId, '');
+                  }}
+                >
+                  <option value="">Select Subcategory...</option>
+                  {activeParentList.map((cat) => (
                     <option key={cat._id} value={cat._id}>
                       {cat.name}
                     </option>
                   ))}
-                </select>
-              </div>
-
-              {/* Level 1: Parent Group (Tops, Bottoms, Modest) */}
-              {activeParentList.length > 0 && (
-                <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-slate-500">2. Section / Group</label>
-                  <select
-                    value={selectedParentId}
-                    onChange={(e) => {
-                      const newParentId = e.target.value;
-                      setSelectedParentId(newParentId);
-                      setSelectedSubId('');
-                      applyCategorySelection(selectedRootId, newParentId, '');
-                    }}
-                    className="w-full px-3 py-2 rounded-md bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-emerald-500 cursor-pointer"
-                  >
-                    <option value="">Select Section...</option>
-                    {activeParentList.map((cat) => (
-                      <option key={cat._id} value={cat._id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                </Select>
               )}
 
-              {/* Level 2: Specific Subcategory (Hoodies, T-Shirts, Hijab) */}
+              {/* Item Type (Only shown if parent has children) */}
               {activeSubList.length > 0 && (
-                <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-slate-500">3. Garment / Item Type</label>
-                  <select
-                    value={selectedSubId}
-                    onChange={(e) => {
-                      const newSubId = e.target.value;
-                      setSelectedSubId(newSubId);
-                      applyCategorySelection(selectedRootId, selectedParentId, newSubId);
-                    }}
-                    className="w-full px-3 py-2 rounded-md bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-emerald-500 cursor-pointer"
-                  >
-                    <option value="">Select Item Type...</option>
-                    {activeSubList.map((cat) => (
-                      <option key={cat._id} value={cat._id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <Select
+                  label="Item Type"
+                  value={selectedSubId}
+                  onChange={(e) => {
+                    const newSubId = e.target.value;
+                    setSelectedSubId(newSubId);
+                    applyCategorySelection(selectedRootId, selectedParentId, newSubId);
+                  }}
+                >
+                  <option value="">Select Item Type...</option>
+                  {activeSubList.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </Select>
               )}
 
-              {/* Active Path Breadcrumb Badge */}
-              {finalCategory && (
-                <div className="pt-1.5 flex items-center gap-1 text-[11px] font-mono text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 px-2 py-1 rounded">
-                  <span>{activeRoot?.name}</span>
-                  {activeParent && (
-                    <>
-                      <ChevronRight className="w-3 h-3 text-emerald-500" />
-                      <span>{activeParent.name}</span>
-                    </>
-                  )}
-                  {activeSub && (
-                    <>
-                      <ChevronRight className="w-3 h-3 text-emerald-500" />
-                      <span className="font-semibold">{activeSub.name}</span>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
+              {/* Status Dropdown (Minimal Shopify/WordPress Copy) */}
+              <Select
+                label="Status"
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value as ProductStatus })}
+              >
+                <option value="PUBLISHED">Active</option>
+                <option value="DRAFT">Draft</option>
+                <option value="ARCHIVED">Archived</option>
+              </Select>
 
-            {/* 2. Marketing Collections Multi-Select */}
-            <div className="space-y-2.5 pt-1">
-              <div className="flex items-center gap-1.5 font-semibold text-slate-800">
-                <Tag className="w-3.5 h-3.5 text-slate-500" />
-                <span>Marketing Collections</span>
-              </div>
+              {/* Stock Status Override (Clean) */}
+              <Select
+                label="Stock Status"
+                value={form.stockStatus}
+                onChange={(e) => setForm({ ...form, stockStatus: e.target.value as StockStatus })}
+              >
+                <option value="AUTO">Auto</option>
+                <option value="FORCE_OUT_OF_STOCK">Force Out of Stock</option>
+                <option value="PRE_ORDER">Pre-Order</option>
+              </Select>
 
-              {/* Quick toggle pills for existing collections */}
-              <div className="flex flex-wrap gap-1.5">
-                {availableCollections.map((col) => {
-                  const isSelected = form.collections.includes(col.slug);
-                  return (
-                    <button
-                      key={col._id}
-                      type="button"
-                      onClick={() => handleToggleCollection(col.slug)}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition cursor-pointer border ${
-                        isSelected
-                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-semibold'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      {isSelected ? '✓ ' : '+ '}
-                      {col.title}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Active Tag Chips & Custom Tag Input */}
-              <div className="space-y-1.5 pt-1">
-                <label className="text-[11px] font-medium text-slate-500">
-                  Custom Tags / Campaign Badges (Press Enter)
+              {/* Marketing Collections Tags (No Icons) */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <label className="block font-semibold text-slate-700 text-xs">
+                  Collections
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g. flash-sale, oversized, fleece"
+
+                <div className="flex flex-wrap gap-1.5">
+                  {availableCollections.map((col) => {
+                    const isSelected = form.collections.includes(col.slug);
+                    return (
+                      <button
+                        key={col._id}
+                        type="button"
+                        onClick={() => handleToggleCollection(col.slug)}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition cursor-pointer border ${
+                          isSelected
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-semibold'
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {isSelected ? '✓ ' : '+ '}
+                        {col.title}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <Input
+                  placeholder="Custom tag (press Enter)"
                   value={customTagInput}
                   onChange={(e) => setCustomTagInput(e.target.value)}
                   onKeyDown={handleAddCustomTag}
-                  className="w-full px-3 py-2 rounded-md bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-emerald-500"
                 />
 
                 {form.collections.length > 0 && (
@@ -650,7 +707,7 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
                     {form.collections.map((tag) => (
                       <span
                         key={tag}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 text-[10px] font-mono"
+                        className="inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[10px] text-slate-700"
                       >
                         <span>{tag}</span>
                         <button
@@ -665,86 +722,68 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
                   </div>
                 )}
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* 3. Product Status */}
-            <div className="space-y-1.5 pt-1">
-              <label className="font-semibold text-slate-700 block">Publish Status</label>
-              <select
-                value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-emerald-500 shadow-2xs cursor-pointer"
-              >
-                <option value="Draft">Draft (Hidden from storefront)</option>
-                <option value="Active">Active (Live on storefront)</option>
-                <option value="Archived">Archived</option>
-              </select>
-            </div>
+          {/* Action Buttons (Matching Image 1) */}
+          <div className="space-y-2.5">
+            <Button
+              type="submit"
+              variant="default"
+              isLoading={isSaving}
+              className="w-full h-10 text-xs"
+            >
+              Save Changes
+            </Button>
 
-            {/* Action Buttons */}
-            <div className="pt-4 space-y-2.5">
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
-              >
-                {isSaving
-                  ? isEdit ? 'Saving Changes...' : 'Creating Product...'
-                  : isEdit ? 'Save Changes' : 'Create Product'}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={isSaving}
-                className="w-full block py-2.5 px-4 text-center rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold transition cursor-pointer shadow-2xs disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isSaving}
+              className="w-full h-10 text-xs"
+            >
+              Cancel
+            </Button>
           </div>
         </div>
       </form>
 
-      {/* Modal: Quick Add Category */}
+      {/* Quick Add Category Modal */}
       {showAddCategoryModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-bold text-slate-900">Add New Category</h3>
-              <button
-                type="button"
-                onClick={() => setShowAddCategoryModal(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateCategory} className="space-y-3.5 text-xs">
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700 block">Category Name</label>
-                <input
-                  type="text"
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+          <Card className="w-full max-w-sm shadow-2xl">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Add Category</CardTitle>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCategoryModal(false)}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateCategory} className="space-y-4">
+                <Input
+                  label="Category Name"
                   required
-                  placeholder="e.g. Leather Jackets, Hijab, Ghee"
+                  placeholder="e.g. Smart Watches"
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-900 focus:outline-none focus:border-emerald-500"
                 />
-              </div>
 
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700 block">Parent Category (Optional)</label>
-                <select
+                <Select
+                  label="Parent Category"
                   value={newCatParentId}
                   onChange={(e) => setNewCatParentId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-900 focus:outline-none focus:border-emerald-500 cursor-pointer"
                 >
-                  <option value="">None (Create as Root / Department)</option>
+                  <option value="">None (Root Category)</option>
                   {categoryTree.map((root) => (
                     <React.Fragment key={root._id}>
-                      <option value={root._id}>📁 {root.name}</option>
+                      <option value={root._id}>{root.name}</option>
                       {root.children?.map((sub) => (
                         <option key={sub._id} value={sub._id}>
                           &nbsp;&nbsp;↳ {sub.name}
@@ -752,30 +791,23 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
                       ))}
                     </React.Fragment>
                   ))}
-                </select>
-                <p className="text-[10px] text-slate-400">
-                  Select a parent to nest it, or leave empty to make it a Root department.
-                </p>
-              </div>
+                </Select>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddCategoryModal(false)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCreatingCategory}
-                  className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition disabled:opacity-50"
-                >
-                  {isCreatingCategory ? 'Saving...' : 'Create Category'}
-                </button>
-              </div>
-            </form>
-          </div>
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowAddCategoryModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="default" isLoading={isCreatingCategory}>
+                    Create
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

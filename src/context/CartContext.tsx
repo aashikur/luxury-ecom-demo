@@ -7,20 +7,46 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
  * LESSON: Zero-Login Guest Cart Context with LocalStorage Persistence
  * ============================================================================
  * 
- * WHY LOCALSTORAGE FOR GUEST CHECKOUT?
- * In Bangladesh e-commerce, forcing user registration drops conversion by 60%.
- * Storing the cart in localStorage gives customers a fast guest shopping bag 
- * that survives page refreshes and browser restarts without requiring an account.
+ * Upgraded to Universal Multi-Niche E-Commerce:
+ * Supports Regular Single-SKU products, Clothing Sizes, Gadget Multi-Axis Variants,
+ * and Food/Service Modifiers without requiring strict `size` on items.
  */
 
 export interface ICartItem {
   productId: string;
+  variantId?: string;
+  sku?: string;
   title: string;
   slug: string;
   image: string;
-  size: string;
+  size?: string;
+  variantLabel?: string;
+  attributes?: {
+    key: string;
+    value: string;
+  }[];
+  modifiers?: {
+    label: string;
+    priceDelta: number;
+  }[];
   price: number;
   quantity: number;
+}
+
+export function getCartItemKey(item: {
+  productId: string;
+  variantId?: string;
+  variantLabel?: string;
+  size?: string;
+  modifiers?: { label: string }[];
+}): string {
+  const modKey = (item.modifiers || []).map((m) => m.label).sort().join('|');
+  return [
+    item.productId,
+    item.variantId || '',
+    item.variantLabel || item.size || '',
+    modKey,
+  ].join('::');
 }
 
 interface CartContextType {
@@ -28,8 +54,8 @@ interface CartContextType {
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
   addToCart: (item: Omit<ICartItem, 'quantity'>, quantity?: number, openDrawer?: boolean) => void;
-  removeFromCart: (productId: string, size: string) => void;
-  updateQuantity: (productId: string, size: string, delta: number) => void;
+  removeFromCart: (productId: string, variantKeyOrSize?: string) => void;
+  updateQuantity: (productId: string, variantKeyOrSize?: string, delta?: number) => void;
   clearCart: () => void;
   totalItems: number;
   subtotal: number;
@@ -72,9 +98,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     openDrawer = false
   ) => {
     setCart((prev) => {
-      const existingIdx = prev.findIndex(
-        (i) => i.productId === item.productId && i.size === item.size
-      );
+      const itemKey = getCartItemKey(item);
+      const existingIdx = prev.findIndex((i) => getCartItemKey(i) === itemKey);
 
       if (existingIdx > -1) {
         const next = [...prev];
@@ -90,17 +115,34 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const removeFromCart = (productId: string, size: string) => {
+  const removeFromCart = (productId: string, variantKeyOrSize = '') => {
     setCart((prev) =>
-      prev.filter((item) => !(item.productId === productId && item.size === size))
+      prev.filter((item) => {
+        const matchProduct = item.productId === productId;
+        const matchKey =
+          !variantKeyOrSize ||
+          item.size === variantKeyOrSize ||
+          item.variantLabel === variantKeyOrSize ||
+          item.variantId === variantKeyOrSize ||
+          getCartItemKey(item) === variantKeyOrSize;
+        return !(matchProduct && matchKey);
+      })
     );
   };
 
-  const updateQuantity = (productId: string, size: string, delta: number) => {
+  const updateQuantity = (productId: string, variantKeyOrSize = '', delta = 1) => {
     setCart((prev) =>
       prev
         .map((item) => {
-          if (item.productId === productId && item.size === size) {
+          const matchProduct = item.productId === productId;
+          const matchKey =
+            !variantKeyOrSize ||
+            item.size === variantKeyOrSize ||
+            item.variantLabel === variantKeyOrSize ||
+            item.variantId === variantKeyOrSize ||
+            getCartItemKey(item) === variantKeyOrSize;
+
+          if (matchProduct && matchKey) {
             const nextQty = item.quantity + delta;
             return nextQty > 0 ? { ...item, quantity: nextQty } : null;
           }

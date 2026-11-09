@@ -257,6 +257,69 @@ export default function SettingsFormClient({ initialConfig }: { initialConfig: a
                 ))}
               </div>
             </div>
+
+            {/* Store Mode: Multi-Product vs Single-Product Funnel */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                Store Architecture Mode
+              </label>
+              <select
+                value={config.branding?.storeMode || 'MULTI_PRODUCT'}
+                onChange={(e) =>
+                  setConfig({
+                    ...config,
+                    branding: { ...config.branding, storeMode: e.target.value },
+                  })
+                }
+                className="w-full px-3.5 py-2.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-zinc-600"
+              >
+                <option value="MULTI_PRODUCT">Multi-Product Catalog Store (Default)</option>
+                <option value="SINGLE_PRODUCT_FUNNEL">Single-Product Funnel / Landing Page</option>
+              </select>
+            </div>
+
+            {/* Store Niche */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                Default Store Niche
+              </label>
+              <select
+                value={config.branding?.storeNiche || 'CLOTHING'}
+                onChange={(e) =>
+                  setConfig({
+                    ...config,
+                    branding: { ...config.branding, storeNiche: e.target.value },
+                  })
+                }
+                className="w-full px-3.5 py-2.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-zinc-600"
+              >
+                <option value="CLOTHING">Clothing & Streetwear Apparel</option>
+                <option value="GADGETS">Gadgets, Electronics & Accessories</option>
+                <option value="FOOD">Food & Beverage Items</option>
+                <option value="GENERAL">General Multi-Niche Store</option>
+              </select>
+            </div>
+
+            {/* Featured Product Slug for Funnel Mode */}
+            {config.branding?.storeMode === 'SINGLE_PRODUCT_FUNNEL' && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  Featured Product Slug for Funnel
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. vintage-heavyweight-acid-wash-hoodie"
+                  value={config.branding?.featuredProductSlug || ''}
+                  onChange={(e) =>
+                    setConfig({
+                      ...config,
+                      branding: { ...config.branding, featuredProductSlug: e.target.value },
+                    })
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-zinc-600 font-mono"
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

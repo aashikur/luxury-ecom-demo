@@ -60,18 +60,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       ? { $or: [{ _id: slug }, { slug }] }
       : { slug };
 
-    const updated = await Product.findOneAndUpdate(
-      query,
-      { $set: body },
-      { new: true }
-    );
+    const product = await Product.findOne(query);
 
-    if (!updated) {
+    if (!product) {
       return NextResponse.json(
         { success: false, error: 'Product not found to update' },
         { status: 404 }
       );
     }
+
+    Object.assign(product, body);
+    const updated = await product.save();
 
     return NextResponse.json(
       { success: true, message: 'Product updated successfully', data: updated },

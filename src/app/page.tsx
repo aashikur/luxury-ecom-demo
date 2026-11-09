@@ -7,6 +7,7 @@ import Navbar from '@/components/storefront/Navbar';
 import HeroBanner from '@/components/storefront/HeroBanner';
 import PromoCard from '@/components/storefront/PromoCard';
 import CollectionSection from '@/components/storefront/CollectionSection';
+import ProductDetailView from '@/components/storefront/ProductDetailView';
 import CartDrawer from '@/components/storefront/CartDrawer';
 import Footer from '@/components/storefront/Footer';
 
@@ -41,6 +42,9 @@ export default async function HomePage() {
   const branding = config?.branding || {
     storeName: 'Aurem Luxury',
     tagline: 'Engineered Streetwear & Minimal Garments',
+    storeNiche: 'CLOTHING' as const,
+    storeMode: 'MULTI_PRODUCT' as const,
+    featuredProductSlug: '',
     colors: { accent: '#B8860B' },
   };
 
@@ -76,9 +80,32 @@ export default async function HomePage() {
         accentColor={branding.colors?.accent || '#B8860B'}
       />
 
-      {/* 3. Shopify-Style Dynamic Sections Engine */}
+      {/* 3. Shopify-Style Dynamic Sections Engine / Single Product Funnel */}
       <main className="flex-1 pb-16">
-        {activeSections.map((section: IHomeSection) => {
+        {branding.storeMode === 'SINGLE_PRODUCT_FUNNEL' && cleanProducts.length > 0 ? (
+          <div>
+            {(() => {
+              const featured =
+                cleanProducts.find(
+                  (p: { slug: string }) => p.slug === branding.featuredProductSlug
+                ) || cleanProducts[0];
+              const related = cleanProducts.filter(
+                (p: { _id: string }) => p._id !== featured._id
+              );
+              return (
+                <ProductDetailView
+                  product={featured}
+                  relatedProducts={related}
+                  accentColor={branding.colors?.accent || '#B8860B'}
+                  insideDhakaFee={logistics.insideDhakaFee}
+                  outsideDhakaFee={logistics.outsideDhakaFee}
+                  showroomAddress={logistics.showroomAddress}
+                />
+              );
+            })()}
+          </div>
+        ) : (
+          activeSections.map((section: IHomeSection) => {
           // Block 1: Hero Banner
           if (section.type === 'HERO_BANNER' || (section.type as string) === 'HERO_CAROUSEL') {
             return (
@@ -142,7 +169,8 @@ export default async function HomePage() {
           }
 
           return null;
-        })}
+        })
+        )}
       </main>
 
       {/* 4. Slide-Over 1-Page Bangladesh Checkout Drawer */}

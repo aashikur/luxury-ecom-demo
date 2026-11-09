@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, Minus, Plus, ShoppingBag, Check, Copy } from 'lucide-react';
-import { useCart } from '@/context/CartContext';
+import { useCart, getCartItemKey } from '@/context/CartContext';
 
 interface CartDrawerProps {
   insideDhakaFee?: number;
@@ -87,9 +87,14 @@ export default function CartDrawer({
           },
           items: cart.map((item) => ({
             productId: item.productId,
+            variantId: item.variantId || null,
+            sku: item.sku || '',
             title: item.title,
             image: item.image,
-            size: item.size,
+            size: item.size || '',
+            variantLabel: item.variantLabel || item.size || '',
+            attributes: item.attributes || [],
+            modifiers: item.modifiers || [],
             quantity: item.quantity,
             unitPrice: item.price,
           })),
@@ -207,50 +212,62 @@ export default function CartDrawer({
             <>
               {/* Line Items */}
               <div className="divide-y divide-zinc-200">
-                {cart.map((item) => (
-                  <div
-                    key={`${item.productId}-${item.size}`}
-                    className="py-3.5 flex items-center gap-3.5"
-                  >
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-16 h-20 object-cover bg-zinc-100 shrink-0 border border-zinc-100"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-bold text-zinc-900 truncate">
-                        {item.title}
-                      </h4>
-                      <p className="text-[11px] text-zinc-500 mt-0.5">Size: {item.size}</p>
-                      <p
-                        style={{ color: accentColor }}
-                        className="text-xs font-bold mt-1"
-                      >
-                        {(item.price * item.quantity).toLocaleString()}৳
-                      </p>
+                {cart.map((item) => {
+                  const itemKey = getCartItemKey(item);
+                  return (
+                    <div
+                      key={itemKey}
+                      className="py-3.5 flex items-center gap-3.5"
+                    >
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-16 h-20 object-cover bg-zinc-100 shrink-0 border border-zinc-100"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-xs font-bold text-zinc-900 truncate">
+                          {item.title}
+                        </h4>
+                        {(item.variantLabel || item.size) && (
+                          <p className="text-[11px] text-zinc-500 mt-0.5">
+                            {item.variantLabel || `Size: ${item.size}`}
+                          </p>
+                        )}
+                        {item.modifiers && item.modifiers.length > 0 && (
+                          <p className="text-[10px] text-zinc-400 mt-0.5 italic">
+                            + {item.modifiers.map((m) => m.label).join(', ')}
+                          </p>
+                        )}
+                        <p
+                          style={{ color: accentColor }}
+                          className="text-xs font-bold mt-1"
+                        >
+                          {(item.price * item.quantity).toLocaleString()}৳
+                        </p>
+                      </div>
+                      {/* Quantity Stepper */}
+                      <div className="flex items-center border border-zinc-200 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.productId, itemKey, -1)}
+                          className="p-1.5 text-zinc-500 hover:text-zinc-900 cursor-pointer"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="w-6 text-center text-xs font-semibold">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.productId, itemKey, 1)}
+                          className="p-1.5 text-zinc-500 hover:text-zinc-900 cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
-                    {/* Quantity Stepper */}
-                    <div className="flex items-center border border-zinc-200 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => updateQuantity(item.productId, item.size, -1)}
-                        className="p-1.5 text-zinc-500 hover:text-zinc-900 cursor-pointer"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="w-6 text-center text-xs font-semibold">
-                        {item.quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => updateQuantity(item.productId, item.size, 1)}
-                        className="p-1.5 text-zinc-500 hover:text-zinc-900 cursor-pointer"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Delivery Zone Selector */}

@@ -1,14 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-/**
- * ============================================================================
- * LESSON: Marketing Collection Model (Temporal & Campaign-Driven)
- * ============================================================================
- * 
- * Unlike structural Categories (Taxonomy), Collections are fluid, many-to-many
- * marketing groups like "Winter Drop 2026", "Under ৳1999", "Eid Luxury Edit".
- */
-
 export interface ICollectionImage {
   url: string;
   key: string;
@@ -52,7 +43,7 @@ const CollectionSchema = new Schema<ICollection>(
 
 CollectionSchema.index({ isFeaturedHome: 1, displayOrder: 1 });
 
-const Collection: Model<ICollection> =
+export const Collection: Model<ICollection> =
   mongoose.models.Collection || mongoose.model<ICollection>('Collection', CollectionSchema);
 
 export default Collection;

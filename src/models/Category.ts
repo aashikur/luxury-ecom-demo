@@ -1,17 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-/**
- * ============================================================================
- * LESSON: Enterprise E-Commerce Category & Taxonomy Model
- * ============================================================================
- * 
- * DESIGN HIGHLIGHTS:
- * 1. Infinite Depth / Adjacency List with Materialized Path (ancestors array).
- * 2. parentId = null denotes a Root/Department category (e.g. Men, Women, Food, Modest Wear).
- * 3. ancestors array contains parent slugs: ['men', 'men-tops'] enabling single-query sub-tree lookup.
- * 4. isFeaturedHome allows pinning category cards on the storefront homepage.
- */
-
 export interface ICategoryImage {
   url: string;
   key: string;
@@ -22,7 +10,7 @@ export interface ICategory extends Document {
   slug: string;
   description?: string;
   parentId?: mongoose.Types.ObjectId | null;
-  ancestors: string[]; // Slugs of all parent ancestors in order
+  ancestors: string[]; // Slugs of all parent ancestors in order: e.g. ['men', 'men-tops']
   image?: ICategoryImage;
   level: number;       // 0: Root/Department, 1: Parent Group, 2: Sub-item
   displayOrder: number;
@@ -58,12 +46,11 @@ const CategorySchema = new Schema<ICategory>(
   }
 );
 
-// Compound indexes for ultra-fast hierarchical catalog browsing
 CategorySchema.index({ parentId: 1, displayOrder: 1 });
 CategorySchema.index({ level: 1, displayOrder: 1 });
 CategorySchema.index({ isFeaturedHome: 1, displayOrder: 1 });
 
-const Category: Model<ICategory> =
+export const Category: Model<ICategory> =
   mongoose.models.Category || mongoose.model<ICategory>('Category', CategorySchema);
 
 export default Category;

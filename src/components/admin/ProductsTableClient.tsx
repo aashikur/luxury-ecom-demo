@@ -18,6 +18,19 @@ import {
   Layers,
   ChevronDown,
 } from 'lucide-react';
+import {
+  Button,
+  Badge,
+  Input,
+  Breadcrumb,
+  TableContainer,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui';
 
 interface ProductItem {
   _id: string;
@@ -25,11 +38,16 @@ interface ProductItem {
   slug: string;
   description: string;
   primaryCategory: string;
+  productType?: string;
+  hasVariants?: boolean;
+  stockStatus?: string;
+  status?: string;
+  totalStock?: number;
   collections?: string[];
   basePrice: number;
   discountPrice?: number;
   images: { url: string; key: string }[];
-  variants?: { size: string; stock: number }[];
+  variants?: { size: string; stock: number; sku?: string }[];
   isActive: boolean;
   createdAt: string;
 }
@@ -48,7 +66,7 @@ export default function ProductsTableClient({
   // Popover menu state: which row has action menu open
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
-  // Inline Stock Editing state (Image 3)
+  // Inline Stock Editing state
   const [editingStockId, setEditingStockId] = useState<string | null>(null);
   const [tempStockValue, setTempStockValue] = useState<number>(0);
   const [isUpdatingStock, setIsUpdatingStock] = useState(false);
@@ -75,9 +93,13 @@ export default function ProductsTableClient({
   // Filtered Products
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      if (activeTab === 'ACTIVE' && !p.isActive) return false;
-      if (activeTab === 'DRAFT' && p.isActive) return false;
-      if (activeTab === 'ARCHIVED' && p.isActive) return false;
+      const isPublished = p.status === 'PUBLISHED' || (!p.status && p.isActive);
+      const isDraft = p.status === 'DRAFT' || (!p.status && !p.isActive);
+      const isArchived = p.status === 'ARCHIVED';
+
+      if (activeTab === 'ACTIVE' && !isPublished) return false;
+      if (activeTab === 'DRAFT' && !isDraft) return false;
+      if (activeTab === 'ARCHIVED' && !isArchived) return false;
 
       if (selectedCategory !== 'ALL' && p.primaryCategory !== selectedCategory) {
         return false;
@@ -113,9 +135,9 @@ export default function ProductsTableClient({
     }
   };
 
-  // Inline Stock Edit handlers (Matching Image 3)
+  // Inline Stock Edit handlers
   const handleStartStockEdit = (product: ProductItem) => {
-    const totalStock = product.variants?.reduce((s, v) => s + v.stock, 0) || 0;
+    const totalStock = product.totalStock ?? (product.variants?.reduce((s, v) => s + v.stock, 0) || 0);
     setEditingStockId(product._id);
     setTempStockValue(totalStock);
   };
@@ -125,23 +147,37 @@ export default function ProductsTableClient({
     const targetProduct = products.find((p) => p._id === productId);
     if (!targetProduct) return;
 
-    // Distribute stock across existing variants proportionally or set first variant
-    const currentVariants = targetProduct.variants || [];
-    const updatedVariants = currentVariants.length > 0
-      ? currentVariants.map((v, idx) => (idx === 0 ? { ...v, stock: tempStockValue } : v))
-      : [{ size: 'M', stock: tempStockValue, sku: `${targetProduct.slug.toUpperCase()}-M` }];
+    let payload: Record<string, unknown> = {};
+
+    if (targetProduct.hasVariants === false) {
+      payload = { totalStock: tempStockValue };
+    } else {
+      const currentVariants = targetProduct.variants || [];
+      const updatedVariants = currentVariants.length > 0
+        ? currentVariants.map((v, idx) => (idx === 0 ? { ...v, stock: tempStockValue } : v))
+        : [{ size: 'M', stock: tempStockValue, sku: `${targetProduct.slug.toUpperCase()}-M` }];
+      payload = { variants: updatedVariants, totalStock: tempStockValue };
+    }
 
     try {
       const res = await fetch(`/api/products/${productId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ variants: updatedVariants }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {
         setProducts((prev) =>
           prev.map((p) =>
-            p._id === productId ? { ...p, variants: updatedVariants } : p
+            p._id === productId
+              ? {
+                  ...p,
+                  totalStock: tempStockValue,
+                  ...(targetProduct.hasVariants !== false && {
+                    variants: (payload.variants as typeof targetProduct.variants) || p.variants,
+                  }),
+                }
+              : p
           )
         );
         setEditingStockId(null);
@@ -160,7 +196,7 @@ export default function ProductsTableClient({
   const handleExportCSV = () => {
     const headers = ['Title,Category,Status,TotalStock,Price\n'];
     const rows = filteredProducts.map((p) => {
-      const totalStock = p.variants?.reduce((s, v) => s + v.stock, 0) || 0;
+      const totalStock = p.totalStock ?? (p.variants?.reduce((s, v) => s + v.stock, 0) || 0);
       return `"${p.title}","${p.primaryCategory}",${p.isActive ? 'Active' : 'Draft'},${totalStock},${p.basePrice}\n`;
     });
     const blob = new Blob([...headers, ...rows], { type: 'text/csv' });
@@ -171,32 +207,32 @@ export default function ProductsTableClient({
     a.click();
   };
 
+  const breadcrumbs = [
+    { label: 'Dashboard', href: '/admin' },
+    { label: 'Products' },
+  ];
+
   return (
     <div className="w-full space-y-6">
-      {/* 1. Page Header (Matching Reference Image 1) */}
+      {/* 1. Page Header (Matching Image 2) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
-            <Link href="/admin" className="hover:text-slate-800 transition">Dashboard</Link>
-            <span>&gt;</span>
-            <span className="text-slate-900 font-medium">Products</span>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Products</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <Breadcrumb items={breadcrumbs} />
+          <h1 className="text-2xl font-bold tracking-tight text-[#060d11] mt-1">Products</h1>
+          <p className="text-sm text-slate-500 mt-1">
             Browse and manage your product catalog.
           </p>
         </div>
 
-        <Link
-          href="/admin/products/new"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Product</span>
+        <Link href="/admin/products/new">
+          <Button variant="default" className="gap-1.5 shadow-xs shrink-0">
+            <Plus className="w-4 h-4" />
+            <span>Add Product</span>
+          </Button>
         </Link>
       </div>
 
-      {/* 2. Filter Pills Tabs (All, Active, Draft, Archived) */}
+      {/* 2. Filter Pills Tabs (Matching Image 2: All, Active, Draft, Archived) */}
       <div className="flex items-center gap-1 border-b border-slate-200 pb-3">
         {[
           { id: 'ALL', label: 'All' },
@@ -207,9 +243,9 @@ export default function ProductsTableClient({
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
               activeTab === tab.id
-                ? 'bg-slate-100 text-slate-900'
+                ? 'bg-slate-100 text-slate-900 shadow-2xs'
                 : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
             }`}
           >
@@ -218,35 +254,36 @@ export default function ProductsTableClient({
         ))}
       </div>
 
-      {/* 3. Search and Action Controls Row */}
+      {/* 3. Search and Action Controls Toolbar (Matching Image 2) */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Search Input + Category Button */}
+        {/* Left: Search Bar + Category Filter Dropdown */}
         <div className="flex items-center gap-2.5 flex-1 max-w-md">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-500 flex-1 focus-within:border-emerald-500 shadow-2xs">
-            <Search className="w-3.5 h-3.5 text-slate-400" />
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder="Search products.."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent w-full focus:outline-none text-slate-900 text-xs"
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-900 shadow-2xs placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
           </div>
 
-          {/* Category Dropdown Button */}
           <div className="relative">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setIsCategoryMenuOpen((prev) => !prev)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer"
+              className="gap-1.5 text-xs font-semibold h-9"
             >
               <Layers className="w-3.5 h-3.5 text-slate-400" />
               <span>{selectedCategory === 'ALL' ? 'Category' : selectedCategory}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400 ml-1" />
-            </button>
+              <ChevronDown className="w-3 h-3 text-slate-400 ml-0.5" />
+            </Button>
 
             {isCategoryMenuOpen && (
-              <div className="absolute left-0 mt-1.5 w-44 bg-white border border-slate-200 rounded-lg shadow-lg z-30 py-1 text-xs text-slate-700">
+              <div className="absolute left-0 mt-1.5 w-44 rounded-lg border border-slate-200 bg-white py-1 text-xs text-slate-700 shadow-lg z-30">
                 {categories.map((c) => (
                   <button
                     key={c}
@@ -255,7 +292,7 @@ export default function ProductsTableClient({
                       setIsCategoryMenuOpen(false);
                     }}
                     className={`w-full text-left px-3.5 py-2 hover:bg-slate-50 cursor-pointer ${
-                      selectedCategory === c ? 'font-bold text-emerald-600 bg-emerald-50/50' : ''
+                      selectedCategory === c ? 'font-bold text-emerald-700 bg-emerald-50/50' : ''
                     }`}
                   >
                     {c === 'ALL' ? 'All Categories' : c}
@@ -266,253 +303,239 @@ export default function ProductsTableClient({
           </div>
         </div>
 
-        {/* Right Action Tools: Views, Columns, Export */}
+        {/* Right: Views, Columns, Export */}
         <div className="flex items-center gap-2">
-          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition shadow-2xs">
+          <Button variant="outline" size="sm" className="h-9 gap-1.5 font-medium text-slate-600">
             <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
             <span>Views</span>
-          </button>
+          </Button>
 
-          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition shadow-2xs">
+          <Button variant="outline" size="sm" className="h-9 gap-1.5 font-medium text-slate-600">
             <Columns className="w-3.5 h-3.5 text-slate-400" />
             <span>Columns</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleExportCSV}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition shadow-2xs cursor-pointer"
+            className="h-9 gap-1.5 font-medium text-slate-600"
           >
             <Download className="w-3.5 h-3.5 text-slate-400" />
             <span>Export</span>
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* 4. High-Clarity Table (Matching Apex Reference Image 1 & 3) */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
-        <div className="overflow-x-auto min-h-[360px]">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/75 text-[11px] font-semibold text-slate-600">
-                <th className="py-3 px-4 w-10">
-                  <input type="checkbox" className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                </th>
-                <th className="py-3 px-4">Product <span className="text-slate-400 font-normal">↑↓</span></th>
-                <th className="py-3 px-4">Category <span className="text-slate-400 font-normal">↑↓</span></th>
-                <th className="py-3 px-4">Status <span className="text-slate-400 font-normal">↑↓</span></th>
-                <th className="py-3 px-4 text-center">Stock <span className="text-slate-400 font-normal">↑↓</span></th>
-                <th className="py-3 px-4 text-right">Price <span className="text-slate-400 font-normal">↑↓</span></th>
-                <th className="py-3 px-4 text-right">Created <span className="text-slate-400 font-normal">↑↓</span></th>
-                <th className="py-3 px-4 text-center w-12"></th>
+      {/* 4. High-Clarity Table (Matching Image 2) */}
+      <TableContainer>
+        <Table>
+          <TableHeader>
+            <tr>
+              <TableHead className="w-10">
+                <input
+                  type="checkbox"
+                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                />
+              </TableHead>
+              <TableHead>Product <span className="text-slate-400 font-normal">↑↓</span></TableHead>
+              <TableHead>Category <span className="text-slate-400 font-normal">↑↓</span></TableHead>
+              <TableHead>Status <span className="text-slate-400 font-normal">↑↓</span></TableHead>
+              <TableHead className="text-center">Stock <span className="text-slate-400 font-normal">↑↓</span></TableHead>
+              <TableHead className="text-right">Price <span className="text-slate-400 font-normal">↑↓</span></TableHead>
+              <TableHead className="text-right">Created <span className="text-slate-400 font-normal">↑↓</span></TableHead>
+              <TableHead className="text-center w-12"></TableHead>
+            </tr>
+          </TableHeader>
+          <TableBody>
+            {filteredProducts.length === 0 ? (
+              <tr>
+                <TableCell colSpan={8} className="py-14 text-center text-slate-400">
+                  No products found matching your active filter.
+                </TableCell>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {filteredProducts.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-14 text-center text-slate-400">
-                    No products found matching your active filter.
-                  </td>
-                </tr>
-              ) : (
-                filteredProducts.map((product) => {
-                  const totalStock = product.variants?.reduce((s, v) => s + v.stock, 0) || 0;
-                  const thumb = product.images?.[0]?.url || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80';
-                  const isMenuOpen = activeMenuId === product._id;
-                  const isEditingStock = editingStockId === product._id;
+            ) : (
+              filteredProducts.map((product) => {
+                const rowStock = product.totalStock ?? (product.variants?.reduce((s, v) => s + (v.stock || 0), 0) || 0);
+                const thumb = product.images?.[0]?.url || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80';
+                const isMenuOpen = activeMenuId === product._id;
+                const isEditingStock = editingStockId === product._id;
+                const isPublished = product.status === 'PUBLISHED' || (!product.status && product.isActive);
 
-                  return (
-                    <tr
-                      key={product._id}
-                      className="hover:bg-slate-50/80 transition group"
-                    >
-                      {/* Checkbox */}
-                      <td className="py-3.5 px-4">
-                        <input type="checkbox" className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                      </td>
+                return (
+                  <TableRow key={product._id}>
+                    {/* Checkbox */}
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                    </TableCell>
 
-                      {/* Product Thumbnail + Name + Subtitle */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="relative w-9 h-11 bg-slate-100 rounded-md overflow-hidden shrink-0 border border-slate-200">
-                            <Image
-                              src={thumb}
-                              alt={product.title}
-                              fill
-                              sizes="36px"
-                              className="object-cover"
+                    {/* Product Thumbnail + Name + Subtitle */}
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-9 h-11 bg-slate-100 rounded-md overflow-hidden shrink-0 border border-slate-200">
+                          <Image
+                            src={thumb}
+                            alt={product.title}
+                            fill
+                            sizes="36px"
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 max-w-xs">
+                          <Link
+                            href={`/admin/products/${product._id}`}
+                            className="font-semibold text-[#060d11] hover:text-[#076E46] transition block truncate"
+                          >
+                            {product.title}
+                          </Link>
+                          <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                            {product.description || 'Full-featured luxury minimal garment'}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Category Pill */}
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {product.primaryCategory || 'General'}
+                      </Badge>
+                    </TableCell>
+
+                    {/* Status Pill (Active Green / Draft Orange matching Image 2) */}
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant={isPublished ? 'success' : 'warning'}>
+                          {isPublished ? 'Active' : 'Draft'}
+                        </Badge>
+                        {product.stockStatus === 'FORCE_OUT_OF_STOCK' && (
+                          <span className="text-[9px] font-bold text-red-600 uppercase">
+                            OOS
+                          </span>
+                        )}
+                        {product.stockStatus === 'PRE_ORDER' && (
+                          <span className="text-[9px] font-bold text-blue-600 uppercase">
+                            PRE
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    {/* Stock Column with Inline Stepper Edit */}
+                    <TableCell className="text-center font-mono">
+                      {isEditingStock ? (
+                        <div className="inline-flex items-center gap-1.5 animate-scale-in">
+                          <div className="inline-flex items-center rounded-md border-2 border-emerald-600 bg-white px-2 py-0.5 shadow-xs">
+                            <input
+                              type="number"
+                              min="0"
+                              value={tempStockValue}
+                              onChange={(e) => setTempStockValue(Number(e.target.value))}
+                              className="w-12 text-center text-xs font-mono font-bold text-slate-900 focus:outline-none"
+                              autoFocus
                             />
                           </div>
-                          <div className="min-w-0 max-w-xs">
-                            <Link
-                              href={`/admin/products/${product._id}`}
-                              className="font-semibold text-slate-900 hover:text-emerald-600 transition block truncate"
-                            >
-                              {product.title}
-                            </Link>
-                            <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                              {product.description || 'Full-featured luxury minimal garment'}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Category Pill */}
-                      <td className="py-3.5 px-4">
-                        <span className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium border border-slate-200">
-                          {product.primaryCategory || 'General'}
-                        </span>
-                      </td>
-
-                      {/* Status Pill (Active Green / Draft Orange) */}
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                            product.isActive
-                              ? 'bg-emerald-600 text-white'
-                              : 'bg-amber-500 text-white'
-                          }`}
-                        >
-                          {product.isActive ? 'Active' : 'Draft'}
-                        </span>
-                      </td>
-
-                      {/* Stock Column with Inline Stepper Edit (Image 3 Feature) */}
-                      <td className="py-3.5 px-4 text-center font-mono">
-                        {isEditingStock ? (
-                          <div className="inline-flex items-center gap-1.5 animate-scale-in">
-                            <div className="inline-flex items-center rounded-md border-2 border-emerald-500 bg-white px-2 py-0.5 shadow-xs">
-                              <input
-                                type="number"
-                                min="0"
-                                value={tempStockValue}
-                                onChange={(e) => setTempStockValue(Number(e.target.value))}
-                                className="w-12 text-center text-xs font-mono font-bold text-slate-900 focus:outline-none"
-                                autoFocus
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleSaveStockEdit(product._id)}
-                              disabled={isUpdatingStock}
-                              className="p-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white transition cursor-pointer"
-                              title="Save stock"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditingStockId(null)}
-                              className="p-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-700 transition cursor-pointer"
-                              title="Cancel"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
                           <button
                             type="button"
-                            onClick={() => handleStartStockEdit(product)}
-                            className="font-mono text-slate-900 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition cursor-pointer group-hover:text-emerald-700"
-                            title="Click to edit stock inline"
+                            onClick={() => handleSaveStockEdit(product._id)}
+                            disabled={isUpdatingStock}
+                            className="p-1 rounded bg-[#076E46] hover:bg-[#055C3A] text-white transition cursor-pointer"
+                            title="Save stock"
                           >
-                            {totalStock}
+                            <Check className="w-3.5 h-3.5" />
                           </button>
-                        )}
-                      </td>
-
-                      {/* Price */}
-                      <td className="py-3.5 px-4 text-right font-mono font-semibold text-slate-900">
-                        {product.basePrice.toLocaleString()}৳
-                      </td>
-
-                      {/* Created */}
-                      <td className="py-3.5 px-4 text-right text-slate-500 text-[11px]">
-                        {new Date(product.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </td>
-
-                      {/* Three-Dots Action Menu Popover (Matching Reference Image 1) */}
-                      <td className="py-3.5 px-4 text-center relative">
+                          <button
+                            type="button"
+                            onClick={() => setEditingStockId(null)}
+                            className="p-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-700 transition cursor-pointer"
+                            title="Cancel"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
                         <button
                           type="button"
-                          onClick={() => setActiveMenuId(isMenuOpen ? null : product._id)}
-                          className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-800 transition cursor-pointer"
-                          aria-label="Actions"
+                          onClick={() => handleStartStockEdit(product)}
+                          className="font-mono text-slate-900 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition cursor-pointer group-hover:text-emerald-700 inline-flex items-center gap-1"
+                          title="Click to edit stock"
                         >
-                          <MoreHorizontal className="w-4 h-4" />
+                          <span>{rowStock}</span>
+                          <Pencil className="w-2.5 h-2.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
+                      )}
+                    </TableCell>
 
-                        {/* Floating Popover Menu */}
-                        {isMenuOpen && (
-                          <div
-                            ref={menuRef}
-                            className="absolute right-6 top-10 w-32 bg-white rounded-lg shadow-xl border border-slate-200 py-1.5 z-40 text-left text-xs space-y-0.5 animate-scale-in"
+                    {/* Price */}
+                    <TableCell className="text-right font-mono font-semibold text-[#060d11]">
+                      ${product.basePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </TableCell>
+
+                    {/* Created */}
+                    <TableCell className="text-right text-slate-500 text-[11px]">
+                      {new Date(product.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </TableCell>
+
+                    {/* Actions Menu */}
+                    <TableCell className="text-center relative">
+                      <button
+                        type="button"
+                        onClick={() => setActiveMenuId(isMenuOpen ? null : product._id)}
+                        className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-800 transition cursor-pointer"
+                        title="Product actions"
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+
+                      {isMenuOpen && (
+                        <div
+                          ref={menuRef}
+                          className="absolute right-4 top-10 w-36 rounded-lg border border-slate-200 bg-white py-1 shadow-lg z-30 text-xs text-slate-700 animate-scale-in"
+                        >
+                          <Link
+                            href={`/products/${product.slug}`}
+                            target="_blank"
+                            className="flex items-center gap-2 px-3.5 py-2 hover:bg-slate-50 text-slate-700"
                           >
-                            <Link
-                              href={`/admin/products/${product._id}`}
-                              className="flex items-center gap-2 px-3 py-1.5 text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition"
-                              onClick={() => setActiveMenuId(null)}
-                            >
-                              <Eye className="w-3.5 h-3.5 text-slate-400" />
-                              <span>View</span>
-                            </Link>
+                            <Eye className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Preview</span>
+                          </Link>
 
-                            <Link
-                              href={`/admin/products/${product._id}/edit`}
-                              className="flex items-center gap-2 px-3 py-1.5 text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition"
-                              onClick={() => setActiveMenuId(null)}
-                            >
-                              <Pencil className="w-3.5 h-3.5 text-slate-400" />
-                              <span>Edit</span>
-                            </Link>
+                          <Link
+                            href={`/admin/products/${product._id}/edit`}
+                            className="flex items-center gap-2 px-3.5 py-2 hover:bg-slate-50 text-slate-700"
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Edit</span>
+                          </Link>
 
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(product._id, product.title)}
-                              className="w-full flex items-center gap-2 px-3 py-1.5 text-red-600 hover:bg-red-50 transition cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                              <span>Delete</span>
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                          <div className="my-1 border-t border-slate-100" />
 
-        {/* 5. Pagination Bottom Bar */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>
-            Showing <strong className="text-slate-800">{filteredProducts.length}</strong> of{' '}
-            <strong className="text-slate-800">{products.length}</strong> results
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              disabled
-              className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 text-xs font-medium cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <span className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs shadow-2xs">
-              1
-            </span>
-            <button
-              disabled
-              className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 text-xs font-medium cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(product._id, product.title)}
+                            className="w-full flex items-center gap-2 px-3.5 py-2 hover:bg-red-50 text-red-600 transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </div>
   );
 }

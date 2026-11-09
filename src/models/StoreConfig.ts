@@ -1,33 +1,21 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-/**
- * ============================================================================
- * LESSON: Production-Grade StoreConfig Schema (Mongoose + TypeScript)
- * ============================================================================
- * 
- * Includes the Shopify-Style "homeSections" architecture:
- * Admin can add, remove, and reorder (DND) sections on the storefront:
- * 1. HERO_BANNER: Large campaign visual with title, subtitle, description, button, link.
- * 2. COLLECTION_SECTION: Product grid with themeStyle ('LIGHT' or 'DARK_BAND').
- * 3. PROMO_CTA_CARD: Clean horizontal banner with subtitle, title, description, button.
- */
-
 export interface IHomeSection {
   id: string;
   type: 'HERO_BANNER' | 'COLLECTION_SECTION' | 'PROMO_CTA_CARD';
   title?: string;
   subtitle?: string;
   description?: string;
-  buttonText?: string;     // e.g. "SHOP NOW", "VIEW ALL", "VIEW BAG & SHIPPING"
-  buttonLink?: string;     // e.g. "/products?collection=winter-drop"
-  linkUrl?: string;        // Legacy alias for buttonLink
-  collectionSlug?: string; // Query products matching this collection tag
+  buttonText?: string;
+  buttonLink?: string;
+  linkUrl?: string;
+  collectionSlug?: string;
   bannerImage?: {
     url: string;
     key: string;
   };
-  themeStyle?: 'LIGHT' | 'DARK_BAND'; // Normal white surface or high-contrast dark band
-  order: number;           // Reordering index (1, 2, 3...)
+  themeStyle?: 'LIGHT' | 'DARK_BAND';
+  order: number;
   isActive: boolean;
 }
 
@@ -35,6 +23,9 @@ export interface IStoreConfig extends Document {
   branding: {
     storeName: string;
     tagline: string;
+    storeNiche: 'CLOTHING' | 'GADGETS' | 'FOOD' | 'GENERAL';
+    storeMode: 'MULTI_PRODUCT' | 'SINGLE_PRODUCT_FUNNEL';
+    featuredProductSlug?: string;
     logo: {
       url: string;
       key: string;
@@ -152,6 +143,17 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
     branding: {
       storeName: { type: String, default: 'Aurem Luxury' },
       tagline: { type: String, default: 'Engineered Streetwear & Minimal Garments' },
+      storeNiche: {
+        type: String,
+        enum: ['CLOTHING', 'GADGETS', 'FOOD', 'GENERAL'],
+        default: 'CLOTHING',
+      },
+      storeMode: {
+        type: String,
+        enum: ['MULTI_PRODUCT', 'SINGLE_PRODUCT_FUNNEL'],
+        default: 'MULTI_PRODUCT',
+      },
+      featuredProductSlug: { type: String, default: '' },
       logo: {
         url: { type: String, default: '' },
         key: { type: String, default: '' },
@@ -175,8 +177,6 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
         default: 'CENTER',
       },
     },
-
-    // Shopify-style dynamic reorderable sections
     homeSections: [
       {
         id: { type: String, required: true },
@@ -204,7 +204,6 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
         isActive: { type: Boolean, default: true },
       },
     ],
-
     logistics: {
       supportPhone: { type: String, default: '01700000000' },
       whatsappNumber: { type: String, default: '8801700000000' },
@@ -217,7 +216,6 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
         outsideDhaka: { type: String, default: '3-5 Days' },
       },
     },
-
     tracking: {
       metaPixelId: { type: String, default: '' },
       metaCapiToken: { type: String, default: '' },
@@ -227,7 +225,6 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
       tiktokPixelId: { type: String, default: '' },
       tiktokEventsApiToken: { type: String, default: '' },
     },
-
     courier: {
       provider: {
         type: String,
@@ -249,7 +246,6 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
         bkashMerchantNumber: { type: String, default: '' },
       },
     },
-
     payment: {
       cod: {
         enabled: { type: Boolean, default: true },
@@ -288,7 +284,6 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
         isSandbox: { type: Boolean, default: true },
       },
     },
-
     media: {
       defaultVideoProvider: {
         type: String,
@@ -300,7 +295,6 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
         cdnHostname: { type: String, default: '' },
       },
     },
-
     features: {
       capiEnabled: { type: Boolean, default: false },
       tiktokPixelEnabled: { type: Boolean, default: false },
@@ -311,7 +305,6 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
       advanceDeliveryFeeEnabled: { type: Boolean, default: false },
       couponEnabled: { type: Boolean, default: true },
     },
-
     isActive: { type: Boolean, default: true },
   },
   {
