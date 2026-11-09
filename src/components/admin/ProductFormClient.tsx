@@ -240,7 +240,6 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
             aspectRatio="3:4"
             label="Product Media & Gallery"
             description="Add high-resolution garment photos. The first image will be used as the primary display cover."
-            helperGuide="Recommended for Garments: 3:4 Portrait (1200 x 1600 px). Photos are automatically downsampled and compressed to lightweight WebP in browser."
             folder="products"
             disabled={isSaving}
           />
