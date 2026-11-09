@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
+import ProductMediaUploader, { MediaItem } from '@/components/admin/ProductMediaUploader';
 
 interface ProductFormProps {
   mode: 'create' | 'edit';
@@ -21,6 +22,8 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
   // Calculate existing stock or default to 0
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const totalStock = product?.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
+
+  const [images, setImages] = useState<MediaItem[]>(product?.images || []);
 
   const [form, setForm] = useState({
     title: product?.title || '',
@@ -55,6 +58,7 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
             primaryCategory: form.primaryCategory || 'Heavyweight Hoodies',
             isActive: form.status === 'Active',
             variants: updatedVariants,
+            images: images,
           }),
         });
 
@@ -88,7 +92,7 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
                 sku: `${fallbackSlug.toUpperCase()}-M`,
               },
             ],
-            images: [
+            images: images.length > 0 ? images : [
               {
                 url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80',
                 key: 'seed/placeholder.webp',
@@ -156,73 +160,83 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
 
       {/* 2. Main Two-Column Layout (Matching Apex Reference Image 1 & 2) */}
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Product Information Card */}
-        <div className="lg:col-span-8 bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-2xs">
-          <div className="border-b border-slate-100 pb-3">
-            <h2 className="text-sm font-bold text-slate-900">Product Information</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {isEdit
-                ? 'Update the product details and save your changes.'
-                : 'Enter the basic details for the new product.'}
-            </p>
-          </div>
-
-          <div className="space-y-4 text-xs">
-            {/* Name Input */}
-            <div className="space-y-1.5">
-              <label className="font-semibold text-slate-700 block">Name</label>
-              <input
-                type="text"
-                required
-                placeholder="Product name"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 text-xs shadow-2xs"
-              />
+        {/* Left Column: Product Information Card + Media Gallery Card */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* Card 1: Product Information */}
+          <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-2xs">
+            <div className="border-b border-slate-100 pb-3">
+              <h2 className="text-sm font-bold text-slate-900">Product Information</h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {isEdit
+                  ? 'Update the product details and save your changes.'
+                  : 'Enter the basic details for the new product.'}
+              </p>
             </div>
 
-            {/* Description Textarea */}
-            <div className="space-y-1.5">
-              <label className="font-semibold text-slate-700 block">Description</label>
-              <textarea
-                rows={4}
-                placeholder="Product description"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 text-xs leading-relaxed shadow-2xs"
-              />
-            </div>
-
-            {/* Price & Stock Row */}
-            <div className="grid grid-cols-2 gap-4 pt-1">
+            <div className="space-y-4 text-xs">
+              {/* Name Input */}
               <div className="space-y-1.5">
-                <label className="font-semibold text-slate-700 block">Price (৳)</label>
+                <label className="font-semibold text-slate-700 block">Name</label>
                 <input
-                  type="number"
+                  type="text"
                   required
-                  min="0"
-                  step="any"
-                  placeholder="0.00"
-                  value={form.price}
-                  onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-900 font-mono text-xs focus:outline-none focus:border-emerald-500 shadow-2xs"
+                  placeholder="Product name"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 text-xs shadow-2xs"
                 />
               </div>
 
+              {/* Description Textarea */}
               <div className="space-y-1.5">
-                <label className="font-semibold text-slate-700 block">Stock</label>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  placeholder="0"
-                  value={form.stock}
-                  onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-900 font-mono text-xs focus:outline-none focus:border-emerald-500 shadow-2xs"
+                <label className="font-semibold text-slate-700 block">Description</label>
+                <textarea
+                  rows={4}
+                  placeholder="Product description"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 text-xs leading-relaxed shadow-2xs"
                 />
+              </div>
+
+              {/* Price & Stock Row */}
+              <div className="grid grid-cols-2 gap-4 pt-1">
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700 block">Price (৳)</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="any"
+                    placeholder="0.00"
+                    value={form.price}
+                    onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-900 font-mono text-xs focus:outline-none focus:border-emerald-500 shadow-2xs"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700 block">Stock</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    placeholder="0"
+                    value={form.stock}
+                    onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-900 font-mono text-xs focus:outline-none focus:border-emerald-500 shadow-2xs"
+                  />
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Card 2: Split DRY Product Media & Gallery Card */}
+          <ProductMediaUploader
+            images={images}
+            onChange={setImages}
+            disabled={isSaving}
+          />
         </div>
 
         {/* Right Column: Organization Card (Matching Apex Reference Image 1 & 2) */}

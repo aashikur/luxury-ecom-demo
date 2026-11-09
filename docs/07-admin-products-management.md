@@ -4,6 +4,7 @@
 - **Apex High-Contrast Workspace Lock**: Standardized layout with a Jet-Black left sidebar (`#09090B`) paired with a high-clarity Light canvas (`#F8FAFC`, `#FFFFFF` cards, `#EAECF0` borders) matching the reference design.
 - **Three-Dots Floating Action Popover ([Image 1])**: Row-level popover containing `View` (`Eye`), `Edit` (`Pencil`), and `Delete` (`Trash`, red).
 - **Inline Stock Quick-Edit Stepper ([Image 3])**: Table stock column supports live clicking to activate an inline stepper input box (`[ 999 ⇅ ] ✓ ✕`) for real-time inventory updates without opening a modal or navigating away.
+- **Split DRY Product Media Uploader (`ProductMediaUploader.tsx`)**: Decoupled multi-image drag-and-drop uploader connected directly to Cloudflare R2 bucket (`POST /api/upload`), with 4-column responsive preview grid, primary cover badge (`★ Cover`), cover reordering, and hover remove button.
 - **Unified DRY Product Form (`ProductFormClient.tsx`)**: Consolidated New Product (`/admin/products/new`) and Edit Product (`/admin/products/[id]/edit`) into a single 2-column component supporting both `create` and `edit` modes, eliminating code duplication while preserving 1:1 visual fidelity with the reference screenshots.
 - **Dedicated 2-Column Edit Route (`/admin/products/[id]/edit`) ([Image 2])**:
   - *Left Card*: Product Information (Title, Description, Price ৳, and Stock side-by-side).
@@ -33,5 +34,6 @@
 ## 4. Sources & Cross References
 - Products Table: [`src/components/admin/ProductsTableClient.tsx`](file:///e:/WebDevs/Testing/e-com/src/components/admin/ProductsTableClient.tsx)
 - Unified Product Form: [`src/components/admin/ProductFormClient.tsx`](file:///e:/WebDevs/Testing/e-com/src/components/admin/ProductFormClient.tsx)
+- Product Media Uploader: [`src/components/admin/ProductMediaUploader.tsx`](file:///e:/WebDevs/Testing/e-com/src/components/admin/ProductMediaUploader.tsx)
 - Product Detail: [`src/components/admin/ProductDetailClient.tsx`](file:///e:/WebDevs/Testing/e-com/src/components/admin/ProductDetailClient.tsx)
 - Admin Layout: [`src/app/(admin)/admin/layout.tsx`](file:///e:/WebDevs/Testing/e-com/src/app/(admin)/admin/layout.tsx)
