@@ -22,6 +22,7 @@
 
 ## 3. Checklist
 - [x] Create `src/app/(admin)/admin/layout.tsx` with Apex-style dark sidebar.
+- [x] Refine branding to strictly use Lucide vector icons (`Zap`) with `#00C885` rounded container and typography (`AUREM` + `DASHBOARD`), strictly eliminating emoji characters across admin views.
 - [x] Implement `src/components/admin/SettingsFormClient.tsx` with 5 reactive tabs.
 - [x] Wire server component `src/app/(admin)/admin/settings/page.tsx` with live DB data.
 - [x] Implement overview dashboard landing at `src/app/(admin)/admin/page.tsx`.
