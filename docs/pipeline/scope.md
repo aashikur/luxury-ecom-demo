@@ -55,14 +55,17 @@ To guarantee \$0 storage bloat and prevent orphaned zombie assets:
 2. **Form Cancellation Purge:** Draft images uploaded in a session are tracked in `ProductFormClient.tsx` via `sessionUploadedKeys.current`. If the user cancels or navigates away without saving, all uncommitted assets are purged from R2 before redirecting.
 3. **Product Cascade Deletion:** Invoking `DELETE /api/products/[slug]` deletes the product document from MongoDB and concurrently deletes all associated cover and gallery images from R2 via `deleteFromR2(image.key)`.
 
-### 2.3 Store Configuration Engine Scope (`/admin/settings`)
-The single-document `StoreConfig` architecture controls 6 distinct store modules:
-1. **General & Brand:** Store Name, Tagline, Logo URL (R2), Favicon, OpenGraph Image, Primary/Accent Hex Colors, Support Phone, WhatsApp Number, Support Email, Physical Showroom Address, Social Links, Invoice Prefix (`AUR-`), Invoice Footer Policy Note.
-2. **Shipping & Delivery:** Inside Dhaka Delivery Fee (৳80 default), Outside Dhaka Delivery Fee (৳150 default), Suburbs/Gazipur/Savar Delivery Fee (৳120), Free Shipping Threshold (৳2500 default) + toggle, Estimated Delivery Timelines (Dhaka: 24-48 hrs, Outside: 3-5 days), Outside Dhaka Delivery Advance Charge Requirement (৳150 delivery charge in advance toggle).
-3. **Payment Gateways:** Cash on Delivery (COD) enable/disable toggle, Manual bKash Personal/Merchant Number + QR code upload + Payment instructions note, Manual Nagad Number + QR code, SSLCommerz credentials (Store ID, Store Password, Sandbox toggle), bKash PGW credentials.
-4. **Courier & Fraud Shield:** Steadfast Courier API Key & Secret Key, 1-Click Auto-Booking toggle upon order confirmation, Fraud Risk Score threshold (flags orders with $\ge 2$ prior courier returns).
-5. **Marketing & Tracking Pixels:** Meta Pixel ID + Conversions API (CAPI) Server Token, Google Tag Manager (GTM) Container ID, Google Analytics 4 (GA4) Measurement ID, TikTok Pixel ID.
-6. **Storefront & Layout Customizer:** Top Announcement Bar text + visibility toggle, Homepage Section Order array (Hero Banner, Featured Drop, Categories, New Arrivals, Customer Reviews).
+### 2.3 Store Configuration Engine Scope (`/admin/settings` & `StoreConfig`)
+The single-document `StoreConfig` architecture controls 7 distinct store modules designed for rapid, 1-click per-client deployments:
+1. **General Branding & Store Identity:** Store Name, Tagline, Store Niche (`CLOTHING` | `GADGETS` | `FOOD` | `GENERAL`), Store Mode (`MULTI_PRODUCT` | `SINGLE_PRODUCT_FUNNEL`), Featured Product Slug, Logo URL (R2/Cloudinary), Favicon, Accent/Primary Hex Colors, Theme Mode (Dark/Light), Hero Variant (`SPLIT` | `CENTER` | `FULL_SLIDER`).
+2. **Logistics & Delivery:** Inside Dhaka Delivery Fee (৳70-80 default), Outside Dhaka Delivery Fee (৳130-150 default), Free Shipping Threshold (৳2500 default), Estimated Delivery Days (Inside: 1-2 days, Outside: 3-5 days), Customer Helpline Hotline, WhatsApp Order Number, Showroom / Outlet Physical Address.
+3. **Payment Methods:** Cash on Delivery (COD) enable/disable toggle + checkout note, Manual bKash & Nagad (Personal/Agent/Merchant wallet number + payment instructions note), automated bKash PGW (App Key, App Secret, Username, Password, Sandbox switch), automated SSLCommerz (Store ID, Store Password, Sandbox switch).
+4. **Courier & Fraud Shield:** Steadfast / Pathao / RedX default selector, API Key, Secret Key, Base URL, 1-Click Auto-Booking switch upon order approval, Fraud Risk Shield (queries customer delivery success rate and flags orders with < 60% success rate), Outside Dhaka Advance Delivery Fee requirement (e.g. ৳130 advance via bKash).
+5. **Marketing & Tracking Pixels:** Meta (Facebook) Pixel ID + Conversions API (CAPI) Server Token + Test Event Code, Google Tag Manager (GTM) Container ID, Google Analytics 4 (GA4) Measurement ID, TikTok Pixel ID + Events API Token.
+6. **Homepage Drag-and-Drop Layout Builder (`homeSections`):** Array of configurable blocks (`HERO_BANNER`, `COLLECTION_SECTION`, `PROMO_CTA_CARD`) with title, subtitle, collectionSlug, isActive visibility toggle, and Up/Down visual reordering.
+7. **Global Feature Toggles (1-Click Feature Activation):** `abandonedCartCapture`, `fraudCheckEnabled`, `advanceDeliveryFeeEnabled`, `couponEnabled`, `capiEnabled`.
+
+---
 
 ### 2.4 Bangladesh Garment Logistics & Order Lifecycle
 * **Order Status State Machine:**  
@@ -88,4 +91,12 @@ The single-document `StoreConfig` architecture controls 6 distinct store modules
 ### Task #04: Enterprise Dynamic Category & Collection Engine
 * **Files Created/Modified:** `src/models/Category.ts`, `src/models/Collection.ts`, `src/models/Product.ts`, `src/app/api/categories/route.ts`, `src/app/api/collections/route.ts`, `src/components/admin/ProductFormClient.tsx`, `scripts/seed-taxonomies.mjs`.
 * **Changes:** Replaced static category strings with database-driven taxonomy tree (Materialized Path `ancestors`, circular dependency guard, delete protection against assigned products). Integrated 3-level cascading category selector in Admin Product Form with live path breadcrumbs (`Men › Tops › Hoodies`), in-line "+ Quick Add Category" modal, and multi-select marketing collection tags. Seeded production categories and collections. All 16 routes verified and compiling cleanly with Next.js Turbopack.
+
+### Task #05: Admin Design System Lock & Multi-Client Database Collection Architecture
+* **Files Created/Modified:** `.gemini/rules/admin-ui-design-system.md`, `docs/08-admin-design-hierarchy-and-ui-tokens.md`, `docs/09-database-collection-architecture.md`, `src/components/ui/*`, `src/components/admin/ProductsTableClient.tsx`, `src/components/admin/ProductDetailClient.tsx`.
+* **Changes:** Enforced locked typography and UI token hierarchy (`text-2xl font-bold tracking-tight text-[#060d11]`, 14px breadcrumbs with `#060d11` active state, `#076E46` emerald CTAs, unboxed minimal card surfaces). Standardized 7 Core + 3 Growth database collections architecture optimized for 1-click client deployments with zero join overhead.
+
+### Task #06: Store Settings & Configuration Architecture Scope
+* **Files Created/Modified:** `docs/10-store-settings-and-configuration-scope.md`, `docs/pipeline/scope.md`.
+* **Changes:** Fully codified the 7-module settings specification (`General Branding & Store Niche`, `Logistics & Delivery`, `Payment Gateways & Manual Wallets`, `Courier & Fraud Shield`, `Marketing & Tracking Pixels`, `Homepage Layout Builder`, and `Global Feature Toggles`) enabling complete zero-code client onboarding.
 
