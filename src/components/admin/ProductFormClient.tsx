@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
-import ProductMediaUploader, { MediaItem } from '@/components/admin/ProductMediaUploader';
+import MediaUploader, { MediaItem } from '@/components/admin/MediaUploader';
 
 interface ProductFormProps {
   mode: 'create' | 'edit';
@@ -231,10 +231,17 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
             </div>
           </div>
 
-          {/* Card 2: Split DRY Product Media & Gallery Card */}
-          <ProductMediaUploader
-            images={images}
+          {/* Card 2: Reusable Universal Media & Gallery Card with Browser Compressor */}
+          <MediaUploader
+            value={images}
             onChange={setImages}
+            multiple={true}
+            maxFiles={8}
+            aspectRatio="3:4"
+            label="Product Media & Gallery"
+            description="Add high-resolution garment photos. The first image will be used as the primary display cover."
+            helperGuide="Recommended for Garments: 3:4 Portrait (1200 x 1600 px). Photos are automatically downsampled and compressed to lightweight WebP in browser."
+            folder="products"
             disabled={isSaving}
           />
         </div>
