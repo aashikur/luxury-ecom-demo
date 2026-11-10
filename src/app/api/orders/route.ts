@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connectDB } from '@/lib/db';
 import Order, { IOrderItem } from '@/models/Order';
 import Product from '@/models/Product';
 import StoreConfig from '@/models/StoreConfig';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * ============================================================================
@@ -171,6 +174,15 @@ export async function POST(request: NextRequest) {
       await deductOrderInventory(normalizedItems);
     }
 
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/shop', 'page');
+      revalidatePath('/admin', 'page');
+      revalidatePath('/admin/products', 'page');
+    } catch (revErr) {
+      console.warn('Revalidation notice:', revErr);
+    }
+
     return NextResponse.json(
       {
         success: true,
@@ -220,6 +232,15 @@ export async function PATCH(request: NextRequest) {
     // Deduct stock if status changed from unconfirmed to CONFIRMED
     if (previousStatus !== 'CONFIRMED' && status === 'CONFIRMED') {
       await deductOrderInventory(order.items);
+    }
+
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/shop', 'page');
+      revalidatePath('/admin', 'page');
+      revalidatePath('/admin/products', 'page');
+    } catch (revErr) {
+      console.warn('Revalidation notice:', revErr);
     }
 
     return NextResponse.json({

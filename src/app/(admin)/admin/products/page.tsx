@@ -3,6 +3,9 @@ import { connectDB } from '@/lib/db';
 import Product from '@/models/Product';
 import ProductsTableClient from '@/components/admin/ProductsTableClient';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'Garments Catalog | Aurem Admin',
   description: 'Manage garment inventory, prices, and variants',

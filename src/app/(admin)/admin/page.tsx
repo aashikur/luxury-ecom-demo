@@ -13,6 +13,9 @@ import { connectDB } from '@/lib/db';
 import Order from '@/models/Order';
 import Product from '@/models/Product';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'Dashboard | Aurem Admin',
   description: 'Enterprise E-Commerce Operations Overview',

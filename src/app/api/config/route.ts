@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connectDB } from '@/lib/db';
 import StoreConfig from '@/models/StoreConfig';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * ============================================================================
@@ -195,6 +198,16 @@ export async function PUT(request: NextRequest) {
       { $set: body },
       { new: true, upsert: true }
     );
+
+    // Revalidate storefront and admin settings caches
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/shop', 'page');
+      revalidatePath('/admin', 'page');
+      revalidatePath('/admin/settings', 'page');
+    } catch (revErr) {
+      console.warn('Revalidation notice:', revErr);
+    }
 
     return NextResponse.json(
       {

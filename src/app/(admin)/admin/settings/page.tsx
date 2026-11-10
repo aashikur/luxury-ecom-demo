@@ -3,6 +3,9 @@ import { connectDB } from '@/lib/db';
 import StoreConfig from '@/models/StoreConfig';
 import SettingsFormClient from '@/components/admin/SettingsFormClient';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'Store Settings | Aurem Admin',
   description: 'Manage store branding, logistics, and payment methods',

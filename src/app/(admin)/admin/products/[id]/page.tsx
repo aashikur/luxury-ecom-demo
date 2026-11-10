@@ -8,6 +8,9 @@ interface ProductDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'Product Inspector | Aurem Admin',
   description: 'Inspect garment specs, photos, and inventory count',

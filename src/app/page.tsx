@@ -11,6 +11,9 @@ import ProductDetailView from '@/components/storefront/ProductDetailView';
 import CartDrawer from '@/components/storefront/CartDrawer';
 import Footer from '@/components/storefront/Footer';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /**
  * ============================================================================
  * LESSON: React Server Component (RSC) Driven Homepage
@@ -143,11 +146,17 @@ export default async function HomePage() {
             (section.type as string) === 'CATEGORY_GRID' ||
             (section.type as string) === 'CATEGORY_SLIDER'
           ) {
-            // Filter products matching this section's collection
-            const matchedProducts = section.collectionSlug
-              ? cleanProducts.filter((p: { collections?: string[] }) =>
-                  p.collections?.includes(section.collectionSlug || '')
-                )
+            // Filter products matching this section's collection or taxonomy
+            const targetSlug = (section.collectionSlug || '').toLowerCase().trim();
+            const matchedProducts = targetSlug
+              ? cleanProducts.filter((p: { collections?: string[]; categorySlug?: string; categoryPath?: string[]; primaryCategory?: string }) => {
+                  const inCollections = p.collections?.some((c) => c.toLowerCase() === targetSlug);
+                  const inCatSlug = p.categorySlug?.toLowerCase() === targetSlug;
+                  const inCatPath = p.categoryPath?.some((cp) => cp.toLowerCase() === targetSlug);
+                  const normCat = (p.primaryCategory || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                  const inPrimaryCat = normCat ? normCat.includes(targetSlug) || targetSlug.includes(normCat) : false;
+                  return inCollections || inCatSlug || inCatPath || inPrimaryCat;
+                })
               : cleanProducts;
 
             const isDarkBand =

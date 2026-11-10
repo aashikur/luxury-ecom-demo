@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connectDB } from '@/lib/db';
 import Product from '@/models/Product';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * ============================================================================
@@ -228,6 +231,19 @@ export async function POST(request: NextRequest) {
 
     // 3. Create product
     const product = await Product.create(body);
+
+    // Revalidate all caches across storefront and admin
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/shop', 'page');
+      revalidatePath('/admin', 'page');
+      revalidatePath('/admin/products', 'page');
+      if (product.slug) {
+        revalidatePath(`/products/${product.slug}`, 'page');
+      }
+    } catch (revErr) {
+      console.warn('Revalidation notice:', revErr);
+    }
 
     return NextResponse.json(
       {

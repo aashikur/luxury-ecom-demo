@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connectDB } from '@/lib/db';
 import Product from '@/models/Product';
 import { deleteFromR2 } from '@/lib/storage';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * ============================================================================
@@ -72,6 +75,21 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     Object.assign(product, body);
     const updated = await product.save();
 
+    // Revalidate all caches across storefront and admin
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/shop', 'page');
+      revalidatePath('/admin', 'page');
+      revalidatePath('/admin/products', 'page');
+      if (updated.slug) {
+        revalidatePath(`/products/${updated.slug}`, 'page');
+      }
+      revalidatePath(`/admin/products/${updated._id}`, 'page');
+      revalidatePath(`/admin/products/${updated._id}/edit`, 'page');
+    } catch (revErr) {
+      console.warn('Revalidation notice:', revErr);
+    }
+
     return NextResponse.json(
       { success: true, message: 'Product updated successfully', data: updated },
       { status: 200 }
@@ -113,6 +131,20 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       if (keysToDelete.length > 0) {
         await Promise.allSettled(keysToDelete.map((key) => deleteFromR2(key)));
       }
+    }
+
+    // Revalidate all caches across storefront and admin
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/shop', 'page');
+      revalidatePath('/admin', 'page');
+      revalidatePath('/admin/products', 'page');
+      if (deleted.slug) {
+        revalidatePath(`/products/${deleted.slug}`, 'page');
+      }
+      revalidatePath(`/admin/products/${deleted._id}`, 'page');
+    } catch (revErr) {
+      console.warn('Revalidation notice:', revErr);
     }
 
     return NextResponse.json(

@@ -9,6 +9,9 @@ import ProductCard from '@/components/storefront/ProductCard';
 import CartDrawer from '@/components/storefront/CartDrawer';
 import Footer from '@/components/storefront/Footer';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface ShopPageProps {
   searchParams: Promise<{
     collection?: string;

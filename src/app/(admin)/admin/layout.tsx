@@ -1,6 +1,9 @@
 import React from 'react';
 import AdminShellClient from '@/components/admin/AdminShellClient';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'Aurem Dashboard | Management',
   description: 'Enterprise E-Commerce Management Dashboard',

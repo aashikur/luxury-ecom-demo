@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connectDB } from '@/lib/db';
 import Collection from '@/models/Collection';
 import Product from '@/models/Product';
 import mongoose from 'mongoose';
+
+export const dynamic = 'force-dynamic';
 
 function slugify(text: string): string {
   return text
@@ -75,6 +78,12 @@ export async function POST(request: NextRequest) {
       endDate: body.endDate ? new Date(body.endDate) : undefined,
     });
 
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/shop', 'page');
+      revalidatePath('/admin/products', 'page');
+    } catch {}
+
     return NextResponse.json({ success: true, data: newCollection }, { status: 201 });
   } catch (err: any) {
     console.error('Error creating collection:', err);
@@ -112,6 +121,12 @@ export async function PUT(request: NextRequest) {
 
     await collection.save();
 
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/shop', 'page');
+      revalidatePath('/admin/products', 'page');
+    } catch {}
+
     return NextResponse.json({ success: true, data: collection });
   } catch (err: any) {
     console.error('Error updating collection:', err);
@@ -145,6 +160,12 @@ export async function DELETE(request: NextRequest) {
     );
 
     await Collection.findByIdAndDelete(id);
+
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/shop', 'page');
+      revalidatePath('/admin/products', 'page');
+    } catch {}
 
     return NextResponse.json({
       success: true,

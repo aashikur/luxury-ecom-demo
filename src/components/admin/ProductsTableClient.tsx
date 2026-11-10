@@ -63,6 +63,28 @@ export default function ProductsTableClient({
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
 
+  // Sync state if server passes updated initialProducts prop
+  useEffect(() => {
+    setProducts(initialProducts);
+  }, [initialProducts]);
+
+  // Client-side live sync fallback to guarantee fresh inventory & images on mount
+  const refreshProducts = async () => {
+    try {
+      const res = await fetch('/api/products?all=true', { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setProducts(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to sync products in table:', err);
+    }
+  };
+
+  useEffect(() => {
+    refreshProducts();
+  }, []);
+
   // Popover menu state: which row has action menu open
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
@@ -126,6 +148,7 @@ export default function ProductsTableClient({
       const data = await res.json();
       if (data.success) {
         setProducts((prev) => prev.filter((p) => p._id !== id));
+        refreshProducts();
       } else {
         alert(data.error || 'Failed to delete product');
       }

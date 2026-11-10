@@ -8,6 +8,9 @@ interface EditProductPageProps {
   params: Promise<{ id: string }>;
 }
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'Edit Product | Aurem Admin',
   description: 'Update product details, pricing, and stock',

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connectDB } from '@/lib/db';
 import Category, { ICategory } from '@/models/Category';
 import Product from '@/models/Product';
 import mongoose from 'mongoose';
+
+export const dynamic = 'force-dynamic';
 
 // Helper: slugify string
 function slugify(text: string): string {
@@ -167,6 +170,12 @@ export async function POST(request: NextRequest) {
       isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
     });
 
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/shop', 'page');
+      revalidatePath('/admin/products', 'page');
+    } catch {}
+
     return NextResponse.json({ success: true, data: newCategory }, { status: 201 });
   } catch (err: any) {
     console.error('Error creating category:', err);
@@ -228,6 +237,12 @@ export async function PUT(request: NextRequest) {
 
     await category.save();
 
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/shop', 'page');
+      revalidatePath('/admin/products', 'page');
+    } catch {}
+
     return NextResponse.json({ success: true, data: category });
   } catch (err: any) {
     console.error('Error updating category:', err);
@@ -282,6 +297,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     await Category.findByIdAndDelete(id);
+
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/shop', 'page');
+      revalidatePath('/admin/products', 'page');
+    } catch {}
 
     return NextResponse.json({
       success: true,

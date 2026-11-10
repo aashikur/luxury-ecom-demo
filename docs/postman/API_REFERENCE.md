@@ -34,6 +34,7 @@
 
 ### `PUT /api/config`
 * **Consumer / Who uses it:** Super Admin / Merchant Settings.
+* **Cache Revalidation:** Automatically purges Next.js full-route cache for `'/'`, `'/shop'`, `'/admin'`, and `'/admin/settings'`.
 
 ---
 
@@ -41,19 +42,22 @@
 
 ### `GET /api/products`
 * **Consumer / Who uses it:** Storefront Catalog, Homepage Sections, Search & Filters.
-* **Query Parameters:** `?collection=...`, `?category=...`, `?limit=...`, `?page=...`
+* **Query Parameters:** `?collection=...`, `?category=...`, `?limit=...`, `?page=...`, `?all=true`
 
 ### `POST /api/products`
 * **Consumer / Who uses it:** Admin Product Creation Form.
+* **Cache Revalidation:** Automatically triggers on-demand `revalidatePath` for `'/'`, `'/shop'`, `'/admin'`, `'/admin/products'`, and `'/products/:slug'`.
 
 ### `GET /api/products/:slug`
 * **Consumer / Who uses it:** Customer Product Detail Page (`/products/[slug]`).
 
 ### `PUT /api/products/:slug`
-* **Consumer / Who uses it:** Admin Product Edit Form.
+* **Consumer / Who uses it:** Admin Product Edit Form & Inline Stock Stepper.
+* **Cache Revalidation:** Automatically triggers on-demand `revalidatePath` for `'/'`, `'/shop'`, `'/admin'`, `'/admin/products'`, `'/admin/products/:id'`, and `'/products/:slug'`.
 
 ### `DELETE /api/products/:slug`
 * **Consumer / Who uses it:** Admin Product Table.
+* **Cache Revalidation:** Automatically triggers on-demand `revalidatePath` for catalog routes and cascades Cloudflare R2 asset deletion.
 
 ---
 
