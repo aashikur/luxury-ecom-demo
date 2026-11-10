@@ -60,3 +60,5 @@ Every new note file must strictly follow this exact 4-part structure:
 ## 4. UI Design & Engineering References
 * **Dashboard UI Inspiration:** [Apex Shadcn Dashboard](https://apex-shadcn.dashboardpack.com/products/prod-1)
 * **Tone & Styling Standard:** Ultra-clean, minimalistic senior-engineer UI. No decorative notice fluff, emojis, sparkles, or excessive AI badges.
+* **Prompt Library:** Master AI & engineering prompt templates are stored in `docs/PROMPT_LIBRARY.md`.
+
