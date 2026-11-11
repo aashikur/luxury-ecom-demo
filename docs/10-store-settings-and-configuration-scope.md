@@ -31,6 +31,30 @@ Controls the look, feel, niche, and layout orientation of the store.
   - Enable/Disable Toggle
   - Banner Text: e.g. *"Free express delivery across Bangladesh on orders over ৳2,500"*
 
+#### 1.1 Header Navigation & Quick Category Bar (`headerNavLinks`)
+Provides the luxury e-commerce split navbar layout: `[Logo] [ Menu ▾ ] | [ Category 1 ] [ Category 2 ] ... [ Cart / Search ]`:
+- **Universal "Menu" Trigger (All Categories Mega Menu / Drawer):**
+  - Always visible across Mobile and Desktop.
+  - Hover or click reveals the complete 3-level taxonomy tree (`Root Category ➔ Sub-Category ➔ Sub-Sub Category`) dynamically queried from `Category` collection.
+- **Configurable Pinned Quick Links (`StoreConfig.headerNavLinks[]`):**
+  - Next to the "Menu" button, the admin can feature 1 to 4+ high-converting or seasonal categories (e.g. *Hoodies, Winter Drop, Oversized Tees*).
+  - **Embedded Schema Fields:**
+    - `id`: unique string identifier (e.g. `nav_1`)
+    - `label`: Display text on navbar (e.g. `Heavyweight Hoodies`)
+    - `href`: Target URL (e.g. `/category/hoodies`)
+    - `categoryId`: Optional ObjectId reference to `Category`
+    - `badgeText`: Optional promotional pill (e.g. `HOT`, `NEW`, `SALE`)
+    - `isActive`: Boolean visibility toggle (👁️ Eye icon)
+    - `order`: Numeric sort position (⬆️ ⬇️ Move Up / Down)
+- **Admin Management Operations (`/admin/settings`):**
+  - **Reorder:** Move Up / Down buttons to rearrange order in real-time.
+  - **Hide/Unhide (👁️ Eye Icon):** Instantly toggle visibility on the storefront without deleting the link.
+  - **Add Link (`+ Add Quick Link`):** Dropdown modal allowing one-click selection of existing Category / Sub-Category (auto-fills label & href) or custom manual URL.
+  - **Delete (`🗑️ Trash Icon`):** Remove obsolete quick links permanently.
+- **Responsive Presentation:**
+  - **Desktop:** Inline horizontal category pills next to the "Menu" trigger + Mega-Menu dropdown.
+  - **Mobile:** Slide-over category drawer on Menu tap + horizontal touch-scrollable category chips below the header.
+
 ---
 
 ### 2. Logistics, Delivery & Contacts (Shipping Rates & Helpdesk)

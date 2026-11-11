@@ -297,6 +297,26 @@ To allow non-technical merchants self-serve control over third-party API credent
 
 ---
 
+### Rule #13: Universal Menu & Configurable Quick-Category Bar (`headerNavLinks`)
+Provides the high-converting luxury e-commerce navigation pattern: `[Logo] [ Menu ▾ ] | [ Category 1 ] [ Category 2 ] ... [ Cart / Search ]`:
+1. **Anti-Over-Engineering Invariant:**
+   - ❌ **NO separate `NavbarMenu` table or collection in MongoDB.**
+   - Pinned quick links are embedded directly inside `StoreConfig.headerNavLinks[]`.
+   - The universal "Menu" button dynamically queries the existing 3-level `Category` collection (`Root ➔ Sub ➔ Sub-Sub`) without redundant intermediate tables.
+2. **Universal "Menu" Trigger:**
+   - Always accessible across Desktop and Mobile headers.
+   - Hover or click reveals the entire category hierarchy in a desktop Mega-Menu dropdown or mobile slide-over drawer.
+3. **Admin Quick Links Control (`/admin/settings`):**
+   - **Order Control (⬆️ ⬇️):** Reorder links horizontally.
+   - **Eye Icon Toggle (👁️):** Hide or show links without deletion (ideal for seasonal items like *Winter Drop*).
+   - **One-Click Add (`+`):** Select existing Category / Sub-Category to auto-populate label, slug, and href.
+   - **Delete (🗑️):** Permanently remove obsolete links.
+4. **Mobile Responsive Invariant:**
+   - Desktop renders inline horizontal pills next to the Menu button.
+   - Mobile renders horizontal touch-scrollable category pills directly below the main navbar with active scroll-snap.
+
+---
+
 ## 3. Step 1 Sign-Off Checklist
 
 - [x] Top-level collections strictly capped at 7 Core + 3 Growth.
@@ -312,5 +332,6 @@ To allow non-technical merchants self-serve control over third-party API credent
 - [x] Modular homepage section engine (wideFull/wideBox, smart banner, dual-source products) locked.
 - [x] Unified analytics wrapper with dual CAPI deduplication, GTM dataLayer, and BD phone hashing locked.
 - [x] 3-Layer Credential Security Shield (AES-256 field-level encryption, sanitized public projection, and Super-Admin RBAC) locked.
+- [x] Universal Menu (Mega-Menu & Drawer) & Configurable Quick-Category Bar (`headerNavLinks`) locked.
 
 👉 **Next Step:** `[ধাপ ২] Schema, Interface & Response Envelope Locked`
