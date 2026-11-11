@@ -25,13 +25,14 @@ When building a production-grade, white-label e-commerce platform designed for r
 
 ---
 
-### B. Growth / Extension Collections (Scale When Needed)
+### B. Growth / Extension & Taxonomy Collections (Scale When Needed)
 
 | # | Collection Name | Mongoose Model | Purpose |
 | :--- | :--- | :--- | :--- |
-| **8** | `coupons` | `Coupon` | Promo codes, flat/percentage discounts, minimum spend conditions, usage quotas, and expiry dates. |
-| **9** | `reviews` | `Review` | Customer feedback ratings, verified buyer badges, comments, and customer-uploaded fit photos. |
-| **10** | `auditlogs` | `AuditLog` | Enterprise compliance and security trail (who edited product price, who canceled an order, who changed courier settings). |
+| **8** | `brands` | `Brand` | **Multi-Niche Brand Entities.** Apple, Samsung, Sony, Aurem, etc. Stores brand logo, slug, description, website, and active status. Linked optionally in `Product` with denormalized name/slug for zero-join catalog filtering. |
+| **9** | `coupons` | `Coupon` | Promo codes, flat/percentage discounts, minimum spend conditions, usage quotas, and expiry dates. |
+| **10** | `reviews` | `Review` | Customer feedback ratings, verified buyer badges, comments, and customer-uploaded fit photos. |
+| **11** | `auditlogs` | `AuditLog` | Enterprise compliance and security trail (who edited product price, who canceled an order, who changed courier settings). |
 
 ---
 
@@ -39,7 +40,10 @@ When building a production-grade, white-label e-commerce platform designed for r
 
 1. **NO Separate `Variants` Table:** Embedded in `Product.variants[]`. Gives atomic inventory updates without multi-table transactions or slow `$lookup` pipelines.
 2. **NO Separate `HomeSlider` / `Banner` Table:** Embedded inside `StoreConfig.homeSections[]`. The entire storefront homepage loads in a single query.
-3. **NO Database `Cart` / `Wishlist` Table:** Session carts live client-side in Zustand / LocalStorage for instantaneous, zero-latency UI interactions. Once the user enters checkout and provides a phone number, it converts directly into an `INCOMPLETE` lead in the `orders` collection.
+3. **NO Separate `NavbarMenu` Table:** Embedded in `StoreConfig.headerNavLinks[]` + dynamic `Category` tree.
+4. **NO Separate `Filters` Table:** Dynamically derived from existing `Product` fields (`basePrice`, `inStock`, `brandSlug`, `variants.size`, `variants.colorName`). Zero desync risk.
+5. **NO External Search Cluster (Elastic/Algolia):** Sub-40ms live auto-suggest runs on dedicated micro-payload `/api/search` directly using MongoDB text and compound indexes.
+6. **NO Database `Cart` / `Wishlist` Table:** Session carts live client-side in Zustand / LocalStorage for instantaneous, zero-latency UI interactions. Once the user enters checkout and provides a phone number, it converts directly into an `INCOMPLETE` lead in the `orders` collection.
 
 ---
 

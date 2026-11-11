@@ -57,14 +57,18 @@
 6. **`User` (`users`)**: Admin and call-center staff accounts with Role-Based Access Control (`SUPER_ADMIN`, `ADMIN`, `MODERATOR`).
 7. **`Customer` (`customers`)**: Phone-number-indexed customer profiles caching total order history, completed delivery count, and courier fraud risk.
 
-### B. The 3 Growth Collections (Scaled on Demand)
-8. **`Coupon` (`coupons`)**: Discount vouchers, minimum spend limits, expiry dates, and usage limits.
-9. **`Review` (`reviews`)**: Verified customer ratings, text reviews, and uploaded photos.
-10. **`AuditLog` (`auditlogs`)**: Sensitive admin action tracking (who approved order, who updated prices).
+### B. The Growth & Taxonomy Collections (Scaled on Demand)
+8. **`Brand` (`brands`)**: Multi-niche brand entities (e.g. *Apple*, *Samsung*, *Nike*, *Aurem*). Stores logo, slug, description, website, and active status. Linked optionally in `Product` via `brandId` with denormalized `brandName` & `brandSlug` for zero-join queries.
+9. **`Coupon` (`coupons`)**: Discount vouchers, minimum spend limits, expiry dates, and usage limits.
+10. **`Review` (`reviews`)**: Verified customer ratings, text reviews, and uploaded photos.
+11. **`AuditLog` (`auditlogs`)**: Sensitive admin action tracking (who approved order, who updated prices).
 
 ### C. Prohibited Collections (Anti-Over-Engineering)
 - ❌ **NO `Variants` Table:** Embedded in `Product.variants[]` for atomic updates and zero `$lookup` joins.
 - ❌ **NO `HomeBanner` Table:** Embedded in `StoreConfig.homeSections[]` (entire homepage loads in 1 query).
+- ❌ **NO `NavbarMenu` Table:** Embedded in `StoreConfig.headerNavLinks[]` + dynamic `Category` tree.
+- ❌ **NO `Filters` / `FilterOptions` Table:** Dynamically aggregated from existing `Product` fields (`basePrice`, `inStock`, `brandSlug`, `variants.size`, `variants.colorName`). Zero desync risk.
+- ❌ **NO External Search Cluster (Elastic/Algolia):** Instant search runs via micro-payload `/api/search` directly against `Product` text and compound indexes with sub-40ms response.
 - ❌ **NO `Cart` Table in Database:** Session carts live client-side in Zustand + LocalStorage for zero-latency UI.
 
 ---
@@ -317,10 +321,41 @@ Provides the high-converting luxury e-commerce navigation pattern: `[Logo] [ Men
 
 ---
 
+### Rule #14: Brand Architecture & Optional Taxonomy Linking
+- **Multi-Niche Adaptability:** In `GADGETS` or multi-brand storefronts, customers filter and shop specifically by brand (e.g. *Apple*, *Samsung*, *Anker*, *Sony*). In single-brand fashion stores (e.g. *Aurem*), brand is redundant.
+- **Optional Product Association:** During product creation/edit, the Brand selection dropdown is **strictly optional**. Single-brand merchants leave it blank without validation errors.
+- **Zero-Join Denormalization:** `Product` stores `brandId` (ObjectId ref) alongside denormalized `brandName` and `brandSlug`. Catalog queries and filters run at wire-speed without `$lookup` overhead.
+
+---
+
+### Rule #15: Advanced Faceted Filtering via URL SearchParams (Zero Extra Collections)
+- **Anti-Over-Engineering Invariant:** NO separate `Filters` collection or complex EAV tables. Filter facets are dynamically derived from live `Product` fields (`basePrice`, `inStock`, `brandSlug`, `categorySlug`, `variants.size`, `variants.colorName`).
+- **Single Source of Truth:** Filters operate strictly via URL SearchParams (e.g. `/shop?brand=apple,sony&minPrice=2000&maxPrice=15000&inStock=true&sort=price_asc`).
+  - 100% shareable links across WhatsApp, Messenger, and Social Ads.
+  - SSR & SEO indexable; zero React state desynchronization.
+- **Faceted Pipeline Performance:** A single MongoDB query with compound indexes executes sub-20ms filtering and returns facet counts in one round-trip.
+- **Pages with Advanced Filters:**
+  1. `/shop` (Primary catalog with full sidebar / drawer filter)
+  2. `/category/[slug]` (Category drill-down filters)
+  3. `/brand/[slug]` (Dedicated brand hub with sub-category & price filters)
+  4. `/collections/[slug]` (Campaign / Flash sale filters)
+  5. `/admin/products` (Merchant inventory filter by status, category, brand, and stock)
+
+---
+
+### Rule #16: Instant Live Auto-Suggest Search Engine (`/api/search`)
+- **Micro-Payload Architecture:** Rather than loading the heavy 50-80KB master `/api/products` payload, auto-suggest runs on a dedicated `/api/search?q=...` endpoint.
+- **Payload Projection:** Strips heavy descriptions, variants, size charts, and modifiers. Returns only:
+  `{ title, slug, basePrice, discountPrice, image: images[0].url, inStock }`
+- **Ultra-Low Latency:** Debounced (300ms) query limited to top 6 results runs across `title`, `tags`, `brandName`, and `sku` in < 40ms.
+- **Click Navigation:** Clicking any result routes directly to `/products/[slug]`. Clicking "View all results" routes to `/shop?q=...`.
+
+---
+
 ## 3. Step 1 Sign-Off Checklist
 
-- [x] Top-level collections strictly capped at 7 Core + 3 Growth.
-- [x] Prohibited anti-over-engineered tables documented.
+- [x] Top-level collections strictly capped at 7 Core + 4 Growth/Taxonomy.
+- [x] Prohibited anti-over-engineered tables documented (NO Variants, NO Banners, NO Filters, NO ElasticSearch cluster).
 - [x] 3-Field guest checkout with 11-digit BD phone regex & Smart Drawer toggle locked.
 - [x] Abandoned lead capture (`INCOMPLETE`) and state machine transitions locked.
 - [x] Atomic `$inc` inventory check locked against overselling.
@@ -328,10 +363,13 @@ Provides the high-converting luxury e-commerce navigation pattern: `[Logo] [ Men
 - [x] Multi-niche and single-product funnel rules codified.
 - [x] Zero-egress Cloudflare R2 media lifecycle and Next.js 16 cache invalidation locked.
 - [x] Category (3-level tree) vs Collection (promotions) relationship locked.
-- [x] Slug-centric flat URL architecture (`/category/[slug]`, `/products/[slug]`) locked.
+- [x] Slug-centric flat URL architecture (`/category/[slug]`, `/products/[slug]`, `/brand/[slug]`) locked.
 - [x] Modular homepage section engine (wideFull/wideBox, smart banner, dual-source products) locked.
 - [x] Unified analytics wrapper with dual CAPI deduplication, GTM dataLayer, and BD phone hashing locked.
 - [x] 3-Layer Credential Security Shield (AES-256 field-level encryption, sanitized public projection, and Super-Admin RBAC) locked.
 - [x] Universal Menu (Mega-Menu & Drawer) & Configurable Quick-Category Bar (`headerNavLinks`) locked.
+- [x] Brand taxonomy with optional product linking and zero-join denormalization locked.
+- [x] Advanced Faceted Filter via URL SearchParams (zero extra collections) locked.
+- [x] Instant Live Search engine with micro-payload `/api/search` locked.
 
 👉 **Next Step:** `[ধাপ ২] Schema, Interface & Response Envelope Locked`
