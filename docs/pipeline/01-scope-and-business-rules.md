@@ -277,6 +277,26 @@ A centralized, zero-bloat tracking architecture ensuring 100% ad attribution whi
 
 ---
 
+### Rule #12: 3-Layer Credential Security & Field-Level Encryption Shield
+To allow non-technical merchants self-serve control over third-party API credentials without compromising application security:
+1. **Server Environment Invariant (`.env`):**
+   - `MONGODB_URI` and the master cryptographic key `ENCRYPTION_KEY` (32-byte hex secret) reside strictly in `.env`.
+   - These secrets are NEVER committed to git, exposed via API endpoints, or transmitted to client browsers.
+2. **Field-Level Encryption at Rest (AES-256-GCM):**
+   - High-risk server secrets stored in `StoreConfig` (`courier.steadfast.secretKey`, `payment.bkashPGW.appSecret`, `payment.bkashPGW.password`, `payment.sslCommerz.storePass`, `tracking.metaCapiToken`, `tracking.tiktokEventsApiToken`) MUST be encrypted with `ENCRYPTION_KEY` before saving to MongoDB Atlas.
+   - In MongoDB, secrets appear as ciphertext (`enc:v1:7a9f8c4...`). Even a full database dump leaves credentials completely unreadable.
+3. **Strict Public Projection Sanitization:**
+   - Storefront endpoints (`/api/config`, Server Component queries) query MongoDB with a projection that strips all secret fields (`-courier.steadfast.secretKey`, `-payment.bkashPGW.appSecret`, etc.).
+   - Ordinary store visitors NEVER receive third-party API secrets or payment passwords in JSON payloads or DevTools network responses.
+4. **Super-Admin RBAC & Masked Settings UI:**
+   - Modifying credentials (`PUT /api/config`) strictly requires a valid, verified `SUPER_ADMIN` session cookie.
+   - Admin settings inputs display masked values (`••••••••••••••••`) to prevent shoulder surfing or clear-text HTTP echoing.
+5. **Zero-Client Third-Party Calls:**
+   - The browser client NEVER initiates direct authenticated requests to Steadfast, bKash PGW, or Facebook Graph API.
+   - All third-party interactions execute server-to-server inside Next.js API routes where keys are decrypted in server memory in-flight.
+
+---
+
 ## 3. Step 1 Sign-Off Checklist
 
 - [x] Top-level collections strictly capped at 7 Core + 3 Growth.
@@ -284,12 +304,13 @@ A centralized, zero-bloat tracking architecture ensuring 100% ad attribution whi
 - [x] 3-Field guest checkout with 11-digit BD phone regex & Smart Drawer toggle locked.
 - [x] Abandoned lead capture (`INCOMPLETE`) and state machine transitions locked.
 - [x] Atomic `$inc` inventory check locked against overselling.
-- [x] Steadfast courier auto-booking and fraud score thresholds locked.
+- [x] Steadfast courier auto-booking, configurable fraud alert (<60%), and optional advance delivery fee locked.
 - [x] Multi-niche and single-product funnel rules codified.
 - [x] Zero-egress Cloudflare R2 media lifecycle and Next.js 16 cache invalidation locked.
 - [x] Category (3-level tree) vs Collection (promotions) relationship locked.
 - [x] Slug-centric flat URL architecture (`/category/[slug]`, `/products/[slug]`) locked.
 - [x] Modular homepage section engine (wideFull/wideBox, smart banner, dual-source products) locked.
 - [x] Unified analytics wrapper with dual CAPI deduplication, GTM dataLayer, and BD phone hashing locked.
+- [x] 3-Layer Credential Security Shield (AES-256 field-level encryption, sanitized public projection, and Super-Admin RBAC) locked.
 
 👉 **Next Step:** `[ধাপ ২] Schema, Interface & Response Envelope Locked`

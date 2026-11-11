@@ -130,3 +130,30 @@ Enables or disables operational features on the fly:
 - `gtmEnabled`: Dispatches events to Google Tag Manager dataLayer.
 - `tiktokPixelEnabled`: Dispatches events to TikTok Pixel.
 - `clarityEnabled`: Loads Microsoft Clarity session recorder and heatmaps.
+
+---
+
+## 8. Store Secrets & Security Architecture (The 3-Layer Shield)
+
+To balance rapid, 1-click merchant deployments with banking-grade credential protection:
+
+### Layer 1: Server Environment (`.env`)
+- `MONGODB_URI` and master `ENCRYPTION_KEY` (32-byte hex secret) reside strictly on the server / Vercel Environment Variables.
+- Never exposed via API, never committed to Git, never sent to the browser.
+
+### Layer 2: Field-Level AES-256-GCM Encryption at Rest (MongoDB Atlas)
+- High-risk third-party secrets stored in `StoreConfig` are encrypted using `ENCRYPTION_KEY` prior to persisting in the database:
+  - `courier.steadfast.secretKey`
+  - `payment.bkashPGW.appSecret` & `password`
+  - `payment.sslCommerz.storePass`
+  - `tracking.metaCapiToken` & `tracking.tiktokEventsApiToken`
+- Stored as ciphertext (`enc:v1:7a9f8c4...`). Even a full MongoDB backup dump leaves all secrets completely unreadable.
+
+### Layer 3: Public Projection Sanitization
+- Storefront client endpoints (`GET /api/config`) query MongoDB with projection stripping all secret fields.
+- Public customers/browsers only receive public tokens (`metaPixelId`, `ga4MeasurementId`, `branding`, `logistics`).
+
+### Layer 4: Super-Admin RBAC & Masked Settings UI
+- Modifying store configuration (`PUT /api/config`) strictly requires an authenticated `SUPER_ADMIN` HttpOnly session cookie.
+- Admin input fields render secrets masked (`••••••••••••••••`) to eliminate shoulder surfing or cleartext network echoing.
+- Third-party API interactions (Steadfast booking, bKash PGW checkout, Meta CAPI dispatch) run **100% server-to-server** inside Next.js API routes where keys are decrypted in server memory in-flight.
