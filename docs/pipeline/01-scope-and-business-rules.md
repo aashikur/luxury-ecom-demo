@@ -141,13 +141,17 @@ status: 'DELIVERED'        status: 'RETURNED' / 'CANCELLED'
 
 ---
 
-### Rule #4: Courier Auto-Booking & Return Fraud Prevention
-- **Default Courier:** Integrated with **Steadfast Courier API**.
-- **Fraud Score Shield:**
-  - On checkout, system checks the customer's phone number against courier delivery history.
-  - **Success Rate $\ge$ 80%:** Green Badge (Safe for 100% COD).
-  - **Success Rate 50% – 79%:** Yellow Badge (Phone confirmation required).
-  - **Success Rate < 50% OR $\ge 2$ Prior Returns:** Red Alert (Requires ৳130–150 advance delivery charge via bKash before dispatch).
+### Rule #4: Courier Auto-Booking, Return Fraud Shield & Advance Delivery Fee Protection
+- **Default Courier:** Integrated with **Steadfast Courier API** (with secondary support for Pathao and RedX).
+- **Fraud Score Shield & Alert Threshold:**
+  - On checkout/admin order view, system checks the customer's phone number against courier delivery history.
+  - **Configurable Alert Threshold (Default: < 60%):** Flags orders where historical delivery success rate is below this threshold with a prominent **High Risk** warning.
+  - **Auto-Hold High Risk Orders:** Optional switch to hold flagged orders for phone verification before dispatching.
+- **Advance Delivery Charge Protection (Optional Toggle & Configurable Amount):**
+  - **Toggleable (`advancePayment.enabled` / `features.advanceDeliveryFeeEnabled`):** Merchants can turn advance delivery fee collection ON or OFF anytime.
+  - **Configurable Amount (`advancePayment.amount`):** Default `৳130` (customizable e.g. ৳100, ৳130, ৳150).
+  - **Scope:** Can be set for *Outside Dhaka Only* or *All Orders*.
+  - **Payment Wallets:** Supports bKash, Nagad, or Rocket with custom instruction notes.
 - **1-Click Bulk Dispatch:** Admin can select multiple `CONFIRMED` orders and dispatch to Steadfast in a single batch API call, auto-generating 4×6 inch thermal shipping labels.
 
 ---

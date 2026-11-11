@@ -24,6 +24,12 @@ Controls the look, feel, niche, and layout orientation of the store.
   - Background & Surface tokens
   - Dark / Light Theme Mode toggle
 - **Hero Variant**: `SPLIT` | `CENTER` | `FULL_SLIDER`.
+- **Currency & Global Symbols**:
+  - Currency Symbol: `৳` (Default)
+  - Currency Code: `BDT`
+- **Announcement Bar**:
+  - Enable/Disable Toggle
+  - Banner Text: e.g. *"Free express delivery across Bangladesh on orders over ৳2,500"*
 
 ---
 
@@ -53,9 +59,9 @@ Supports cash on delivery alongside automated and manual mobile financial servic
 - **Cash on Delivery (COD)**:
   - Enabled / Disabled switch
   - Checkout instructions note: e.g., *"পণ্য হাতে পেয়ে চেক করে মূল্য পরিশোধ করুন"*
-- **Manual bKash & Nagad**:
-  - Enabled switch
-  - Wallet Number (e.g. `018xxxxxxxx`)
+- **Manual bKash, Nagad & Rocket**:
+  - Individual Enabled / Disabled switches
+  - Wallet Numbers (e.g. `017xxxxxxxx`)
   - Account Type (`PERSONAL` | `AGENT` | `MERCHANT`)
   - Step-by-step instructions (e.g. *"বিকাশ সেন্ড মানি করে ট্রানজেকশন আইডি দিন"*)
 - **Automated Payment Gateways (Ready for API integration)**:
@@ -69,13 +75,18 @@ Automated dispatching and return fraud prevention for Bangladesh logistics.
 - **Default Courier Provider**: `STEADFAST` | `PATHAO` | `REDX`.
 - **Steadfast API Credentials**:
   - `API Key`, `Secret Key`, `Base URL`.
+- **Pathao Courier Credentials**:
+  - `Store ID`, `Client ID`, `Client Secret`, `Username`, `Password`, `Base URL`.
 - **Auto Booking Switch**: Approving an order in admin automatically generates a consignment note and tracking code in the courier portal.
 - **Fraud Risk Shield**:
   - Queries customer phone number against courier delivery success rates.
-  - Flags orders with `< 60%` delivery success as **High Risk** to prevent return delivery fee losses.
-- **Advance Delivery Charge Protection**:
-  - Required for Outside Dhaka (Yes/No).
-  - Advance Amount (e.g. `৳130` via bKash before shipping to prevent fake orders).
+  - **Alert Threshold Rate**: Configurable threshold (Default: `< 60%`). Flags orders below this delivery success rate as **High Risk** to prevent return delivery fee losses.
+  - **Auto-Hold High Risk Orders**: Switch to automatically hold flagged orders for phone verification before dispatching.
+- **Advance Delivery Charge Protection (Configurable Amount & Toggle)**:
+  - **Enabled / Disabled Toggle**: Merchant can turn advance payment requirement ON or OFF anytime.
+  - **Charge Scope**: Outside Dhaka Only (Recommended) or All Orders.
+  - **Configurable Amount**: Customizable advance fee input (Default: `৳130`, e.g. 100/130/150).
+  - **Payment Wallet & Instructions**: Select bKash / Nagad / Rocket, enter wallet number and instructions note for customers.
 
 ---
 

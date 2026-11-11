@@ -34,6 +34,10 @@ export interface IStoreConfig extends Document {
       url: string;
       key: string;
     };
+    currencySymbol?: string;
+    currencyCode?: string;
+    announcementBarEnabled?: boolean;
+    announcementBarText?: string;
     themeMode: 'DARK' | 'LIGHT';
     colors: {
       primary: string;
@@ -80,13 +84,29 @@ export interface IStoreConfig extends Document {
       secretKey?: string;
       baseUrl?: string;
     };
+    pathao?: {
+      clientId?: string;
+      clientSecret?: string;
+      username?: string;
+      password?: string;
+      storeId?: string;
+      baseUrl?: string;
+    };
     fraudCheck: {
       apiKey?: string;
       riskThresholdRatio: number;
+      alertThresholdPercent: number;
+      autoHoldHighRisk?: boolean;
     };
     advancePayment: {
-      requiredForOutsideDhaka: boolean;
-      advanceAmount: number;
+      enabled: boolean;
+      applyOnlyOutsideDhaka: boolean;
+      amount: number;
+      walletType?: 'BKASH' | 'NAGAD' | 'ROCKET';
+      walletNumber?: string;
+      instructions?: string;
+      requiredForOutsideDhaka?: boolean;
+      advanceAmount?: number;
       bkashMerchantNumber?: string;
     };
   };
@@ -98,13 +118,19 @@ export interface IStoreConfig extends Document {
     manualBkash: {
       enabled: boolean;
       number: string;
-      accountType: 'PERSONAL' | 'AGENT';
+      accountType: 'PERSONAL' | 'AGENT' | 'MERCHANT';
       instructions?: string;
     };
     manualNagad: {
       enabled: boolean;
       number: string;
-      accountType: 'PERSONAL' | 'AGENT';
+      accountType: 'PERSONAL' | 'AGENT' | 'MERCHANT';
+      instructions?: string;
+    };
+    manualRocket?: {
+      enabled: boolean;
+      number: string;
+      accountType: 'PERSONAL' | 'AGENT' | 'MERCHANT';
       instructions?: string;
     };
     bkashPGW: {
@@ -140,6 +166,12 @@ export interface IStoreConfig extends Document {
     abandonedCartCapture: boolean;
     advanceDeliveryFeeEnabled: boolean;
     couponEnabled: boolean;
+    codEnabled?: boolean;
+    manualBkashEnabled?: boolean;
+    manualNagadEnabled?: boolean;
+    manualRocketEnabled?: boolean;
+    bkashPgwEnabled?: boolean;
+    sslCommerzEnabled?: boolean;
   };
   isActive: boolean;
   createdAt: Date;
@@ -183,6 +215,13 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
         type: String,
         enum: ['SPLIT', 'CENTER', 'FULL_SLIDER'],
         default: 'CENTER',
+      },
+      currencySymbol: { type: String, default: '৳' },
+      currencyCode: { type: String, default: 'BDT' },
+      announcementBarEnabled: { type: Boolean, default: true },
+      announcementBarText: {
+        type: String,
+        default: 'Free express shipping across Bangladesh on orders above ৳2,500',
       },
     },
     homeSections: [
@@ -250,13 +289,32 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
         secretKey: { type: String, default: '' },
         baseUrl: { type: String, default: 'https://portal.packzy.com/api/v1' },
       },
+      pathao: {
+        clientId: { type: String, default: '' },
+        clientSecret: { type: String, default: '' },
+        username: { type: String, default: '' },
+        password: { type: String, default: '' },
+        storeId: { type: String, default: '' },
+        baseUrl: { type: String, default: 'https://api-hermes.pathao.com' },
+      },
       fraudCheck: {
         apiKey: { type: String, default: '' },
         riskThresholdRatio: { type: Number, default: 0.3 },
+        alertThresholdPercent: { type: Number, default: 60 },
+        autoHoldHighRisk: { type: Boolean, default: false },
       },
       advancePayment: {
+        enabled: { type: Boolean, default: false },
+        applyOnlyOutsideDhaka: { type: Boolean, default: true },
+        amount: { type: Number, default: 130 },
+        walletType: { type: String, enum: ['BKASH', 'NAGAD', 'ROCKET'], default: 'BKASH' },
+        walletNumber: { type: String, default: '01700000000' },
+        instructions: {
+          type: String,
+          default: 'ঢাকার বাইরের অর্ডারের জন্য অগ্রিম ১৩০ টাকা ডেলিভারি চার্জ বিকাশ করে ট্রানজেকশন আইডি দিন।',
+        },
         requiredForOutsideDhaka: { type: Boolean, default: false },
-        advanceAmount: { type: Number, default: 150 },
+        advanceAmount: { type: Number, default: 130 },
         bkashMerchantNumber: { type: String, default: '' },
       },
     },
@@ -268,7 +326,11 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
       manualBkash: {
         enabled: { type: Boolean, default: true },
         number: { type: String, default: '01700000000' },
-        accountType: { type: String, enum: ['PERSONAL', 'AGENT'], default: 'PERSONAL' },
+        accountType: {
+          type: String,
+          enum: ['PERSONAL', 'AGENT', 'MERCHANT'],
+          default: 'PERSONAL',
+        },
         instructions: {
           type: String,
           default: 'Send Money to our personal bKash number and provide your TrxID below.',
@@ -277,10 +339,27 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
       manualNagad: {
         enabled: { type: Boolean, default: true },
         number: { type: String, default: '01700000000' },
-        accountType: { type: String, enum: ['PERSONAL', 'AGENT'], default: 'PERSONAL' },
+        accountType: {
+          type: String,
+          enum: ['PERSONAL', 'AGENT', 'MERCHANT'],
+          default: 'PERSONAL',
+        },
         instructions: {
           type: String,
           default: 'Send Money to our personal Nagad number and provide your TrxID below.',
+        },
+      },
+      manualRocket: {
+        enabled: { type: Boolean, default: false },
+        number: { type: String, default: '01700000000' },
+        accountType: {
+          type: String,
+          enum: ['PERSONAL', 'AGENT', 'MERCHANT'],
+          default: 'PERSONAL',
+        },
+        instructions: {
+          type: String,
+          default: 'Send Money to our Rocket number and provide your TrxID below.',
         },
       },
       bkashPGW: {
@@ -320,6 +399,12 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
       abandonedCartCapture: { type: Boolean, default: true },
       advanceDeliveryFeeEnabled: { type: Boolean, default: false },
       couponEnabled: { type: Boolean, default: true },
+      codEnabled: { type: Boolean, default: true },
+      manualBkashEnabled: { type: Boolean, default: true },
+      manualNagadEnabled: { type: Boolean, default: true },
+      manualRocketEnabled: { type: Boolean, default: false },
+      bkashPgwEnabled: { type: Boolean, default: false },
+      sslCommerzEnabled: { type: Boolean, default: false },
     },
     isActive: { type: Boolean, default: true },
   },
