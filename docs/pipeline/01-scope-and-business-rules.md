@@ -181,6 +181,57 @@ The platform adapts dynamically based on `StoreConfig`:
 
 ---
 
+### Rule #8: Category vs Collection Architecture & Relationship Contracts
+- **Category (Physical Taxonomy - "What the product IS"):**
+  - **Single Self-Referential Schema:** All 3 levels (Root, Sub, Item) live in `categories`. No separate `SubCategory` tables.
+  - **Level Structure:** Level 0 (Root, `parentId: null`), Level 1 (Sub-category), Level 2 (Item type).
+  - **Materialized Ancestors:** `ancestors: ['men', 'topwear']` stores slug trail for instant breadcrumbs and fast parent queries without `$lookup`.
+  - **Local Sibling Reordering:** Scoped per parent using compound index `{ parentId: 1, displayOrder: 1 }`. Reordering items within `Topwear` never affects `Bottomwear`.
+  - **Batch Reordering:** Updated via `bulkWrite` in a single trip (`PUT /api/categories/reorder`).
+  - **Deletion Safeguards:**
+    1. Blocks deletion if child categories exist.
+    2. Blocks deletion if active products are assigned to the category.
+- **Collection (Marketing & Merchandising - "How we SELL the product"):**
+  - Separate top-level collection (`collections`) for promotional drops (*Winter Drop 2026*, *Flash Sale*).
+  - Stores `bannerImage`, `badgeText` (`HOT`, `SALE`, `40% OFF`), and campaign dates.
+  - **Relationship:** Many-to-many string array on product (`Product.collections: string[]`). A single hoodie can belong to multiple collections simultaneously.
+  - **Safe Deletion:** Deleting a collection removes marketing tags from products; products themselves remain 100% intact.
+
+---
+
+### Rule #9: Slug-Centric Flat URL Architecture & Dynamic Breadcrumbs
+- **The Anti-Pattern (Deep Nested URLs):** URLs like `/shop/men/topwear/hoodies/acid-wash-hoodie` create broken links when categories are renamed, break running Facebook ads, and cause duplicate content SEO penalties.
+- **The Shopify & Nike Standard (Canonical Flat URLs):**
+  - **Category Pages:** `/category/[slug]` (e.g. `/category/men`, `/category/hoodies`). Short, clean for social ads, permanent permalink.
+  - **Collection Pages:** `/collections/[slug]` (e.g. `/collections/winter-drop-2026`).
+  - **Product Pages:** `/products/[slug]` (e.g. `/products/heavyweight-acid-wash-hoodie`). Flat canonical URL that never breaks or duplicates.
+- **Dynamic 14px Breadcrumbs:** The product page dynamically traverses `Product.categoryPath` (`["men", "topwear", "hoodies"]`) to render clickable breadcrumb links: `Home › Men › Topwear › Hoodies › Product Name`.
+
+---
+
+### Rule #10: Modular Homepage Section Engine (`StoreConfig.homeSections[]`)
+The storefront homepage is fully dynamic and zero-code configurable via `StoreConfig.homeSections[]`:
+1. **Reorderable & Unlimited:** Admin can click `[+ Add Section]` to append unlimited sections, moving them Up/Down via `order: 1, 2, 3...` without code changes.
+2. **Container Widths (`layoutWidth`):**
+   - `WIDE_FULL`: 100vw edge-to-edge layout for immersive lifestyle banners.
+   - `WIDE_BOX`: Centered container (`max-w-7xl mx-auto px-4`) for elegant boxed aesthetics.
+3. **Smart Banners (Static or Carousel):**
+   - 1 Image = Static Hero Banner (zero JS overhead).
+   - Multi-Images = Auto-playing Swiper Carousel slider.
+   - **Fallback Logic:** If only image + link (`bannerURL_link`) are provided, the entire image acts as a clean clickable poster. If text/button are provided, renders luxury typography overlay.
+4. **Compact Promo CTA Cards:**
+   - Heights: `S` (~120px mini-strip), `M` (~220px standard voucher), `L` (~320px countdown/event card).
+   - Fully clickable with customizable promo badges.
+5. **Product Showcase Sections (The Dual-Source Engine):**
+   - Display Style: `GRID` (4 columns) or `CAROUSEL` (horizontal swipe).
+   - **Mode A (Auto from Category / Collection):** Selects a category or collection slug; automatically pulls live products dynamically.
+   - **Mode B (Manual Curated Products):** Admin searches products by name/SKU and hand-picks specific 4-8 items.
+6. **Performance Guardrail (The Batch Query Rule):**
+   - Regardless of whether there are 3 or 12 sections on the homepage, the Next.js Server Component executes **ONE single database query** on load (`Product.find({ isActive: true })`) and filters in-memory.
+   - **Guaranteed Homepage Load Time: < 600ms**.
+
+---
+
 ## 3. Step 1 Sign-Off Checklist
 
 - [x] Top-level collections strictly capped at 7 Core + 3 Growth.
@@ -191,5 +242,8 @@ The platform adapts dynamically based on `StoreConfig`:
 - [x] Steadfast courier auto-booking and fraud score thresholds locked.
 - [x] Multi-niche and single-product funnel rules codified.
 - [x] Zero-egress Cloudflare R2 media lifecycle and Next.js 16 cache invalidation locked.
+- [x] Category (3-level tree) vs Collection (promotions) relationship locked.
+- [x] Slug-centric flat URL architecture (`/category/[slug]`, `/products/[slug]`) locked.
+- [x] Modular homepage section engine (wideFull/wideBox, smart banner, dual-source products) locked.
 
 👉 **Next Step:** `[ধাপ ২] Schema, Interface & Response Envelope Locked`
