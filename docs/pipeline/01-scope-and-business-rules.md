@@ -232,6 +232,38 @@ The storefront homepage is fully dynamic and zero-code configurable via `StoreCo
 
 ---
 
+### Rule #11: Unified Analytics & Dual-Tracking Engine (Wrapper, CAPI & GTM)
+A centralized, zero-bloat tracking architecture ensuring 100% ad attribution while keeping page speed under 800ms:
+1. **The Single Facade Wrapper (`src/lib/analytics.ts`):**
+   - All storefront components, buttons, and drawers call a single unified function: `trackEvent(eventName, payload)`.
+   - UI components NEVER directly invoke `fbq`, `ttq`, or `dataLayer`.
+2. **Feature-Flag Controlled Execution:**
+   - Checks `StoreConfig.features.capiEnabled`, `features.gtmEnabled`, `features.tiktokPixelEnabled`.
+   - Skips disabled trackers silently without console errors or runtime crashes.
+   - In development mode (`NODE_ENV === 'development'`), logs events cleanly to console with zero fake data sent to live ad accounts.
+3. **Dual-Tracking with Event Deduplication (`event_id`):**
+   - Browser Pixel (`fbq`) and Server-Side CAPI (`POST /api/orders`) send the EXACT SAME `event_id` (e.g. `orderNumber: "AUR-1042"`).
+   - Meta deduplicates identical events, eliminating double-counting while capturing 100% of sales bypassed by iOS Safari/Ad-blockers.
+4. **Bangladeshi Advanced Matching & Attribution:**
+   - Normalizes BD phone numbers to E.164 format (`88017XXXXXXXX`) and SHA-256 hashes them (`ph`) before transmission, boosting Event Match Quality to **8.5 – 9.5 / 10**.
+   - Captures `_fbp` and `_fbc` (from ad click `fbclid`) cookies and forwards them in CAPI for precise campaign ROAS attribution.
+5. **GTM-Only Agency Decoupling:**
+   - Professional marketing agencies can disable native CAPI/pixels and enable GTM (`gtmEnabled: true` + `gtmId: "GTM-XXXXX"`).
+   - The wrapper automatically pushes standardized GA4 e-commerce events to `window.dataLayer`.
+   - Marketers can configure Microsoft Clarity, TikTok, Google Ads, or Snapchat inside GTM without touching application code.
+6. **Performance & Non-Blocking Invariant:**
+   - ZERO heavy external NPM analytics packages (pure ~60-line TypeScript utility).
+   - Server CAPI runs as a non-blocking background task ("fire-and-forget"). Order confirmation response is returned in < 200ms regardless of Facebook API latency.
+   - Browser scripts use `next/script` with `strategy="afterInteractive"`.
+7. **Strict 5 Canonical E-Commerce Events (Zero Noise):**
+   - `PageView`
+   - `ViewContent` (PDP with SKU, price, category)
+   - `AddToCart` (Drawer or inline button)
+   - `InitiateCheckout` (Fired on phone input blur)
+   - `Purchase` (Order confirmation with full transaction payload)
+
+---
+
 ## 3. Step 1 Sign-Off Checklist
 
 - [x] Top-level collections strictly capped at 7 Core + 3 Growth.
@@ -245,5 +277,6 @@ The storefront homepage is fully dynamic and zero-code configurable via `StoreCo
 - [x] Category (3-level tree) vs Collection (promotions) relationship locked.
 - [x] Slug-centric flat URL architecture (`/category/[slug]`, `/products/[slug]`) locked.
 - [x] Modular homepage section engine (wideFull/wideBox, smart banner, dual-source products) locked.
+- [x] Unified analytics wrapper with dual CAPI deduplication, GTM dataLayer, and BD phone hashing locked.
 
 👉 **Next Step:** `[ধাপ ২] Schema, Interface & Response Envelope Locked`
