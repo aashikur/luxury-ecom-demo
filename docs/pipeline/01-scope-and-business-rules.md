@@ -238,7 +238,13 @@ A centralized, zero-bloat tracking architecture ensuring 100% ad attribution whi
    - All storefront components, buttons, and drawers call a single unified function: `trackEvent(eventName, payload)`.
    - UI components NEVER directly invoke `fbq`, `ttq`, or `dataLayer`.
 2. **Feature-Flag Controlled Execution:**
-   - Checks `StoreConfig.features.capiEnabled`, `features.gtmEnabled`, `features.tiktokPixelEnabled`.
+   - Checks `StoreConfig.features`: `capiEnabled`, `gtmEnabled`, `tiktokPixelEnabled`, `clarityEnabled`.
+   - Dedicated 1-Click Trackers:
+     - Meta Pixel (`metaPixelId`) & CAPI (`metaCapiToken`)
+     - Google Analytics 4 (`ga4MeasurementId`)
+     - Microsoft Clarity Heatmap & Session Recording (`clarityProjectId`)
+     - TikTok Pixel (`tiktokPixelId`)
+     - Google Tag Manager (`gtmId`)
    - Skips disabled trackers silently without console errors or runtime crashes.
    - In development mode (`NODE_ENV === 'development'`), logs events cleanly to console with zero fake data sent to live ad accounts.
 3. **Dual-Tracking with Event Deduplication (`event_id`):**

@@ -64,6 +64,7 @@ export interface IStoreConfig extends Document {
     metaTestEventCode?: string;
     gtmId?: string;
     ga4MeasurementId?: string;
+    clarityProjectId?: string;
     tiktokPixelId?: string;
     tiktokEventsApiToken?: string;
   };
@@ -127,6 +128,7 @@ export interface IStoreConfig extends Document {
     capiEnabled: boolean;
     tiktokPixelEnabled: boolean;
     gtmEnabled: boolean;
+    clarityEnabled?: boolean;
     courierAutoBooking: boolean;
     fraudCheckEnabled: boolean;
     abandonedCartCapture: boolean;
@@ -222,6 +224,7 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
       metaTestEventCode: { type: String, default: '' },
       gtmId: { type: String, default: '' },
       ga4MeasurementId: { type: String, default: '' },
+      clarityProjectId: { type: String, default: '' },
       tiktokPixelId: { type: String, default: '' },
       tiktokEventsApiToken: { type: String, default: '' },
     },
@@ -299,6 +302,7 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
       capiEnabled: { type: Boolean, default: false },
       tiktokPixelEnabled: { type: Boolean, default: false },
       gtmEnabled: { type: Boolean, default: false },
+      clarityEnabled: { type: Boolean, default: false },
       courierAutoBooking: { type: Boolean, default: false },
       fraudCheckEnabled: { type: Boolean, default: false },
       abandonedCartCapture: { type: Boolean, default: true },

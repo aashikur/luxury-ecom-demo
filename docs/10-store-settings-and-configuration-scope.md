@@ -74,14 +74,17 @@ Automated dispatching and return fraud prevention for Bangladesh logistics.
 ---
 
 ### 5. Marketing, Tracking & Pixels
-Full-funnel attribution and advertising tracking.
+Full-funnel attribution, user behavior heatmaps, and advertising tracking.
 - **Meta (Facebook) Pixel & CAPI**:
   - Meta Pixel ID
   - Meta Conversions API (CAPI) Server Token
   - Test Event Code
-- **Google Tag Manager (GTM) & GA4**:
-  - GTM Container ID (`GTM-XXXXXX`)
+- **Google Analytics 4 (GA4) & GTM**:
   - GA4 Measurement ID (`G-XXXXXXXX`)
+  - GTM Container ID (`GTM-XXXXXX`)
+- **Microsoft Clarity (Free Heatmaps & Screen Recording)**:
+  - Clarity Project ID (`clarityProjectId`)
+  - Enables 100% free visual replay of user sessions, click heatmaps, and checkout friction points without needing GTM.
 - **TikTok Pixel & Events API**:
   - TikTok Pixel ID & Events API Token.
 
