@@ -27,18 +27,24 @@ Controls the look, feel, niche, and layout orientation of the store.
 
 ---
 
-### 2. Logistics & Delivery (Shipping Rates & Helpdesk)
-Manages delivery tariffs and customer communication channels.
-- **Inside Dhaka Delivery Fee**: Flat rate for city deliveries (e.g. `৳70`).
-- **Outside Dhaka Delivery Fee**: Nationwide courier rate (e.g. `৳130`).
-- **Free Shipping Threshold**: Order amount required to unlock free shipping (e.g. `৳2,500`).
+### 2. Logistics, Delivery & Contacts (Shipping Rates & Helpdesk)
+Manages delivery tariffs, delivery policy, free shipping progress bar, and customer communication channels.
+- **Inside Dhaka Delivery Fee**: Flat rate for city deliveries (Default: `৳70`).
+- **Dhaka Suburbs Delivery Fee (Gazipur, Savar, Narayanganj)**: Tariff for perimeter zones (Default: `৳100`).
+- **Outside Dhaka Delivery Fee**: Nationwide courier rate for 63 districts (Default: `৳130`).
+- **Free Shipping Toggle & Threshold**:
+  - `isFreeShippingEnabled`: Enable/Disable switch for free shipping campaigns.
+  - `freeShippingThreshold`: Order amount required to unlock free shipping (Default: `৳2,500`). Powers the live progress meter in Cart Drawer.
 - **Estimated Delivery Timelines**:
-  - Inside Dhaka: e.g. `1-2 Days`
+  - Inside Dhaka: e.g. `24-48 Hours`
   - Outside Dhaka: e.g. `3-5 Days`
-- **Customer Helpline Contacts**:
-  - Hotline Phone: e.g. `01700000000`
-  - WhatsApp Order Number: e.g. `8801700000000`
+- **Customer Helpline & Social Contacts**:
+  - Hotline Phone: e.g. `01700000000` (appears on top announcement bar, footer, and invoice)
+  - WhatsApp Order Hotline: e.g. `8801700000000` (sanitized for instant `https://wa.me/` floating chat)
+  - Support Email: e.g. `support@aurem.com`
+  - Helpline Availability Hours: e.g. `10:00 AM - 10:00 PM (Everyday)`
   - Showroom / Outlet Address: e.g. `Banani 11, Dhaka, Bangladesh`
+- **Delivery Policy Note**: Checkout trust reminder (e.g. *"পণ্য ডেলিভারিম্যানের সামনে চেক করে গ্রহণ করুন"*).
 
 ---
 

@@ -49,9 +49,14 @@ export interface IStoreConfig extends Document {
   logistics: {
     supportPhone: string;
     whatsappNumber: string;
+    supportEmail?: string;
     showroomAddress: string;
+    helplineHours?: string;
+    deliveryPolicyNote?: string;
     insideDhakaFee: number;
+    suburbsDhakaFee?: number;
     outsideDhakaFee: number;
+    isFreeShippingEnabled?: boolean;
     freeShippingThreshold: number;
     estimatedDeliveryDays: {
       insideDhaka: string;
@@ -209,9 +214,14 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
     logistics: {
       supportPhone: { type: String, default: '01700000000' },
       whatsappNumber: { type: String, default: '8801700000000' },
+      supportEmail: { type: String, default: '' },
       showroomAddress: { type: String, default: 'Dhaka, Bangladesh' },
+      helplineHours: { type: String, default: '10:00 AM - 10:00 PM' },
+      deliveryPolicyNote: { type: String, default: 'পণ্য ডেলিভারিম্যানের সামনে চেক করে গ্রহণ করুন' },
       insideDhakaFee: { type: Number, default: 70 },
+      suburbsDhakaFee: { type: Number, default: 100 },
       outsideDhakaFee: { type: Number, default: 130 },
+      isFreeShippingEnabled: { type: Boolean, default: true },
       freeShippingThreshold: { type: Number, default: 2500 },
       estimatedDeliveryDays: {
         insideDhaka: { type: String, default: '24-48 Hours' },
