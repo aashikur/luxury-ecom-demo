@@ -71,13 +71,16 @@
 
 ## 2. Business Rules & Logic Contracts
 
-### Rule #1: Bangladeshi Guest-First Checkout (No Signup / No Password)
+### Rule #1: Bangladeshi Guest-First Checkout (No Signup / No Password) & Smart Drawer Toggle
 - **Problem:** Requiring password creation or email verification causes 70%+ checkout abandonment in Bangladesh.
 - **Rule:** The storefront checkout MUST be a **3-field Slide-Over Drawer**:
   1. Full Name (`string`, min 2 chars)
   2. Mobile Phone Number (`string`, strictly validated against BD regex: `/^01[3-9]\d{8}$/`)
   3. Full Delivery Address (`string`, District + Thana/Area + House/Street details)
 - **Customer Account:** Customers are NEVER required to create a password. Their identity is indexed solely by their 11-digit phone number.
+- **Smart Checkout Mode (`smartCheckoutEnabled`):**
+  - **ON (Default: `true`):** Order placement completes entirely within the slide-over sidebar drawer (`CartDrawer`) with zero page reload or URL navigation. Best for fast impulse buying and viral traffic.
+  - **OFF (`false`):** "Buy Now" or "Checkout" button routes to the dedicated `/checkout` full page. Useful for merchants requiring additional form fields, complex payment gateways, or multi-step checkout reviews.
 
 ---
 
@@ -274,7 +277,7 @@ A centralized, zero-bloat tracking architecture ensuring 100% ad attribution whi
 
 - [x] Top-level collections strictly capped at 7 Core + 3 Growth.
 - [x] Prohibited anti-over-engineered tables documented.
-- [x] 3-Field guest checkout with 11-digit BD phone regex locked.
+- [x] 3-Field guest checkout with 11-digit BD phone regex & Smart Drawer toggle locked.
 - [x] Abandoned lead capture (`INCOMPLETE`) and state machine transitions locked.
 - [x] Atomic `$inc` inventory check locked against overselling.
 - [x] Steadfast courier auto-booking and fraud score thresholds locked.

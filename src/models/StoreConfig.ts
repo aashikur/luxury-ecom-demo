@@ -134,6 +134,7 @@ export interface IStoreConfig extends Document {
     tiktokPixelEnabled: boolean;
     gtmEnabled: boolean;
     clarityEnabled?: boolean;
+    smartCheckoutEnabled?: boolean;
     courierAutoBooking: boolean;
     fraudCheckEnabled: boolean;
     abandonedCartCapture: boolean;
@@ -313,6 +314,7 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
       tiktokPixelEnabled: { type: Boolean, default: false },
       gtmEnabled: { type: Boolean, default: false },
       clarityEnabled: { type: Boolean, default: false },
+      smartCheckoutEnabled: { type: Boolean, default: true },
       courierAutoBooking: { type: Boolean, default: false },
       fraudCheckEnabled: { type: Boolean, default: false },
       abandonedCartCapture: { type: Boolean, default: true },

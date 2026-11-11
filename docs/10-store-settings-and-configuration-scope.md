@@ -110,8 +110,12 @@ Zero-code homepage visual arrangement stored as an array in `StoreConfig`.
 
 ### 7. Global Feature Toggles (1-Click Feature Activation)
 Enables or disables operational features on the fly:
+- `smartCheckoutEnabled`: When enabled (`true`, default), order placement completes directly inside the slide-over sidebar drawer (`CartDrawer`) with zero page redirect. When disabled (`false`), clicking checkout routes to the dedicated `/checkout` page.
 - `abandonedCartCapture`: Instantly records checkout leads as `INCOMPLETE` orders as soon as the phone number is entered.
 - `fraudCheckEnabled`: Automatically checks customer courier delivery history upon order submission.
 - `advanceDeliveryFeeEnabled`: Requires outside-Dhaka customers to pay delivery fees in advance.
 - `couponEnabled`: Shows promo coupon input box at checkout.
 - `capiEnabled`: Dispatches server-side conversion events to Meta CAPI.
+- `gtmEnabled`: Dispatches events to Google Tag Manager dataLayer.
+- `tiktokPixelEnabled`: Dispatches events to TikTok Pixel.
+- `clarityEnabled`: Loads Microsoft Clarity session recorder and heatmaps.
