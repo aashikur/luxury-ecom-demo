@@ -8,6 +8,20 @@
 
 ---
 
+## 🗺️ The 7-Step Senior Master Pipeline
+
+| Step | Milestone | Scope & Deliverables | Status |
+| :---: | :--- | :--- | :---: |
+| **01** | **Scope & Business Rules Locked** | 7 Core + 3 Growth Collections, Guest 3-field COD checkout, Abandoned lead capture (`INCOMPLETE`), Atomic stock decrement (`$inc`), Steadfast fraud score, Multi-niche rules. | 🔒 **LOCKED** ([Spec](./01-scope-and-business-rules.md)) |
+| **02** | **Schema, Interface & Envelope** | TypeScript DTOs, Mongoose Schema interfaces, Standard `{ success, data, error, code }` response contract. | ⏳ **PENDING** |
+| **03** | **Seed Engine & Fixtures** | 1-Command database seeding script (`npm run db:seed`) generating realistic multi-variant products, categories, collections, and admin credentials. | ⏳ **PENDING** |
+| **04** | **Core Backend & State Machine** | Atomic inventory decrement, Order lifecycle transitions (`INCOMPLETE` $\rightarrow$ `DELIVERED`), Steadfast courier API integration, `revalidatePath` cache busters. | ⏳ **PENDING** |
+| **05** | **Admin & Staff Auth (RBAC)** | HttpOnly Cookie sessions for Admin / Call-Center staff; zero-password barrier for guest buyers. | ⏳ **PENDING** |
+| **06** | **Frontend UI Wireup** | 1-Page COD drawer, Size chart modal, Color swatches, Admin taxonomy management (`/admin/categories`, `/admin/collections`), Variant matrix builder. | ⏳ **PENDING** |
+| **07** | **Hardening & Launch Sign-Off** | Concurrency verification, Vercel Edge cache inspection, backup restore drills per `docs/PRODUCTION_CHECKLIST.md`. | ⏳ **PENDING** |
+
+---
+
 ## 1. Master Scope & Milestone Progress Matrix
 
 | Phase | Module | Scope & Core Deliverables | Status | Live Components / Routes |
@@ -104,3 +118,8 @@ The single-document `StoreConfig` architecture controls 7 distinct store modules
 ### Task #07: Production Cache Invalidation, On-Demand Revalidation & Dynamic Rendering Lock
 * **Files Created/Modified:** `src/app/page.tsx`, `src/app/shop/page.tsx`, `src/app/products/[slug]/page.tsx`, `src/app/(admin)/admin/layout.tsx`, `src/app/(admin)/admin/page.tsx`, `src/app/(admin)/admin/products/page.tsx`, `src/app/(admin)/admin/products/[id]/page.tsx`, `src/app/(admin)/admin/products/[id]/edit/page.tsx`, `src/app/(admin)/admin/settings/page.tsx`, `src/app/api/products/route.ts`, `src/app/api/products/[slug]/route.ts`, `src/app/api/config/route.ts`, `src/app/api/orders/route.ts`, `src/app/api/categories/route.ts`, `src/app/api/collections/route.ts`, `src/components/admin/ProductsTableClient.tsx`, `docs/11-nextjs-caching-ssg-dynamic-rendering-and-revalidation.md`, `docs/pipeline/scope.md`.
 * **Changes:** Diagnosed and eliminated production stale-cache issue on Vercel Edge (`X-Vercel-Cache: HIT`, `X-Nextjs-Prerender: 1`) where product creations and image edits updated MongoDB Atlas but were masked by static build caching. Locked `export const dynamic = 'force-dynamic'` and `revalidate = 0` across all admin routes and storefront catalog. Integrated `revalidatePath` into all mutation route handlers (`POST`, `PUT`, `DELETE`). Added client-side prop sync and `no-store` background fetch on mount in `ProductsTableClient.tsx`. Upgraded homepage collection matching to support multi-attribute category and taxonomy fallback. Fully codified lesson and master prompt template in `docs/11-nextjs-caching-ssg-dynamic-rendering-and-revalidation.md`.
+
+
+### Task #08: Master 7-Step Pipeline Codification & Step 1 Scope and Business Rules Lock
+* **Files Created/Modified:** `docs/pipeline/01-scope-and-business-rules.md`, `docs/pipeline/scope.md`.
+* **Changes:** Formulated and locked the 7-Step Senior Master Engineering Pipeline (`Scope & Rules` ➔ `Schema & Envelope` ➔ `Seed Engine` ➔ `Core Backend & State Machine` ➔ `Admin Auth` ➔ `Frontend Wireup` ➔ `Hardening & Sign-off`). Authored exhaustive Step 1 specification locking the 7 Core + 3 Growth collections boundaries, Bangladeshi 3-field guest checkout rules (`01XXXXXXXXX`), abandoned cart lead state machine (`INCOMPLETE`), atomic conditional stock decrement (`$inc`), Steadfast courier fraud thresholds, multi-niche adaptability, and Cloudflare R2 media lifecycle.
