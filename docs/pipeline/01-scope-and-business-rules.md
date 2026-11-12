@@ -11,10 +11,10 @@
 
 ```
 [ধাপ ১] Scope & Business Rules Locked (THIS DOCUMENT)
-  │      - 7 Core Collections + 3 Growth Collections Boundaries
-  │      - Bangladeshi Guest-First Checkout & Incomplete Lead Rules
-  │      - Concurrency & Atomic Inventory Rules
-  │      - Courier Return Fraud & State Transition Rules
+  │      - 7 Core Collections + 4 Growth/Taxonomy Collections Boundaries (Total 11)
+  │      - Bangladeshi Guest-First Checkout, 3-Zone Delivery & Incomplete Lead Rules
+  │      - Concurrency, Idempotency & Atomic Inventory Rules
+  │      - Zero-Latency Performance SLA, Security Shield & Payment State Rules
   ▼
 [ধাপ ২] Schema, Interface & Response Envelope Locked
   │      - TypeScript DTOs & Mongoose Schema Interfaces
@@ -54,7 +54,7 @@
    - `specifications[]` (Fabric details, GSM, care instructions)
    - `modifierGroups[]` (Gift box, custom embroidery, add-on accessories)
 5. **`Order` (`orders`)**: Order state machine from checkout lead (`INCOMPLETE`) to `DELIVERED` / `RETURNED`. Embeds purchased item snapshots and courier consignment data.
-6. **`User` (`users`)**: Admin and call-center staff accounts with Role-Based Access Control (`SUPER_ADMIN`, `ADMIN`, `MODERATOR`).
+6. **`User` (`users`)**: Unified authentication & RBAC accounts supporting 5 roles: `SUPER_ADMIN`, `ADMIN`, `MODERATOR` (future-configurable), `MERCHANT` (future B2B wholesale buyer), and `USER` (registered retail shopper; guest checkout remains passwordless).
 7. **`Customer` (`customers`)**: Phone-number-indexed customer profiles caching total order history, completed delivery count, and courier fraud risk.
 
 ### B. The Growth & Taxonomy Collections (Scaled on Demand)
@@ -112,51 +112,58 @@ status: 'DELIVERED'        status: 'RETURNED' / 'CANCELLED'
 (Success, stats +1)        (Restores stock, flags fraud score +1)
 ```
 
-- **Order State Machine Constraints:**
+- **Order State Machine Constraints & Allowed Transitions:**
   - `INCOMPLETE`: Generated on phone input blur. Does NOT deduct stock.
-  - `PENDING`: User clicked "Confirm Order". Deducts inventory atomically.
-  - `CONFIRMED`: Staff verified order via call or auto-rules.
+  - `PENDING`: User clicked "Confirm Order" (for COD / Manual MFS) or gateway reservation started. Deducts inventory atomically (`inventoryState: 'DEDUCTED'`).
+  - `CONFIRMED`: Staff verified order via call or auto-rules (or online gateway IPN verified `PAID`).
   - `SHIPPED`: Courier tracking number generated. Order items CANNOT be edited once shipped.
-  - `DELIVERED`: Terminal state. Marks order fulfilled and updates customer delivery success count.
-  - `CANCELLED` / `RETURNED`: **Automatically restores product variant stock** and increments customer return ratio.
+  - `DELIVERED`: Terminal state. Marks order fulfilled and atomically increments `Customer.deliveredCount` & `Customer.totalSpent`.
+  - `CANCELLED` / `RETURNED`: **Idempotently restores product stock ONCE** (`inventoryState === 'DEDUCTED' -> 'RESTORED'`) and atomically updates `Customer.returnedCount` / `cancelledCount` for fraud scoring.
+  - **Strict Transition Guard:** Reject illegal backwards transitions (e.g., `DELIVERED -> PENDING` or `CANCELLED -> CONFIRMED` without explicit re-deduction).
 
 ---
 
-### Rule #3: Zero Overselling & Atomic Concurrency
-- **Problem:** During flash sales (e.g. 10 users buying the last 2 hoodies simultaneously), non-atomic checks create negative stock (`-3`).
-- **Rule:** Stock deductions MUST use MongoDB atomic operators with a conditional predicate:
-  ```ts
-  Product.findOneAndUpdate(
-    { 
-      _id: productId, 
-      'variants._id': variantId, 
-      'variants.stock': { $gte: qty } // STRICT CONDITION
-    },
-    { 
-      $inc: { 
-        'variants.$.stock': -qty, 
-        totalStock: -qty 
-      } 
-    }
-  );
-  ```
-- **Invariant:** If the query returns `null`, the transaction fails immediately and returns:
-  `{ success: false, error: "Selected item is out of stock", code: "OUT_OF_STOCK" }`.
+### Rule #3: Zero Overselling, Dual Stock Predicate & Idempotent Ledger
+- **Problem:** During flash sales (e.g. 10 users buying the last 2 hoodies simultaneously), non-atomic checks create negative stock (`-3`), and double-cancel clicks can restore stock twice (`+2`).
+- **Dual Conditional Atomic Update Rule:**
+  - **Variant Product (`hasVariants: true`):**
+    ```ts
+    Product.findOneAndUpdate(
+      { _id: productId, isActive: true, 'variants._id': variantId, 'variants.stock': { $gte: qty } },
+      { $inc: { 'variants.$.stock': -qty, totalStock: -qty } }
+    );
+    ```
+  - **Single/Regular Product (`hasVariants: false`):**
+    ```ts
+    Product.findOneAndUpdate(
+      { _id: productId, isActive: true, totalStock: { $gte: qty } },
+      { $inc: { totalStock: -qty } }
+    );
+    ```
+- **Idempotency & Reservation Invariants:**
+  - Every `Order` tracks `inventoryState: 'NONE' | 'DEDUCTED' | 'RESTORED'` so cancellations/refunds/webhooks can NEVER deduct or restore stock twice.
+  - For Online Gateways (`SSLCommerz` / `bKash PGW`), stock reserved at initiation carries `stockReservationExpiresAt` (e.g., 15 mins); expired unpaid reservations are released idempotently.
+  - If an atomic predicate returns `null`, fail immediately and rollback prior item deductions in that order, returning `{ success: false, error: "Selected item is out of stock", code: "OUT_OF_STOCK" }`.
 
 ---
 
-### Rule #4: Courier Auto-Booking, Return Fraud Shield & Advance Delivery Fee Protection
+### Rule #4: 3-Zone Delivery, Courier Auto-Booking, Fraud Shield & Advance Fee
+- **3-Zone Bangladesh Delivery Tariffs (`Order.customer.deliveryZone`):**
+  - `INSIDE_DHAKA`: City core tariff (`StoreConfig.logistics.insideDhakaFee`, default `৳70`).
+  - `DHAKA_SUBURBS`: Gazipur, Savar, Narayanganj, Keraniganj (`StoreConfig.logistics.suburbsDhakaFee`, default `৳100`).
+  - `OUTSIDE_DHAKA`: Nationwide 63 districts (`StoreConfig.logistics.outsideDhakaFee`, default `৳130`).
+  - Free shipping unlocks automatically when `isFreeShippingEnabled` is `true` and `subtotal >= freeShippingThreshold`.
 - **Default Courier:** Integrated with **Steadfast Courier API** (with secondary support for Pathao and RedX).
 - **Fraud Score Shield & Alert Threshold:**
-  - On checkout/admin order view, system checks the customer's phone number against courier delivery history.
-  - **Configurable Alert Threshold (Default: < 60%):** Flags orders where historical delivery success rate is below this threshold with a prominent **High Risk** warning.
+  - On checkout/admin order view, system checks the customer's 11-digit BD phone against `Customer` history & courier delivery success rates.
+  - **Configurable Alert Threshold (Default: < 60%):** Flags orders below threshold as **High Risk**.
   - **Auto-Hold High Risk Orders:** Optional switch to hold flagged orders for phone verification before dispatching.
 - **Advance Delivery Charge Protection (Optional Toggle & Configurable Amount):**
   - **Toggleable (`advancePayment.enabled` / `features.advanceDeliveryFeeEnabled`):** Merchants can turn advance delivery fee collection ON or OFF anytime.
   - **Configurable Amount (`advancePayment.amount`):** Default `৳130` (customizable e.g. ৳100, ৳130, ৳150).
-  - **Scope:** Can be set for *Outside Dhaka Only* or *All Orders*.
+  - **Scope:** Configurable for `OUTSIDE_DHAKA` only (default; `DHAKA_SUBURBS` exempt unless `applyOnlyOutsideDhaka === false`) or All Orders.
   - **Payment Wallets:** Supports bKash, Nagad, or Rocket with custom instruction notes.
-- **1-Click Bulk Dispatch:** Admin can select multiple `CONFIRMED` orders and dispatch to Steadfast in a single batch API call, auto-generating 4×6 inch thermal shipping labels.
+- **1-Click Bulk Dispatch & Non-Blocking Webhook Sync:** Admin dispatches `CONFIRMED` orders to Steadfast in batches (4×6 thermal labels); Steadfast delivery/return status webhooks update `Order` and `Customer` counters idempotently.
 
 ---
 
@@ -181,14 +188,15 @@ The platform adapts dynamically based on `StoreConfig`:
 
 ---
 
-### Rule #7: Next.js 16 Zero-Stale Cache Invalidation Contract
-- **Admin & Store Catalog Routes:**
-  ```ts
-  export const dynamic = 'force-dynamic';
-  export const revalidate = 0;
-  ```
-- **Mutation Handlers (`POST`, `PUT`, `DELETE`):**
-  Must call `revalidatePath` on `'/'`, `'/shop'`, `'/admin/products'`, and `'/products/[slug]'` so Vercel Edge CDN never serves stale static build caches to visitors.
+### Rule #7: Next.js 16 Zero-Stale Cache, `StoreConfig` Singleton Cache & `bf-cache` Split Strategy
+- **Admin, Checkout & Account (`/admin/**`, `/checkout`, `/account`):**
+  - Strictly dynamic (`export const dynamic = 'force-dynamic'; export const revalidate = 0;`) + `Cache-Control: private, no-store` — prevents stale inventory/orders/PII and blocks `bf-cache` snapshots of sensitive admin/checkout pages.
+  - Client table/form wrappers (`ProductsTableClient`, `SettingsFormClient`) sync incoming props via `useEffect` and support `{ cache: 'no-store' }` refresh on mount/after mutations.
+- **Public Storefront Catalog (`/`, `/shop`, `/category/[slug]`, `/collections/[slug]`, `/brand/[slug]`, `/products/[slug]`):**
+  - **Shared `getPublicStoreConfig()` Cache:** Wrapped in Next.js `unstable_cache` (`tags: ['store-config']`, `revalidate: 86400` or `false`) with public-only `.select()` projection. Serves 100k+ visitors across all Vercel serverless instances with **0 DB queries** until Super Admin saves settings (`PUT /api/config`).
+  - **Catalog Data Cache & `bf-cache` Enabler:** Public storefront queries run through tagged `unstable_cache` (`'products'`, `'categories'`, `'collections'`, `'brands'`) with `Cache-Control: public, max-age=0, must-revalidate` (**STRICTLY NO `no-store`** on public storefront HTML!) so Chrome/Safari **Back/Forward Cache (`bf-cache`)** restores pages in **`0ms`** on mobile back-swipe.
+- **Immediate On-Demand Invalidation (`POST`, `PUT`, `PATCH`, `DELETE`):**
+  - Every Admin or Order mutation MUST call `revalidateTag(...)` AND `revalidatePath(...)` (`'/'`, `'/shop'`, `'/admin'`, `'/admin/products'`, `'/admin/settings'`, `'/products/[slug]'`, `'/category/[slug]'`) so changes propagate globally in **< 1 second**.
 
 ---
 
@@ -352,16 +360,110 @@ Provides the high-converting luxury e-commerce navigation pattern: `[Logo] [ Men
 
 ---
 
+### Rule #17: Server-Authoritative Pricing, Wholesale Role Gate & Checkout Idempotency
+- **Zero Client Price Trust:** The checkout browser payload ONLY submits `{ productId, variantId, modifierLabels, quantity, couponCode, deliveryZone, idempotencyKey }`. The server NEVER trusts client-supplied `unitPrice`, `subtotal`, `discount`, `deliveryFee`, or `totalAmount`.
+- **Server Recalculation & Dual-Tier Pricing Rule:** Backend fetches live prices from `Product`, verifies `isActive: true` and variant ownership, calculates 3-zone delivery fee from `StoreConfig` (with `freeShippingThreshold`), validates coupons, and stores immutable purchase snapshots on `Order.items[]`.
+  - **Retail vs Merchant Wholesale Gate:** Regular guests and `USER` accounts strictly receive Retail price (`discountPrice ?? basePrice`). Future `MERCHANT` wholesale pricing (`wholesalePrice`) is applied ONLY when the server verifies an authenticated, approved `session.user.role === 'MERCHANT'` (and `qty >= wholesaleMinQty`).
+- **Coupon Enforcement:** Validates `isActive`, `startsAt <= now <= expiresAt`, `minSpend`, global `usageLimit`, `perPhoneLimit` (against `01XXXXXXXXX`), and non-stackable rule.
+- **Checkout Idempotency (`idempotencyKey`):** Every order submission generates a client UUID `idempotencyKey` stored with a unique sparse index on `Order`. Duplicate submissions/double-taps return the existing order without creating a second order or double-deducting stock.
+
+---
+
+### Rule #18: Unified Payment Adapter, COD + SSLCommerz Primary & SMS-Forwarder Auto-Verify
+- **Day-1 Primary Payment Scope (Locked):** Primary launch supports **`COD` (Cash on Delivery)** and **`SSLCOMMERZ` (Automated Online Gateway)**, built behind a **Unified Payment Adapter Contract** (`initiatePayment()`, `verifyPayment()`, `refundPayment()`) so future gateways (`BKASH_PGW`, `NAGAD_PGW`, `ROCKET_PGW`) and manual MFS plug in without rewriting order or checkout flows.
+- **Decoupled States:** Fulfillment (`orderStatus`) and payment (`paymentStatus: 'UNPAID' | 'PENDING_VERIFICATION' | 'PAID' | 'FAILED' | 'CANCELLED' | 'REFUNDED'`) are strictly separate fields. Marking an order `PAID` never skips fulfillment; marking `DELIVERED` requires verified settlement or COD collection.
+- **Unified Payment Metadata (`Order.payment`):** Tracks `method`, `status`, `amountDue`, `amountPaid`, `trxId`, `senderPhone`, `gatewayRef` (`val_id` / `bank_tran_id`), and `verifiedBy: 'IPN' | 'SMS_WEBHOOK' | 'ADMIN' | 'COD_SETTLEMENT'`.
+- **SSLCommerz Golden Rule:** Checkout creates the order with `paymentStatus: 'UNPAID'` and `stockReservationExpiresAt`. Browser success/fail redirect URLs NEVER mark an order `PAID` — ONLY server-to-server IPN + SSLCommerz Validation API verifying matching `tran_id`, `amount`, and `currency === 'BDT'` marks `paymentStatus: 'PAID'` and moves `orderStatus` to `'CONFIRMED'`.
+- **Manual MFS (`MANUAL_BKASH` / `MANUAL_NAGAD` / `MANUAL_ROCKET`) — Identical Adapter Flow:**
+  - Customer submits `trxId` (normalized uppercase, unique across active orders) + `senderPhone` $\rightarrow$ order enters `paymentStatus: 'PENDING_VERIFICATION'`.
+  - **Verification Path A (Admin Manual Approve):** Staff verifies `trxId` in wallet/SMS and approves $\rightarrow$ transitions `paymentStatus: 'PAID'` (`verifiedBy: 'ADMIN'`).
+  - **Verification Path B (Mobile SMS-Forwarder Auto-Verify Webhook):** An Android SMS-forwarder app posts incoming MFS SMS payloads to a signed endpoint (`POST /api/webhooks/sms-payment` secured via HMAC/webhook secret). The server parses `(provider, trxId, amount, senderPhone)` and, upon exact match with an order in `PENDING_VERIFICATION`, **automatically transitions `paymentStatus: 'PAID'` (`verifiedBy: 'SMS_WEBHOOK'`)** — behaving identically to an SSLCommerz IPN callback.
+
+---
+
+### Rule #19: 5-Role RBAC Matrix, Phased Visibility & Mandatory AuditLog
+- **Strict Role Boundaries (Server-Enforced on Every Route & API):**
+  1. **`USER` (Retail Customer — Guest or Registered):** Browses catalog, sees **Retail price only**, places orders via guest checkout or optional registered account, manages own profile/addresses/orders. No `/admin` access.
+  2. **`MERCHANT` (B2B Wholesale Buyer — Future-Ready in Schema):** Shops like `USER` (no `/admin` access). When wholesale mode is enabled in future, authenticated approved `MERCHANT` accounts view **both Retail & Wholesale prices** on product cards/PDP and checkout at wholesale rates.
+  3. **`MODERATOR` (Limited Admin Staff — Future-Configurable):** Accesses `/admin` with restricted operational scope (e.g., manage orders, edit existing product details/stock; exact permissions configurable later). Strictly NO `/admin/settings` (`StoreConfig`), NO deletions, NO staff management.
+  4. **`ADMIN` (Store Owner / Site Malik):** Full day-to-day store management — Products CRUD (create/edit/delete), Categories, Collections, Brands, Coupons, Orders fulfillment, Courier bulk dispatch, Customers, and Moderator management. **Cannot view or modify `StoreConfig` / site-level credentials, feature flags, or infrastructure settings.**
+  5. **`SUPER_ADMIN` (Platform Architect Above Admin):** Full `ADMIN` capabilities **PLUS exclusive ownership of `StoreConfig` (`/admin/settings`)** — branding/niche infrastructure, payment gateway keys, courier API credentials, encryption/feature flags, and Admin account creation/revocation.
+- **Day-1 UI Visibility Contract:** Initially only `USER`, `ADMIN`, and `SUPER_ADMIN` workflows are surfaced in the UI; `MERCHANT` and `MODERATOR` live in the `User.role` enum and RBAC middleware from Day 1 so enabling them later requires zero database migration.
+- **Session & Credential Hardening:** Passwords hashed with `Argon2id` or `bcrypt`; sessions stored in `HttpOnly`, `Secure` (prod), `SameSite=Lax` cookies; CSRF origin/token protection; `User.sessionVersion` incremented on password/role changes to immediately revoke old sessions.
+- **Mandatory `AuditLog` Trail:** Every price change, manual stock adjustment, order status/payment verification override, `StoreConfig`/secret update, role change, and deletion writes an immutable `AuditLog` entry (`actorId`, `role`, `action`, `targetId`, `before`, `after`, `timestamp`).
+
+---
+
+### Rule #20: API Protection, Rate Limiting & Guest Privacy (IDOR Prevention)
+- **Strict DTO Allowlists & Input Validation:** All API inputs are validated with explicit allowlist schemas (Zod). Reject unknown fields, block raw MongoDB `$` operators (NoSQL injection), and forbid mass-assignment spreading of `req.body` into Mongoose models.
+- **Public Abuse & Bot Rate Limiting:** Enforce IP + phone rate limits on `POST /api/orders`, `POST /api/orders/lead`, `/api/search`, `/api/coupons/validate`, `/api/upload`, `/api/auth/login`, and `/api/webhooks/sms-payment` (plus shared secret/HMAC signature verification on all payment webhooks).
+- **Guest Order Tracking Privacy (Zero IDOR):** Public order tracking (`/track-order`) NEVER exposes customer phone/address by sequential ID or raw `orderNumber` alone — requires **`orderNumber` + last 4 digits of BD phone** (or signed tracking token).
+- **Upload, CSP & Header Hardening:** `/api/upload` validates file magic bytes & max byte limits server-side. Responses MUST enforce **`Content-Security-Policy` (CSP) in enforcement mode** (whitelisting `'self'`, Cloudflare R2 CDN, and active tracking domains `connect.facebook.net`, `googletagmanager.com`, `clarity.ms`; blocking inline XSS & `frame-ancestors 'none'`), alongside `Strict-Transport-Security` (HSTS), `X-Content-Type-Options: nosniff`, `Referrer-Policy`, and strict CORS origins without leaking stack traces in production.
+
+---
+
+### Rule #21: Zero-Latency Performance, Projections, Streaming & Image SLA
+- **Mandatory `.select()` Projections & `.lean()`:**
+  - **Catalog / Card Grids (`/`, `/shop`, `/category/[slug]`, `/collections/[slug]`, `/brand/[slug]`, Related):** Query ONLY card-required fields (`title`, `slug`, `basePrice`, `discountPrice`, `maxPrice`, `inStock`, `stockStatus`, `primaryCategory`, `hasVariants`, and cover `images` sliced to 1) via `.lean()` — NEVER pull `description`, `sizeChart`, `specifications`, or `modifierGroups` (cuts payload 70–90%).
+  - **Public `StoreConfig` Projection:** Select only storefront-safe fields (`branding`, `logistics`, `homeSections`, `headerNavLinks`, `features`, public pixel IDs) — strip all server secrets.
+  - **Zero Double-Serialization:** Replace `JSON.parse(JSON.stringify(...))` on large lists with lightweight typed DTO mappers.
+- **Zero-Waterfall `Promise.all` Rule:** Independent server queries (`StoreConfig`, `Product`, `Category`) MUST execute in parallel via `Promise.all`. List endpoints require bounded pagination (`limit <= 48`) and compound indexes.
+- **Instant Click UX Contract (<16ms Perceived Transition — Zero Freeze):**
+  - **Mandatory `loading.tsx` Skeletons:** Every interactive route (`/products/[slug]`, `/shop`, `/category/[slug]`, `/collections/[slug]`, `/brand/[slug]`, `/admin/products`, `/admin/orders`) MUST have a lightweight Tailwind `animate-pulse` `loading.tsx` boundary — eliminating click freeze on slow 3G/4G mobile AND unlocking Next.js dynamic `<Link>` prefetching.
+  - **`<Suspense>` Streaming:** Heavy secondary blocks (Related Products, Reviews) stream inside `<Suspense>` so above-the-fold PDP content renders immediately.
+  - **Native Tactile Feedback:** Use CSS `:active` scale (`active:scale-[0.98]`) + Next.js 16 `useLinkStatus()` subtle pending bar/pulse on slow transitions — zero heavy spinner libraries.
+- **Strict `<Image>`, Mobile `deviceSizes` & Region Co-location Contract:**
+  - Hero banner MUST use Next.js `<Image fill priority fetchPriority="high" sizes="100vw" />` (NO raw `<img>`). Above-the-fold first 4 catalog cards set `priority`.
+  - Mobile catalog grids default to **2 columns (`grid-cols-2 lg:grid-cols-4`)** with `sizes="(max-width: 640px) 50vw, 25vw"` and tuned `next.config.ts` `deviceSizes` (`384`, `480`, `640`, `750`, ...) so mobile cards fetch `~384w` WebP instead of over-serving `w=750`.
+  - Every `fill` image MUST define exact `sizes` (`sizes="80px"` on PDP thumbnails, `sizes="(max-width: 1024px) 100vw, 50vw"` on PDP main gallery).
+  - Use a tiny inline SVG shimmer `placeholder="blur"` (`blurDataURL`) + gallery hover pre-warming for instant image swaps.
+  - Co-locate Vercel Functions (`sin1` Singapore) with MongoDB Atlas (`ap-southeast-1` Singapore) and execute Steadfast/Meta CAPI calls non-blocking (`<200ms` checkout response SLA).
+
+---
+
+### Rule #22: WCAG AA Accessibility & Clean Incognito Lighthouse Launch Gate
+- **4.5:1 Color Contrast Guardrail:** Storefront accent colors (`#076E46` emerald or darkened gold `#8A6508`; or dark `#09090B` foreground text on `#B8860B` gold buttons/badges) MUST maintain $\ge 4.5:1$ contrast ratio against backgrounds across sale prices, buttons, and discount badges.
+- **Semantic Heading Hierarchy & Accessible Controls:** Maintain sequential heading order (`h1` $\rightarrow$ `h2` $\rightarrow$ `h3`; never jump `h2` to `h4` in Footer) and ensure interactive icon/counter buttons (e.g., Navbar Cart badge) align `aria-label` with visible text or `.sr-only` labels (`label-content-name-mismatch` = 0).
+- **Incognito Lighthouse Launch Gate (Step 7):** Production Lighthouse verification MUST run in **Chrome Incognito (Zero Extensions)** targeting `Performance >= 90`, `Accessibility = 100`, `Best Practices = 100`, `SEO = 100`, `bf-cache = PASS`, and enforced CSP.
+
+---
+
+### Rule #23: Admin Dashboard Performance, Scalability & Anti-Over-Engineering Rules (`/admin/**`)
+- **Anti-Over-Engineering Invariant (Zero Table/State Bloat):**
+  - ❌ **NO Heavy Grid Libraries (`TanStack Table`, `AG Grid`):** Use clean semantic HTML tables driven by URL SearchParams.
+  - ❌ **NO Redux / RTK Query / Full-Catalog Client State:** Never pull all DB records into browser RAM to paginate or filter client-side.
+  - ❌ **NO External Progress Libraries (`nprogress`):** Use native Next.js 16 `loading.tsx` + `useLinkStatus()`.
+- **Shell-Stable Instant Transitions (`Sidebar` Fixed, `{children}` Skeleton Only):**
+  - `AdminShellClient` (Sidebar + Top Header) lives in `admin/layout.tsx` and NEVER unmounts during navigation.
+  - Every admin segment (`/admin`, `/admin/products`, `/admin/orders`, `/admin/settings`, `/admin/products/[id]`) MUST define a lightweight Tailwind `animate-pulse` `loading.tsx` inside `{children}` — delivering **<16ms perceived transition** and unlocking Next.js `<Link>` prefetching.
+  - Sidebar navigation links use `useLinkStatus()` to render a subtle pending indicator next to the clicked menu item during server fetch.
+- **URL-Driven Server Pagination, Projections & SSR/Client Parity:**
+  - All admin list pages (`/admin/products`, `/admin/orders`, `/admin/customers`, `/admin/audit-logs`) and APIs (`GET /api/products`, `GET /api/orders`) MUST paginate server-side via URL SearchParams (`?page=1&limit=20&status=...&q=...`) with a strict cap **`limit <= 50`**.
+  - **SSR & Client Limit Parity Rule:** Server Page and Client Table MUST share the exact same `page` / `limit` parameters (NEVER load unbounded `Product.find({})` in SSR and then overwrite with `limit=20` on client mount!).
+  - **Mandatory List Projections:** Admin tables MUST use `.lean()` + `.select(...)` + `images: { $slice: 1 }` (strip `description`, `sizeChart`, `specifications`, `modifierGroups`, and full `items[]` sub-arrays in list views).
+  - **Indexed Prefix/Text Search:** Search queries hit indexed fields (`slug`, `sku`, `orderNumber`, `customer.phone` anchored `^` regex) — never unindexed regex scans over `description`.
+- **Dashboard KPIs via Single `.aggregate()` + `Promise.all`:**
+  - Overview KPIs (Total Revenue, Today's Orders, Pending Verification Count, Courier Dispatches) MUST execute in **1 parallel `Promise.all`** round-trip using MongoDB `.aggregate([$group])` and indexed `Order.status` predicates (NEVER `Order.find({})` + JS `.reduce()`, and NEVER wrong field names like `orderStatus`).
+  - Sidebar notification badges (e.g., Pending Orders count) MUST reflect live DB counts via lightweight `countDocuments({ status: 'PENDING' })` — never hardcoded strings.
+- **Modular Lazy-Loaded Admin Tabs & Server-Passed Taxonomies:**
+  - Multi-tab admin views (`/admin/settings` — avoiding 2,000-line monolith bundles) MUST split each tab into modular components loaded lazily on-demand via `next/dynamic`, keeping initial admin JS parse under **<100ms**.
+  - Product Create/Edit forms receive cached `Category` tree and `Collection` list from the Server Component via `Promise.all` (`unstable_cache` with `'categories'`/`'collections'` tags) — eliminating post-mount loading flashes.
+- **Admin Freshness & Currency Consistency:**
+  - All `/admin/**` pages strictly retain `export const dynamic = 'force-dynamic'; export const revalidate = 0;` + `Cache-Control: private, no-store` (`bf-cache` disabled for safety).
+  - Client forms/tables sync `initial*` props via `useEffect`, pass `{ cache: 'no-store' }` on manual refresh/mutations, call `router.refresh()` on save, and display `StoreConfig.branding.currencySymbol` (`৳`, never hardcoded `$`).
+
+---
+
 ## 3. Step 1 Sign-Off Checklist
 
-- [x] Top-level collections strictly capped at 7 Core + 4 Growth/Taxonomy.
+- [x] Top-level collections strictly capped at 7 Core + 4 Growth/Taxonomy (11 Total).
 - [x] Prohibited anti-over-engineered tables documented (NO Variants, NO Banners, NO Filters, NO ElasticSearch cluster).
-- [x] 3-Field guest checkout with 11-digit BD phone regex & Smart Drawer toggle locked.
-- [x] Abandoned lead capture (`INCOMPLETE`) and state machine transitions locked.
-- [x] Atomic `$inc` inventory check locked against overselling.
+- [x] 3-Field guest checkout with 11-digit BD phone regex, 3-zone delivery tariffs, & Smart Drawer toggle locked.
+- [x] Abandoned lead capture (`INCOMPLETE`) and idempotent state machine transitions locked.
+- [x] Dual atomic `$inc` inventory predicate (`hasVariants` true/false) + `inventoryState` guard locked against overselling and double-restore.
 - [x] Steadfast courier auto-booking, configurable fraud alert (<60%), and optional advance delivery fee locked.
 - [x] Multi-niche and single-product funnel rules codified.
-- [x] Zero-egress Cloudflare R2 media lifecycle and Next.js 16 cache invalidation locked.
+- [x] Zero-egress Cloudflare R2 media lifecycle, `getPublicStoreConfig()` singleton cache, & `bf-cache`-safe Split Cache Strategy locked.
 - [x] Category (3-level tree) vs Collection (promotions) relationship locked.
 - [x] Slug-centric flat URL architecture (`/category/[slug]`, `/products/[slug]`, `/brand/[slug]`) locked.
 - [x] Modular homepage section engine (wideFull/wideBox, smart banner, dual-source products) locked.
@@ -371,5 +473,12 @@ Provides the high-converting luxury e-commerce navigation pattern: `[Logo] [ Men
 - [x] Brand taxonomy with optional product linking and zero-join denormalization locked.
 - [x] Advanced Faceted Filter via URL SearchParams (zero extra collections) locked.
 - [x] Instant Live Search engine with micro-payload `/api/search` locked.
+- [x] Server-authoritative pricing (with Retail vs `MERCHANT` wholesale gate), coupon validation, & checkout `idempotencyKey` locked.
+- [x] Unified Payment Adapter (`COD` + `SSLCommerz` primary + Manual MFS & Mobile SMS-Forwarder auto-verify webhook) & separate `paymentStatus` state machine locked.
+- [x] 5-Role RBAC permission matrix (`USER` / `MERCHANT` / `MODERATOR` / `ADMIN` / `SUPER_ADMIN` exclusive `StoreConfig`), session hardening, & `AuditLog` triggers locked.
+- [x] API DTO allowlists, rate limiting (including webhook HMAC verification), enforced CSP + HSTS headers, & guest tracking IDOR prevention locked.
+- [x] Zero-latency SLA: mandatory `.select()` projections, `.lean()`, `Promise.all`, `loading.tsx` skeletons, `useLinkStatus`, mobile 2-col `384w` `<Image sizes>`, & `sin1` region co-location locked.
+- [x] WCAG AA 4.5:1 contrast, heading order, ARIA label parity, & Incognito Lighthouse Launch Gate locked.
+- [x] Admin Dashboard Performance & Anti-Over-Engineering rules (fixed shell + `{children}` `loading.tsx`, `useLinkStatus()`, URL SearchParams server pagination `limit <= 50`, list projections, `.aggregate()` KPIs, lazy-loaded tabs, & server-passed taxonomies) locked.
 
 👉 **Next Step:** `[ধাপ ২] Schema, Interface & Response Envelope Locked`
