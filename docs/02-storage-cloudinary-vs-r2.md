@@ -1,5 +1,7 @@
 # 02. Media Storage: Cloudinary vs. Cloudflare R2
 
+> **Status:** Tier 4 Historical MVP Study Note (`v1`). For authoritative CR-Locked v2 rules (`Rule #6` media lifecycle & `Rule #20` upload validation), follow [`docs/pipeline/01-scope-and-business-rules.md`](./pipeline/01-scope-and-business-rules.md).
+
 ## 1. What We Built
 * **Cloudflare R2 Client:** `src/lib/r2.ts` (S3 SDK client initialized)
 * **Storage Upload/Delete Utility:** `src/lib/storage.ts` (`uploadToR2`, `deleteFromR2`)

@@ -19,8 +19,8 @@ Controls the look, feel, niche, and layout orientation of the store.
   - `MULTI_PRODUCT`: Full catalog browsing with categories and collections.
   - `SINGLE_PRODUCT_FUNNEL`: High-converting single-page landing funnel focused on one hero product (`featuredProductSlug`).
 - **Logo & Favicon**: Cloudflare R2 / CDN image uploads for desktop header and browser tab favicon.
-- **Dynamic Color Tokens**:
-  - Accent Color (`#076E46` / `#B8860B`)
+- **Dynamic Color Tokens (WCAG AA 4.5:1 Guardrail — Rule #22)**:
+  - Accent Color: `#076E46` (Emerald — passes `6.27:1` with white text) or `#B8860B` (Antique Gold — MUST pair with dark `#09090B` foreground text on gold buttons/badges and darkened `#8A6508` text on white backgrounds to satisfy $\ge 4.5:1$ contrast).
   - Background & Surface tokens
   - Dark / Light Theme Mode toggle
 - **Hero Variant**: `SPLIT` | `CENTER` | `FULL_SLIDER`.
@@ -131,15 +131,21 @@ Full-funnel attribution, user behavior heatmaps, and advertising tracking.
 
 ---
 
-### 6. Drag-and-Drop Homepage Layout Builder (`homeSections`)
-Zero-code homepage visual arrangement stored as an array in `StoreConfig`.
-- Configurable blocks:
+### 6. Drag-and-Drop Homepage Layout Builder (`homeSections` — Rule #10 Synced)
+Zero-code, unlimited homepage visual arrangement stored as an ordered array in `StoreConfig` (loaded on the storefront via a single batch query `< 600ms`).
+- Configurable blocks & schema fields:
   - `id`: unique section identifier
   - `type`: `HERO_BANNER` | `COLLECTION_SECTION` | `PROMO_CTA_CARD`
-  - `title` & `subtitle`: Section headings
-  - `collectionSlug`: Associated product collection (e.g. `"winter-drop-2026"`)
+  - `layoutWidth`: `WIDE_FULL` (100vw edge-to-edge) | `WIDE_BOX` (`max-w-7xl mx-auto px-4`)
+  - `title` & `subtitle`: Optional overlay headings (omitting text turns image + `bannerURL_link` into a clickable poster)
+  - `bannerImages[]`: Array of `{ url, key }` — 1 image = static Hero Banner (zero JS overhead); >1 image = auto-playing Carousel
+  - `bannerURL_link` / `buttonText` / `buttonLink`: Click target and CTA
+  - `promoHeight`: `S` (~120px strip) | `M` (~220px card) | `L` (~320px event card)
+  - `displayStyle`: `GRID` (4-col desktop / 2-col mobile) | `CAROUSEL`
+  - `sourceMode`: `AUTO` (pulls by `collectionSlug` / `categorySlug`) | `MANUAL` (`curatedProductIds[]` 4–8 items)
+  - `themeStyle`: `LIGHT` | `DARK_BAND`
   - `isActive`: Toggle visibility on the storefront
-  - `order`: Move Up / Down controls to rearrange sections visually.
+  - `order`: Move Up / Down controls to rearrange sections visually (`[+ Add Section]`).
 
 ---
 
@@ -157,27 +163,29 @@ Enables or disables operational features on the fly:
 
 ---
 
-## 8. Store Secrets & Security Architecture (The 3-Layer Shield)
+## 8. Store Secrets, Caching & Security Architecture (The 3-Layer Shield)
 
-To balance rapid, 1-click merchant deployments with banking-grade credential protection:
+To balance rapid, 1-click merchant deployments with banking-grade credential protection and ~0ms storefront latency:
 
 ### Layer 1: Server Environment (`.env`)
-- `MONGODB_URI` and master `ENCRYPTION_KEY` (32-byte hex secret) reside strictly on the server / Vercel Environment Variables.
+- `MONGODB_URI`, `ENCRYPTION_KEY` (32-byte hex secret), and `SMS_WEBHOOK_SECRET` reside strictly on the server / Vercel Environment Variables.
 - Never exposed via API, never committed to Git, never sent to the browser.
 
 ### Layer 2: Field-Level AES-256-GCM Encryption at Rest (MongoDB Atlas)
 - High-risk third-party secrets stored in `StoreConfig` are encrypted using `ENCRYPTION_KEY` prior to persisting in the database:
-  - `courier.steadfast.secretKey`
+  - `courier.steadfast.apiKey` & `secretKey`
+  - `courier.pathao.clientSecret` & `password`
   - `payment.bkashPGW.appSecret` & `password`
   - `payment.sslCommerz.storePass`
   - `tracking.metaCapiToken` & `tracking.tiktokEventsApiToken`
 - Stored as ciphertext (`enc:v1:7a9f8c4...`). Even a full MongoDB backup dump leaves all secrets completely unreadable.
 
-### Layer 3: Public Projection Sanitization
-- Storefront client endpoints (`GET /api/config`) query MongoDB with projection stripping all secret fields.
-- Public customers/browsers only receive public tokens (`metaPixelId`, `ga4MeasurementId`, `branding`, `logistics`).
+### Layer 3: Public Projection Sanitization & Singleton Cache (`getPublicStoreConfig()`)
+- Storefront pages and public `GET /api/config` MUST read via `getPublicStoreConfig()` using a strict `.select()` projection stripping all secret fields (`-courier.steadfast`, `-courier.pathao`, `-payment.bkashPGW`, `-payment.sslCommerz`, `-tracking.metaCapiToken`, `-tracking.tiktokEventsApiToken`).
+- Wrapped in Next.js `unstable_cache` (`tags: ['store-config']`, `revalidate: 86400` or `false`) so 100k+ visitors cause **0 DB hits** until Super Admin saves settings (`PUT /api/config` fires `revalidateTag('store-config')` + `revalidatePath('/', 'layout')`).
 
-### Layer 4: Super-Admin RBAC & Masked Settings UI
-- Modifying store configuration (`PUT /api/config`) strictly requires an authenticated `SUPER_ADMIN` HttpOnly session cookie.
+### Layer 4: Exclusive `SUPER_ADMIN` RBAC, Lazy Tabs & Masked Settings UI
+- Accessing and modifying `/admin/settings` (`PUT /api/config`) strictly requires an authenticated **`SUPER_ADMIN`** HttpOnly session cookie (`ADMIN` and `MODERATOR` are blocked — Rule #19) and writes an immutable `AuditLog` entry.
+- Settings tabs in `SettingsFormClient` are code-split and lazy-loaded via `next/dynamic` (Rule #23), sync `initialConfig` via `useEffect`, and call `router.refresh()` on save.
 - Admin input fields render secrets masked (`••••••••••••••••`) to eliminate shoulder surfing or cleartext network echoing.
-- Third-party API interactions (Steadfast booking, bKash PGW checkout, Meta CAPI dispatch) run **100% server-to-server** inside Next.js API routes where keys are decrypted in server memory in-flight.
+- Third-party API interactions (Steadfast booking, bKash PGW / SSLCommerz validation, Meta CAPI dispatch) run **100% server-to-server** inside Next.js API routes where keys are decrypted in server memory in-flight.

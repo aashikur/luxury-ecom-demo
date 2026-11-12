@@ -1,5 +1,7 @@
 # 03. Database Schemas & Core Data Models
 
+> **Status:** Tier 4 Historical MVP Study Note (`v1` — covers the initial 3 models). The v2 Production Architecture expands to **11 collections (7 Core + 4 Growth)**, 5 RBAC roles, Unified Payment Adapter (`COD` + `SSLCommerz` + SMS-webhook), & `idempotencyKey` — see [`docs/pipeline/01-scope-and-business-rules.md`](./pipeline/01-scope-and-business-rules.md) & [`docs/09-database-collection-architecture.md`](./09-database-collection-architecture.md).
+
 ## 1. What We Built
 * **StoreConfig Model:** `src/models/StoreConfig.ts`
   * `branding`: Dynamic logo, theme colors, dark/light mode

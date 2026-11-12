@@ -1,5 +1,7 @@
 # 01. Database & Health Check Quick Notes
 
+> **Status:** Tier 4 Historical MVP Study Note (`v1`). For authoritative CR-Locked v2 production rules (`sin1` region co-location, `unstable_cache`, Security), follow [`docs/pipeline/01-scope-and-business-rules.md`](./pipeline/01-scope-and-business-rules.md).
+
 ## 1. What We Built
 * **Cached DB Singleton:** `src/lib/db.ts`
 * **Health Check API:** `src/app/api/health/route.ts` (Accessible at `http://localhost:3000/api/health`)

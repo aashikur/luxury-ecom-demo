@@ -9,19 +9,19 @@ When building a production-grade, white-label e-commerce platform designed for r
 
 ---
 
-## 2. Definitive Collection Specification (7 Core + 3 Growth)
+## 2. Definitive Collection Specification (7 Core + 4 Growth — 11 Total)
 
 ### A. Core Collections (Required for Any Store Instance)
 
 | # | Collection Name | Mongoose Model | Purpose & Embedding Strategy |
 | :--- | :--- | :--- | :--- |
-| **1** | `storeconfigs` | `StoreConfig` | **Single Document Singleton.** Stores store name, domain, theme tokens, header/footer nav menus, homepage drag-and-drop section layout blocks, courier credentials (Steadfast/Pathao), and payment gateway keys. Eliminates separate `Banner`, `Theme`, or `NavMenu` tables. |
-| **2** | `categories` | `Category` | **Structural Taxonomy Tree.** Department -> Category -> Subcategory. Stores parent-child references, nested `ancestors[]` slugs, and image banners. |
+| **1** | `storeconfigs` | `StoreConfig` | **Single Document Singleton.** Stores store name, domain, theme tokens, `headerNavLinks[]` quick-category bar, homepage drag-and-drop `homeSections[]` layout blocks, 3-zone Bangladesh logistics, courier credentials, payment gateway keys, and feature flags. |
+| **2** | `categories` | `Category` | **Structural Taxonomy Tree.** Department -> Category -> Subcategory. Stores parent-child references, nested `ancestors[]` slugs, local sibling `displayOrder`, and image banners. |
 | **3** | `collections` | `Collection` | **Marketing & Merchandising.** Seasonal drops (e.g. *Winter Drop 2026*), flash sales, featured home showcases. Separates marketing campaigns from permanent category trees. |
-| **4** | `products` | `Product` | **Master Product Document.** Houses root pricing, inventory, SEO, plus embedded sub-documents: `variants[]` (multi-axis size × color matrix), `sizeChart[]`, `specifications[]`, and `modifierGroups[]`. Eliminates 4-5 relational join tables. |
-| **5** | `orders` | `Order` | **Full Order Lifecycle.** Captures `INCOMPLETE` (abandoned checkout leads as soon as phone number is typed) up to `DELIVERED` and `RETURNED`. Embeds ordered item snapshots, customer address, and courier tracking data. |
-| **6** | `users` | `User` | **Authentication & RBAC.** Admin dashboard access, call center moderator credentials, and optional customer accounts (`SUPER_ADMIN`, `ADMIN`, `MODERATOR`, `CUSTOMER`). |
-| **7** | `customers` | `Customer` | **Phone-Indexed Intelligence & Fraud Prevention.** In BD, 90%+ purchases are guest checkouts. Indexed by phone number to cache total orders, completed deliveries, return/cancellation ratio, and Courier Fraud Risk (`LOW`, `MEDIUM`, `BLACKLIST`). |
+| **4** | `products` | `Product` | **Master Product Document.** Houses root retail & optional `MERCHANT` wholesale pricing, inventory, SEO, optional `Brand` denormalization (`brandId`, `brandName`, `brandSlug`), plus embedded sub-documents: `variants[]` (multi-axis size × color matrix), `sizeChart[]`, `specifications[]`, and `modifierGroups[]`. Eliminates 4-5 relational join tables. |
+| **5** | `orders` | `Order` | **Full Order Lifecycle.** Captures `INCOMPLETE` (abandoned checkout leads on phone blur) up to `DELIVERED` and `RETURNED`, with decoupled `payment.status` (`UNPAID` / `PENDING_VERIFICATION` / `PAID` / `FAILED` / `REFUNDED`), `inventoryState` (`NONE` / `DEDUCTED` / `RESTORED`), `idempotencyKey` unique sparse index, 3-zone delivery, and immutable purchased item snapshots. |
+| **6** | `users` | `User` | **Authentication & 5-Role RBAC.** Supports `SUPER_ADMIN` (exclusive `StoreConfig` + secrets), `ADMIN` (store owner), `MODERATOR` (limited future staff), `MERCHANT` (future B2B wholesale buyer), and `USER` (registered retail buyer). Includes `sessionVersion` for instant token revocation. |
+| **7** | `customers` | `Customer` | **Phone-Indexed Intelligence & Fraud Prevention.** In BD, 90%+ purchases are guest checkouts. Indexed by 11-digit BD phone number to cache total orders, completed deliveries, return/cancellation ratio, and Courier Fraud Risk (`LOW`, `MEDIUM`, `BLACKLIST`). |
 
 ---
 

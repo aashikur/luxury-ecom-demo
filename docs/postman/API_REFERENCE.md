@@ -1,7 +1,8 @@
 # 🚀 Backend API Reference & Postman Documentation
 
 > **Base URL (Local):** `http://localhost:3000`  
-> **Rule:** Every backend route created in this project is documented here in real-time with Request, Response, and Consumer specifications.
+> **Authoritative Contract:** Aligned with [`docs/pipeline/01-scope-and-business-rules.md`](../pipeline/01-scope-and-business-rules.md) (`CR-000` Baseline).  
+> **Standard Envelope (v2 Lock):** `{ success: boolean, data?: T, error?: string, code?: string }`
 
 ---
 
@@ -9,7 +10,7 @@
 
 ### `GET /api/health`
 * **Consumer / Who uses it:** DevOps, UptimeRobot, Serverless Health Monitors, Developers.
-* **Purpose:** Verifies that MongoDB Atlas, Cloudinary SDK, and Cloudflare R2 bucket are live.
+* **Purpose:** Verifies that MongoDB Atlas, Cloudinary SDK, and Cloudflare R2 bucket are live (`force-dynamic`).
 * **Success Response (`200 OK`):** Status `healthy` with readyStateCode `1`.
 
 ---
@@ -17,47 +18,48 @@
 ## 2. Media Upload Pipeline (Cloudflare R2)
 
 ### `POST /api/upload`
-* **Consumer / Who uses it:** Admin Product Manager, Admin Banner Manager, Storefront Profile Uploader.
+* **Consumer / Who uses it:** Admin Product Manager, Admin Banner Manager (`ADMIN` / `SUPER_ADMIN` RBAC + rate limit + magic-byte & size validation).
 * **Request:** `multipart/form-data` with `file`
 * **Success Response (`201 Created`):** Returns `{ url, key }`.
 
 ### `DELETE /api/upload?key=<asset_key>`
-* **Consumer / Who uses it:** Admin Product Manager (cleaning up removed images).
+* **Consumer / Who uses it:** Admin Product Manager (cleaning up removed images; `ADMIN` / `SUPER_ADMIN` RBAC).
 
 ---
 
 ## 3. Store Configuration & Dynamic Theme
 
 ### `GET /api/config`
-* **Consumer / Who uses it:** Storefront Root Layout, Admin Settings Dashboard.
+* **Consumer / Who uses it:** Storefront (`getPublicStoreConfig()`), Admin Settings Dashboard.
+* **Security & Projection Rule:** Public callers MUST receive a sanitized projection stripping all server secrets (`courier.steadfast`, `courier.pathao`, `payment.bkashPGW`, `payment.sslCommerz`, `metaCapiToken`, `tiktokEventsApiToken`). Raw/masked admin editing view requires `SUPER_ADMIN` session.
 * **Success Response (`200 OK`):** Returns active `StoreConfig`. Auto-seeds on fresh DB.
 
 ### `PUT /api/config`
-* **Consumer / Who uses it:** Super Admin / Merchant Settings.
-* **Cache Revalidation:** Automatically purges Next.js full-route cache for `'/'`, `'/shop'`, `'/admin'`, and `'/admin/settings'`.
+* **Consumer / Who uses it:** **`SUPER_ADMIN` ONLY** (Rule #19; writes `AuditLog`, encrypts secrets via AES-256-GCM at rest).
+* **Cache Revalidation:** Triggers `revalidateTag('store-config')` + `revalidatePath` for `'/'` (`layout`), `'/shop'`, `'/admin'`, and `'/admin/settings'`.
 
 ---
 
 ## 4. Products & Catalog Engine
 
 ### `GET /api/products`
-* **Consumer / Who uses it:** Storefront Catalog, Homepage Sections, Search & Filters.
-* **Query Parameters:** `?collection=...`, `?category=...`, `?limit=...`, `?page=...`, `?all=true`
+* **Consumer / Who uses it:** Storefront Catalog, Homepage Sections, Admin Products Table (`limit <= 50` hard cap, `.lean()` + `.select()` projection).
+* **Query Parameters:** `?collection=...`, `?category=...`, `?brand=...`, `?limit=20` (max `50`), `?page=1`, `?all=true` (admin-only)
 
 ### `POST /api/products`
-* **Consumer / Who uses it:** Admin Product Creation Form.
-* **Cache Revalidation:** Automatically triggers on-demand `revalidatePath` for `'/'`, `'/shop'`, `'/admin'`, `'/admin/products'`, and `'/products/:slug'`.
+* **Consumer / Who uses it:** Admin Product Creation Form (`ADMIN` / `SUPER_ADMIN`).
+* **Cache Revalidation:** Triggers `revalidateTag('products')` + `revalidatePath` for `'/'`, `'/shop'`, `'/admin'`, `'/admin/products'`, and `'/products/:slug'`.
 
 ### `GET /api/products/:slug`
 * **Consumer / Who uses it:** Customer Product Detail Page (`/products/[slug]`).
 
 ### `PUT /api/products/:slug`
-* **Consumer / Who uses it:** Admin Product Edit Form & Inline Stock Stepper.
-* **Cache Revalidation:** Automatically triggers on-demand `revalidatePath` for `'/'`, `'/shop'`, `'/admin'`, `'/admin/products'`, `'/admin/products/:id'`, and `'/products/:slug'`.
+* **Consumer / Who uses it:** Admin Product Edit Form & Inline Stock Stepper (`ADMIN` / `SUPER_ADMIN`; price/stock edits write `AuditLog`).
+* **Cache Revalidation:** Triggers `revalidateTag('products')` + `revalidatePath` for `'/'`, `'/shop'`, `'/admin'`, `'/admin/products'`, `'/admin/products/:id'`, and `'/products/:slug'`.
 
 ### `DELETE /api/products/:slug`
-* **Consumer / Who uses it:** Admin Product Table.
-* **Cache Revalidation:** Automatically triggers on-demand `revalidatePath` for catalog routes and cascades Cloudflare R2 asset deletion.
+* **Consumer / Who uses it:** Admin Product Table (`ADMIN` / `SUPER_ADMIN`; writes `AuditLog`).
+* **Cache Revalidation:** Triggers `revalidateTag('products')` + `revalidatePath` for catalog routes and cascades Cloudflare R2 asset deletion.
 
 ---
 
@@ -104,13 +106,14 @@
 ## 6. Orders & Bangladesh 1-Page Checkout
 
 ### `POST /api/orders`
-* **Consumer / Who uses it:** Customer Cart Drawer (Guest 1-Page COD Checkout).
-* **Purpose:** Places order with customer info, delivery zone, payment method, calculates server-side financials, and generates readable `orderNumber` (e.g. `ORD-10482`).
+* **Consumer / Who uses it:** Customer Cart Drawer / Checkout Page (`USER` guest or registered; rate-limited by IP + BD phone).
+* **Purpose:** Places order with strict **Server-Authoritative Pricing** (Rule #17 — client NEVER sends `unitPrice` or `totalAmount`), checkout `idempotencyKey`, 3-zone delivery tariffs (`INSIDE_DHAKA | DHAKA_SUBURBS | OUTSIDE_DHAKA`), and dual atomic conditional `$inc` stock deduction (Rule #3).
 * **Request:**
   * Content-Type: `application/json`
   * Body:
     ```json
     {
+      "idempotencyKey": "550e8400-e29b-41d4-a716-446655440000",
       "customer": {
         "name": "Ashik Rahaman",
         "phone": "01700000000",
@@ -121,13 +124,12 @@
       "items": [
         {
           "productId": "6af0eb83e36767103e4d54aa",
-          "title": "Vintage Heavyweight Acid-Wash Hoodie",
-          "image": "https://images.unsplash.com/...",
-          "size": "L",
-          "quantity": 1,
-          "unitPrice": 1450
+          "variantId": "6af0eb83e36767103e4d54ab",
+          "modifierLabels": [],
+          "quantity": 1
         }
       ],
+      "couponCode": "",
       "paymentMethod": "COD"
     }
     ```
@@ -143,20 +145,23 @@
       "financials": {
         "subtotal": 1450,
         "deliveryFee": 70,
+        "discount": 0,
         "totalAmount": 1520
       },
       "payment": { "method": "COD", "status": "UNPAID" },
+      "inventoryState": "DEDUCTED",
       "status": "PENDING"
     }
   }
   ```
+* **Error Responses:** `400 VALIDATION_ERROR` | `409 OUT_OF_STOCK` | `429 RATE_LIMITED`
 
 ---
 
 ### `GET /api/orders`
-* **Consumer / Who uses it:** Admin Order Management Dashboard.
-* **Purpose:** Queries orders with status filter (`PENDING`, `CONFIRMED`, `SHIPPED`, etc.) and pagination.
-* **Query Parameters:** `?status=PENDING&page=1&limit=20`
+* **Consumer / Who uses it:** Admin Order Management Dashboard (`MODERATOR` / `ADMIN` / `SUPER_ADMIN` RBAC required).
+* **Purpose:** Queries orders with status filter (`INCOMPLETE`, `PENDING`, `CONFIRMED`, `SHIPPED`, etc.), strict `.select()` list projection, `.lean()`, and bounded pagination (`limit <= 50` hard cap).
+* **Query Parameters:** `?status=PENDING&page=1&limit=20&q=...`
 * **Success Response (`200 OK`):**
   ```json
   {
@@ -165,3 +170,18 @@
     "pagination": { "total": 1, "page": 1, "pages": 1, "limit": 20 }
   }
   ```
+
+---
+
+## 7. v2 Target Endpoints Locked in Step 1 Scope (Upcoming in Step 2 & Step 4)
+
+| Endpoint | Consumer / Auth | Purpose (Scope Rule Reference) |
+| :--- | :--- | :--- |
+| `GET /api/search?q=...` | Public Storefront (Rate-Limited) | Sub-40ms micro-payload auto-suggest returning top 6 items (`Rule #16`). |
+| `POST /api/orders/lead` | Public Checkout Drawer | Silent `INCOMPLETE` abandoned-cart lead capture on BD phone blur (`Rule #2`). |
+| `GET /api/orders/track` | Public Guest (`orderNumber` + last 4 digits phone) | IDOR-safe guest order status & courier tracking (`Rule #20`). |
+| `POST /api/webhooks/sslcommerz/ipn` | Server-to-Server IPN | Validates `val_id`, `tran_id`, `amount`, `currency === 'BDT'` -> marks `PAID` (`Rule #18`). |
+| `POST /api/webhooks/sms-payment` | Mobile SMS-Forwarder (HMAC + Rate-Limit) | Matches incoming bKash/Nagad/Rocket SMS `(trxId, amount)` -> auto-verifies `PAID` (`Rule #18`). |
+| `POST /api/coupons/validate` | Public Checkout (Rate-Limited) | Validates active coupon, minSpend, expiry, & `perPhoneLimit` (`Rule #17`). |
+| `PUT /api/categories/reorder` | `ADMIN` / `SUPER_ADMIN` | Single-trip `bulkWrite` sibling reorder (`Rule #8`). |
+| `POST /api/auth/login` & `/logout` | Staff / Registered `USER` / `MERCHANT` | Password auth (`Argon2id`/`bcrypt`), `HttpOnly` cookie + `sessionVersion` (`Rule #19`). |

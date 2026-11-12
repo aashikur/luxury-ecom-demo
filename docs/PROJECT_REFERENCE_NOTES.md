@@ -1,5 +1,6 @@
 # 📚 Developer Learning Notes & Project Reference Guide
 
+> **Status:** Tier 4 Historical MVP Study Note (`v1` — Day-1 architecture snapshot). For current CR-Locked v2 specifications (11 collections, 5 RBAC roles, Unified Payment Adapter, & Zero-Latency SLAs), follow [`docs/pipeline/01-scope-and-business-rules.md`](./pipeline/01-scope-and-business-rules.md) & [`docs/00-how-to-notes.md`](./00-how-to-notes.md).  
 > **Project:** Luxury Garments E-Commerce (Config-Driven MVP)  
 > **Tech Stack:** Next.js (App Router), TypeScript, Tailwind CSS, MongoDB (Mongoose), Cloudflare R2 (S3 SDK), Cloudinary  
 > **Author & Learner:** Ashik Rahaman  

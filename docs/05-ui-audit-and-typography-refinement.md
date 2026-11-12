@@ -1,5 +1,7 @@
 # 05: UI Audit & Typography Refinement Guide
 
+> **Status:** Tier 4 Historical MVP Study Note (`v1`). Note: For production WCAG AA $\ge 4.5:1$ contrast compliance (`#B8860B` requires `#09090B` dark foreground text or `#8A6508`/`#076E46`), follow [`Rule #22` in `01-scope-and-business-rules.md`](./pipeline/01-scope-and-business-rules.md).
+
 ## 1. What We Built
 - **Font & Hierarchy Upgrade**: Integrated Google Font `Cormorant_Garamond` into Next.js root layout with CSS variable `--font-serif` for luxury brand monograms and editorial headings.
 - **Color Shade Harmonization**: Updated the MongoDB Atlas singleton `StoreConfig` from legacy dark crimson (`#E11D48`) to Antique Gold (`#B8860B`) with an editorial Light surface theme (`#FFFFFF` bg, `#09090B` fg, `#F9FAFB` surface).
@@ -26,7 +28,7 @@
 ---
 
 ## 4. Sources & Cross References
-- Design Studio: [`docs/test-design/vectrofit_luxury_storefront_config_studio.tsx`](file:///e:/WebDevs/Testing/e-com/docs/test-design/vectrofit_luxury_storefront_config_studio.tsx)
-- Layout & Fonts: [`src/app/layout.tsx`](file:///e:/WebDevs/Testing/e-com/src/app/layout.tsx)
-- Cart Drawer: [`src/components/storefront/CartDrawer.tsx`](file:///e:/WebDevs/Testing/e-com/src/components/storefront/CartDrawer.tsx)
-- Navbar: [`src/components/storefront/Navbar.tsx`](file:///e:/WebDevs/Testing/e-com/src/components/storefront/Navbar.tsx)
+- Design Studio: [`docs/test-design/vectrofit_luxury_storefront_config_studio.tsx`](./test-design/vectrofit_luxury_storefront_config_studio.tsx)
+- Layout & Fonts: [`src/app/layout.tsx`](file:///c:/WebDevs/luxury-ecom-demo/src/app/layout.tsx)
+- Cart Drawer: [`src/components/storefront/CartDrawer.tsx`](file:///c:/WebDevs/luxury-ecom-demo/src/components/storefront/CartDrawer.tsx)
+- Navbar: [`src/components/storefront/Navbar.tsx`](file:///c:/WebDevs/luxury-ecom-demo/src/components/storefront/Navbar.tsx)

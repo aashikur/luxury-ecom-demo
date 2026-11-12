@@ -63,50 +63,57 @@ Merchant Confused: "Changes visible in View, but not in Products Page or Store!"
 3. **Full Route Cache (Server / CDN):** Prerenders and caches full HTML and RSC payload at build/request time.
 4. **Router Cache (Browser Client):** Stores RSC payloads in browser memory during client-side navigation.
 
-### The Solution Architecture
-1. **`export const dynamic = 'force-dynamic'`**: Bypasses the Full Route Cache and forces the server component to execute on every incoming request.
-2. **`revalidatePath(path, 'page')`**: Actively notifies the Next.js cache engine and Vercel CDN to purge existing cached payloads for that path.
-3. **Client `no-store` Revalidation**: Guarantees that even if client-side Router Cache holds an in-memory snapshot, the client component refetches live data from the database.
+### The Solution Architecture (Split Cache Strategy — CR-Locked Rule #7)
+
+1. **Admin, Checkout & Account (`/admin/**`, `/checkout`, `/account`) — Strictly Dynamic:**
+   * Apply `export const dynamic = 'force-dynamic'; export const revalidate = 0;` + `Cache-Control: private, no-store` so merchants never act on stale inventory/orders and sensitive PII/admin pages never enter browser `bf-cache`.
+2. **Public Storefront (`/`, `/shop`, `/category/[slug]`, `/collections/[slug]`, `/brand/[slug]`, `/products/[slug]`) — ~0ms Shared Cache + `bf-cache`:**
+   * **Singleton Config Cache (`getPublicStoreConfig()`):** Wrapped in Next.js `unstable_cache` (`tags: ['store-config']`, `revalidate: 86400` or `false`) with public-only `.select()` projection. Serves 100k+ visitors across all Vercel serverless instances with **0 DB queries** until Super Admin saves `/admin/settings`.
+   * **Catalog Data Cache:** Storefront product/taxonomy queries run via tagged `unstable_cache` (`'products'`, `'categories'`, `'collections'`, `'brands'`) with `.select()` projections and `.lean()`.
+   * **`bf-cache` Enabler:** Public storefront HTML uses ISR / `Cache-Control: public, max-age=0, must-revalidate` (**NO `no-store`**) so Chrome/Safari Back/Forward swipe restores pages in **`0ms`**.
+3. **On-Demand Invalidation (`revalidateTag` + `revalidatePath`):**
+   * Every `POST`, `PUT`, `PATCH`, `DELETE` handler immediately calls `revalidateTag(...)` AND `revalidatePath(...)` so updates go live in **< 1 second**.
+4. **Client `no-store` & `useEffect` Sync (Admin Tables/Forms):**
+   * Admin client components (`ProductsTableClient`, `SettingsFormClient`) sync incoming `initial*` props via `useEffect`, pass `{ cache: 'no-store' }` on manual refresh/mutations, and call `router.refresh()` after saves.
 
 ---
 
 ## 3. Key Concepts Checklist & Audit Playbook
 
 ### Diagnostic HTTP Header Inspection
-When debugging "storefront not updating" issues in production, run:
+When debugging caching or `bf-cache` in production, run:
 ```bash
 curl -I https://your-domain.vercel.app/
 ```
 Key headers to evaluate:
-* `X-Vercel-Cache: HIT` with `Age: > 0`: The page is being served from edge cache without touching your server or database.
-* `X-Nextjs-Prerender: 1`: Next.js classified this page as static at build time.
-* `Cache-Control: private, no-cache, no-store`: The page is dynamic and hits the server on every request.
+* `X-Vercel-Cache: HIT` with `Age: > 0`: Served from Edge cache (~20–50ms TTFB; expected on public storefront when paired with `revalidateTag`/`revalidatePath` on mutations).
+* `X-Nextjs-Prerender: 1`: Next.js classified this page as static/ISR. Good on public storefront *only* if mutation routes purge it; **BUG** if present on `/admin/**`!
+* `Cache-Control: private, no-cache, no-store`: Mandatory on `/admin/**`, `/checkout`, `/account`; **FORBIDDEN** on public storefront `/` & `/shop` because `no-store` disables mobile `bf-cache`!
 
 ### Golden Rules for E-Commerce Route Configuration
-* **Admin Dashboard & Management Routes:** Must **ALWAYS** be `dynamic = 'force-dynamic'`. Merchants cannot operate on cached inventory or stale orders.
-* **Mutation Handlers (`POST`, `PUT`, `DELETE`):** Must **ALWAYS** call `revalidatePath` for every route that displays the affected resource.
-* **Storefront Catalog (`/` and `/shop`):** Either `dynamic = 'force-dynamic'` (zero cache lag) OR ISR with a short revalidation window (`revalidate = 60`) combined with on-demand `revalidatePath` on mutations.
+* **Admin Dashboard & Checkout Routes:** Must **ALWAYS** be `dynamic = 'force-dynamic'` + `no-store`.
+* **Mutation Handlers (`POST`, `PUT`, `PATCH`, `DELETE`):** Must **ALWAYS** call `revalidateTag` + `revalidatePath` for every route/tag displaying the affected resource.
+* **Storefront Catalog & `StoreConfig`:** Use `unstable_cache` + `revalidateTag` + `must-revalidate` (zero `no-store`, zero per-visitor DB load, instant `bf-cache` back-swipe). *(Note: Commit `4a46e5d` used temporary `force-dynamic` on `/` as an emergency hotfix to clear the initial SSG freeze; v2 pipeline transitions public storefront to the tagged `unstable_cache` + `bf-cache` architecture per Rule #7.)*
 
 ---
 
 ## 4. Master Prompt Template for Future Tasks
 
-When prompting an AI assistant or delegating to an engineer for e-commerce catalog or inventory features, use this structured prompt:
+See the canonical prompt in [`docs/PROMPT_LIBRARY.md`](./PROMPT_LIBRARY.md):
 
 ```text
-Task: Implement [Feature Name] with real-time data consistency and cache invalidation.
+Task: Build/Update [Feature Name, e.g. Product Catalog / Admin Table / Storefront] with real-time data consistency, ~0ms storefront latency, and zero-stale admin state on Vercel.
 
-Requirements:
-1. Route Type: Ensure all admin routes (/admin/...) and dynamic store pages have:
-   export const dynamic = 'force-dynamic';
-   export const revalidate = 0;
-2. Cache Invalidation: In any API route or Server Action that mutates [Product/Order/Config], import { revalidatePath } from 'next/cache' and revalidate affected paths:
-   - Homepage ('/')
-   - Shop catalog ('/shop')
-   - Admin lists ('/admin/products', '/admin/orders')
-   - Single item dynamic routes ('/products/[slug]')
-3. Client State Sync: In client table/list components, sync with incoming props via useEffect and provide a fallback client-side fetch with { cache: 'no-store' } on mount and after mutations.
-4. Edge CDN Verification: Verify response headers on Vercel so X-Vercel-Cache and X-Nextjs-Prerender do not serve frozen SSG payloads.
+Architecture Requirements:
+1. Split Cache & Route Directives:
+   - Admin/Checkout/Account (/admin/**, /checkout, /account): Enforce `export const dynamic = 'force-dynamic'; export const revalidate = 0;` + `no-store`.
+   - Public Storefront (/, /shop, /category/[slug], /products/[slug]): Use `unstable_cache` (tags: 'store-config', 'products', 'categories', 'collections', 'brands') + public `must-revalidate` headers (NO `no-store` so mobile `bf-cache` works in 0ms).
+2. On-Demand Revalidation:
+   In any API route handler or Server Action that creates, updates, or deletes records (POST, PUT, DELETE, PATCH), call `revalidateTag(...)` AND `revalidatePath(...)` for '/', '/shop', '/admin/products', '/admin/orders', '/admin/settings', and `/products/${slug}`.
+3. Performance & Projections:
+   Use `.lean()`, strict `.select()` projections (`images: { $slice: 1 }` on grids), `Promise.all` parallel queries, URL SearchParams pagination (`limit <= 50`), `loading.tsx` skeletons, `<Image>` with explicit `sizes`/`priority`, and `useLinkStatus()`.
+4. Client Component Synchronization (Admin):
+   Sync `initial*` props via `useEffect`, fetch with `{ cache: 'no-store' }` on refresh/mutations matching exact SSR `page`/`limit`, and call `router.refresh()` after saves.
 ```
 
 ---

@@ -22,69 +22,31 @@
 
 ---
 
-## 1. Master Scope & Milestone Progress Matrix
+## 1. v1 MVP Baseline Matrix (Pre-Hardening Prototype)
 
-| Phase | Module | Scope & Core Deliverables | Status | Live Components / Routes |
+> **Clarification:** Phases 01–11 below track the **initial v1 MVP prototype**. Production hardening, security, 11-collection schema expansion, ~0ms caching, and remaining v2 features are governed by the **7-Step Senior Master Pipeline** above (with [`01-scope-and-business-rules.md`](./01-scope-and-business-rules.md) as the single CR-Locked authority).
+
+| Phase | Module | Scope & Core Deliverables | v1 MVP Status | Live Components / Routes |
 | :--- | :--- | :--- | :---: | :--- |
 | **01** | **Cloud & DB Infrastructure** | MongoDB Atlas connection pool singleton, Cloudflare R2 bucket with custom domain CDN, Cloudinary backup, Multi-service health probe. | ✅ **DONE** | `src/lib/db.ts`<br>`src/lib/r2.ts`<br>`src/lib/storage.ts`<br>`GET /api/health` |
-| **02** | **Data Architecture & Schemas** | Mongoose schemas for `StoreConfig` (branding, logistics, payments, tracking, features), `Product` (garments, 3:4 portrait, variants, sizes, tags), and `Order` (7-stage state machine, BD COD, manual MFS). | ✅ **DONE** | `src/models/StoreConfig.ts`<br>`src/models/Product.ts`<br>`src/models/Order.ts` |
+| **02** | **v1 Core Schemas** | Initial v1 Mongoose schemas for `StoreConfig`, `Product`, and `Order` (to be hardened & expanded to 11 collections in **v2 Step 02**). | ✅ **v1 DONE** *(v2 Step 02 Pending)* | `src/models/StoreConfig.ts`<br>`src/models/Product.ts`<br>`src/models/Order.ts` |
 | **03** | **Zero-Dep Media Pipeline** | Pure HTML5 Canvas rule-based client-side image compressor (3-tier matrix, max 1200px cap, target < 200KB WebP) + Cloudflare R2 upload API. | ✅ **DONE** | `src/lib/imageCompressor.ts`<br>`POST /api/upload`<br>`DELETE /api/upload` |
 | **04** | **Storage Garbage Collection** | Lifecycle asset cleanup: instant R2 deletion on media remove (✕), batch purge of uncommitted draft uploads on form cancel, and cascade deletion on product delete. | ✅ **DONE** | `src/components/admin/MediaUploader.tsx`<br>`src/components/admin/ProductFormClient.tsx`<br>`DELETE /api/products/[slug]` |
 | **05** | **Admin Navigation & Shell** | Full-width edge-to-edge admin layout, responsive mobile header, mobile slide-over navigation drawer with backdrop blur, route auto-close. | ✅ **DONE** | `src/app/(admin)/admin/layout.tsx`<br>`src/components/admin/AdminShellClient.tsx` |
-| **06** | **Product Management Suite** | Unified 2-column Product Form for Create (`/admin/products/new`) & Edit (`/admin/products/[id]/edit`), auto-slug generation, stock badges, instant client search, 3:4 portrait uploader. | ✅ **DONE** | `src/app/(admin)/admin/products/`<br>`src/components/admin/ProductFormClient.tsx` |
-| **07** | **Category & Collection Engine** | Managed taxonomy tree (Infinite depth, ancestors materialized path, circular safeguard, delete protection), marketing collections, cascading selectors in Admin, and quick-add modal. | ✅ **DONE** | `src/models/Category.ts`<br>`src/models/Collection.ts`<br>`/api/categories`<br>`/api/collections` |
-| **08** | **Store Settings Engine** | 6-module configuration dashboard: General & Brand, Logistics & Shipping, Payment Gateways, Courier & Fraud Shield, Marketing & Pixels, Storefront & Layout. | 🟡 **IN PROGRESS** | `src/app/(admin)/admin/settings/`<br>`src/components/admin/SettingsFormClient.tsx` |
-| **09** | **Orders & Fulfillment Suite** | Manual order entry (`/admin/orders/new`), live orders table with status badges (`PENDING` to `DELIVERED`), Steadfast courier 1-click booking, customer phone search. | ⏳ **PENDING** | `src/app/(admin)/admin/orders/`<br>`src/models/Order.ts` |
-| **10** | **Storefront Catalog & Discovery** | Luxury garments storefront homepage (`/`), Shop catalog (`/shop`), 3:4 portrait cards, sticky filters, responsive cart drawer, size guide modal, product detail page (`/products/[slug]`). | ⏳ **PENDING** | `src/app/(storefront)/`<br>`src/components/storefront/` |
-| **11** | **Frictionless 1-Page BD Checkout** | Zero-login guest checkout, 11-digit BD phone validation (`01XXXXXXXXX`), auto-lead capture for abandoned carts (`INCOMPLETE`), inside/outside Dhaka logistics, advance payment rules. | ⏳ **PENDING** | `src/app/(storefront)/checkout/`<br>`POST /api/orders` |
+| **06** | **Product Management Suite** | Unified 2-column Product Form for Create (`/admin/products/new`) & Edit (`/admin/products/[id]/edit`), auto-slug generation, stock badges, 3:4 portrait uploader (v2 pagination & `loading.tsx` in **Step 06**). | ✅ **v1 DONE** *(v2 Step 06 Hardening)* | `src/app/(admin)/admin/products/`<br>`src/components/admin/ProductFormClient.tsx` |
+| **07** | **Category & Collection Engine** | Managed taxonomy tree (ancestors materialized path, circular safeguard, delete protection), marketing collections, cascading selectors in Admin. | ✅ **DONE** | `src/models/Category.ts`<br>`src/models/Collection.ts`<br>`/api/categories`<br>`/api/collections` |
+| **08** | **Store Settings Engine** | 7-module configuration dashboard (`branding`, `logistics`, `payment`, `courier`, `tracking`, `sections`, `features`) — v2 RBAC, AES-256 encryption, & lazy tabs pending in **Steps 04–06**. | 🟡 **IN PROGRESS** | `src/app/(admin)/admin/settings/`<br>`src/components/admin/SettingsFormClient.tsx` |
+| **09** | **Orders & Fulfillment Suite** | `/admin/orders`, manual order entry, live orders table, Steadfast courier 1-click booking, customer fraud view. | ⏳ **PENDING** *(Step 06)* | `src/models/Order.ts`<br>`/api/orders` |
+| **10** | **Storefront Catalog & Discovery** | Basic `/`, `/shop`, & `/products/[slug]` live in v1; v2 faceted URL filters, `/category/[slug]`, `/brand/[slug]`, `/api/search`, 2-col mobile grid, `bf-cache` & `loading.tsx` in **Steps 04–06**. | 🟡 **v1 LIVE** *(v2 Step 06 Hardening)* | `src/app/page.tsx`<br>`src/app/shop/page.tsx`<br>`src/app/products/[slug]/page.tsx` |
+| **11** | **Frictionless 1-Page BD Checkout** | Slide-over `CartDrawer` live for `COD` + `MANUAL_BKASH`; v2 3-zone delivery, server-authoritative pricing, `idempotencyKey`, `SSLCommerz` IPN, SMS webhook, & `/checkout` in **Steps 04–06**. | 🟡 **v1 PARTIAL** *(v2 Step 04–06)* | `src/components/storefront/CartDrawer.tsx`<br>`POST /api/orders` |
 
 ---
 
-## 2. Technical Specifications & Architecture Rules
+## 2. Technical Specifications & Architecture References (Zero-Duplication SoC)
 
-### 2.1 Media Optimization Engine (`src/lib/imageCompressor.ts`)
-* **Standard Garment Aspect Ratio:** Strictly locked to **3:4 Portrait** (`1200 x 1600 px`) for catalog parity and zero edge-cropping across responsive cards.
-* **Format:** Universal target `image/webp`.
-* **Cap Dimension:** Max 1200px edge (preserves aspect ratio without distortion).
-* **Target Weight:** Strictly within 80 KB – 180 KB.
-* **Conditional Optimization Matrix:**
-  * **Case A (< 100 KB):**
-    * Already `image/webp` AND max dimension $\le$ 1200px: **BYPASS** (return original file).
-    * Dimension > 1200px: Downscale to 1200px, export WebP at quality `0.90`.
-    * Non-WebP (PNG/JPG): Convert to WebP at quality `0.92`.
-  * **Case B (100 KB – 200 KB):**
-    * Already `image/webp` AND max dimension $\le$ 1200px: **BYPASS**.
-    * Dimension > 1200px OR format is non-WebP: Downscale to 1200px, export WebP at quality `0.90`.
-  * **Case C (> 200 KB to 9 MB+):**
-    * Always downscale to 1200px max edge.
-    * Dynamic quality scaling:
-      * 200 KB – 3 MB: quality `0.82`
-      * \> 3 MB: quality `0.78`
-    * Enforce adaptive multi-pass check to stay strictly between 80 KB and 180 KB.
-* **Safeguards:** Small images are never upscaled. If output size $\ge$ input size, return original file. Canvas elements and Object URLs are immediately revoked to eliminate memory leaks.
-
-### 2.2 Storage Garbage Collection & Lifecycle (`Cloudflare R2`)
-To guarantee \$0 storage bloat and prevent orphaned zombie assets:
-1. **Direct UI Removal:** Clicking the remove icon (✕) on an uploaded thumbnail in `MediaUploader.tsx` optimistically updates UI state and asynchronously invokes `DELETE /api/upload?key=<key>` (seed assets with `seed/` prefix are protected).
-2. **Form Cancellation Purge:** Draft images uploaded in a session are tracked in `ProductFormClient.tsx` via `sessionUploadedKeys.current`. If the user cancels or navigates away without saving, all uncommitted assets are purged from R2 before redirecting.
-3. **Product Cascade Deletion:** Invoking `DELETE /api/products/[slug]` deletes the product document from MongoDB and concurrently deletes all associated cover and gallery images from R2 via `deleteFromR2(image.key)`.
-
-### 2.3 Store Configuration Engine Scope (`/admin/settings` & `StoreConfig`)
-The single-document `StoreConfig` architecture controls 7 distinct store modules designed for rapid, 1-click per-client deployments:
-1. **General Branding & Store Identity:** Store Name, Tagline, Store Niche (`CLOTHING` | `GADGETS` | `FOOD` | `GENERAL`), Store Mode (`MULTI_PRODUCT` | `SINGLE_PRODUCT_FUNNEL`), Featured Product Slug, Logo URL (R2/Cloudinary), Favicon, Accent/Primary Hex Colors, Theme Mode (Dark/Light), Hero Variant (`SPLIT` | `CENTER` | `FULL_SLIDER`).
-2. **Logistics & Delivery:** Inside Dhaka Delivery Fee (৳70-80 default), Outside Dhaka Delivery Fee (৳130-150 default), Free Shipping Threshold (৳2500 default), Estimated Delivery Days (Inside: 1-2 days, Outside: 3-5 days), Customer Helpline Hotline, WhatsApp Order Number, Showroom / Outlet Physical Address.
-3. **Payment Methods:** Cash on Delivery (COD) enable/disable toggle + checkout note, Manual bKash & Nagad (Personal/Agent/Merchant wallet number + payment instructions note), automated bKash PGW (App Key, App Secret, Username, Password, Sandbox switch), automated SSLCommerz (Store ID, Store Password, Sandbox switch).
-4. **Courier & Fraud Shield:** Steadfast / Pathao / RedX default selector, API Key, Secret Key, Base URL, 1-Click Auto-Booking switch upon order approval, Fraud Risk Shield (queries customer delivery success rate and flags orders with < 60% success rate), Outside Dhaka Advance Delivery Fee requirement (e.g. ৳130 advance via bKash).
-5. **Marketing & Tracking Pixels:** Meta (Facebook) Pixel ID + Conversions API (CAPI) Server Token + Test Event Code, Google Tag Manager (GTM) Container ID, Google Analytics 4 (GA4) Measurement ID, TikTok Pixel ID + Events API Token.
-6. **Homepage Drag-and-Drop Layout Builder (`homeSections`):** Array of configurable blocks (`HERO_BANNER`, `COLLECTION_SECTION`, `PROMO_CTA_CARD`) with title, subtitle, collectionSlug, isActive visibility toggle, and Up/Down visual reordering.
-7. **Global Feature Toggles (1-Click Feature Activation):** `abandonedCartCapture`, `fraudCheckEnabled`, `advanceDeliveryFeeEnabled`, `couponEnabled`, `capiEnabled`.
-
----
-
-### 2.4 Bangladesh Garment Logistics & Order Lifecycle
-* **Order Status State Machine:**  
-  `INCOMPLETE` (auto-captured on phone input) $\rightarrow$ `PENDING` $\rightarrow$ `CONFIRMED` $\rightarrow$ `PROCESSING` $\rightarrow$ `SHIPPED` $\rightarrow$ `DELIVERED` (or `CANCELLED` / `RETURNED`).
-* **Fraud Mitigation:** Validates 11-digit BD mobile phone regex `^01[3-9]\d{8}$`. Tracks return history to flag serial COD abusers.
+* **Authoritative Rules (`Rules #1 – #23`):** All business logic, security, payment adapters, RBAC, caching, performance SLAs, and CR log live strictly in [`docs/pipeline/01-scope-and-business-rules.md`](./01-scope-and-business-rules.md).
+* **7-Module `StoreConfig` & 3-Layer Secret Shield:** Detailed field specifications live in [`docs/10-store-settings-and-configuration-scope.md`](../10-store-settings-and-configuration-scope.md).
+* **Media Optimization Engine (`src/lib/imageCompressor.ts`):** Strictly locked **3:4 Portrait** (`1200 x 1600 px`), WebP format, target 80 KB – 180 KB (3-tier Case A/B/C matrix), and 3-stage Cloudflare R2 garbage collection (`MediaUploader` remove ✕, draft cancel purge, and product cascade delete).
 
 ---
 
@@ -135,3 +97,7 @@ The single-document `StoreConfig` architecture controls 7 distinct store modules
 ### Task #11: Admin Dashboard Performance, Scalability & Anti-Over-Engineering Scope Lock (`Rule #23`)
 * **Files Modified:** `docs/pipeline/01-scope-and-business-rules.md`, `docs/pipeline/scope.md`.
 * **Changes:** Locked **Rule #23** governing all `/admin/**` dashboard and management routes: (1) Zero table/state bloat (NO `TanStack Table`, NO `AG Grid`, NO Redux/RTK Query, NO `nprogress`); (2) Fixed `AdminShellClient` layout with per-route `{children}` `loading.tsx` skeletons + Next.js 16 `useLinkStatus()` sidebar indicator (`<16ms` transition); (3) URL SearchParams server pagination (`limit = 20`, hard cap `<= 50`) with strict SSR/Client limit parity + `.select()` + `images: { $slice: 1 }` + `.lean()` projections; (4) Single-trip `Promise.all` + MongoDB `.aggregate([$group])` dashboard KPIs querying indexed `Order.status` (fixing `orderStatus` mismatch) and live sidebar badges; (5) Modular `next/dynamic` tab code-splitting for heavy forms (`/admin/settings`) + server-passed cached taxonomies; (6) Enforced `force-dynamic`/`no-store`, `useEffect` prop sync, `router.refresh()`, and `StoreConfig` currency symbol parity (`৳`).
+
+### Task #12: Full Documentation SoC Alignment, Security/Performance Sync & `CR-000` Baseline Lock
+* **Files Modified:** `docs/00-how-to-notes.md`, `docs/01-database-mongodb.md` through `docs/07-admin-products-management.md`, `docs/09-database-collection-architecture.md`, `docs/10-store-settings-and-configuration-scope.md`, `docs/11-nextjs-caching-ssg-dynamic-rendering-and-revalidation.md`, `docs/PROJECT_REFERENCE_NOTES.md`, `docs/PROMPT_LIBRARY.md`, `docs/postman/API_REFERENCE.md`, `docs/pipeline/01-scope-and-business-rules.md`, `docs/pipeline/scope.md`.
+* **Changes:** Eliminated all cross-document contradictions and enforced a strict 5-Tier Documentation SoC hierarchy (`00-how-to-notes.md` + Rule #6 CR discipline). Synced `11` & `PROMPT_LIBRARY.md` to the `Rule #7` Split Cache + `bf-cache` strategy (`unstable_cache` + `revalidateTag` vs `/admin` `force-dynamic`); aligned `09` to `7 Core + 4 Growth` (11 collections) and 5 RBAC roles (`USER`, `MERCHANT`, `MODERATOR`, `ADMIN`, `SUPER_ADMIN`); aligned `10` to `Rule #10` (`homeSections` fields), `Rule #22` (WCAG AA 4.5:1 contrast), & `Rule #23` (lazy tabs); updated `API_REFERENCE.md` to remove client `unitPrice`, require `idempotencyKey` + `limit <= 50` + `SUPER_ADMIN` config RBAC, and list v2 target endpoints; clearly separated v1 MVP Matrix vs v2 Master Pipeline in `scope.md`; marked `01`–`07` & `PROJECT_REFERENCE_NOTES.md` as Tier 4 Historical MVP Notes with fixed links; and formally locked Step 1 under `CR-000`.

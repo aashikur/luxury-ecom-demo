@@ -1,5 +1,7 @@
 # 07: Admin Products & Inventory Management Guide
 
+> **Status:** Tier 4 Historical MVP Study Note (`v1`). For v2 CR-Locked rules (URL SearchParams server pagination `limit <= 50`, SSR/Client limit parity, `.select()` projections, `{children}` `loading.tsx`, & `useLinkStatus()`), follow [`Rule #23` in `01-scope-and-business-rules.md`](./pipeline/01-scope-and-business-rules.md).
+
 ## 1. What We Built
 - **Apex High-Contrast Workspace Lock**: Standardized layout with a Jet-Black left sidebar (`#09090B`) paired with a high-clarity Light canvas (`#F8FAFC`, `#FFFFFF` cards, `#EAECF0` borders) matching the reference design.
 - **Three-Dots Floating Action Popover**: Row-level popover containing `View` (`Eye`), `Edit` (`Pencil`), and `Delete` (`Trash`, red).

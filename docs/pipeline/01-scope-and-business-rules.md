@@ -1,9 +1,9 @@
 # [ধাপ ১] Scope & Business Rules Locked — Master Specification
 
-> **Phase Status:** 🔒 **LOCKED & AUTHORITATIVE**  
+> **Phase Status:** 🔒 **CR-LOCKED & AUTHORITATIVE (Baseline v1.0)**  
 > **Master Pipeline Stage:** Step 1 of 7  
 > **Target:** Multi-Niche 1-Click Client Deployment & 500 Orders/Day Scalability  
-> **Rule of Engagement:** Any subsequent schema, backend code, or frontend UI that violates these rules must be rejected.
+> **Change Governance (CR Policy):** Once locked, **NO rules in this file may be modified casually**. Any post-lock scope modification MUST be logged in Section 4 (`Change Request (CR) Log`) with CR ID, impact on Schema/API/UI, and explicit human approval. Any code that violates these rules must be rejected.
 
 ---
 
@@ -480,5 +480,15 @@ Provides the high-converting luxury e-commerce navigation pattern: `[Logo] [ Men
 - [x] Zero-latency SLA: mandatory `.select()` projections, `.lean()`, `Promise.all`, `loading.tsx` skeletons, `useLinkStatus`, mobile 2-col `384w` `<Image sizes>`, & `sin1` region co-location locked.
 - [x] WCAG AA 4.5:1 contrast, heading order, ARIA label parity, & Incognito Lighthouse Launch Gate locked.
 - [x] Admin Dashboard Performance & Anti-Over-Engineering rules (fixed shell + `{children}` `loading.tsx`, `useLinkStatus()`, URL SearchParams server pagination `limit <= 50`, list projections, `.aggregate()` KPIs, lazy-loaded tabs, & server-passed taxonomies) locked.
+
+---
+
+## 4. Change Request (CR) Governance & Log
+
+> **Rule:** Step 1 (`Rules #1 – #23`) is frozen at Baseline `v1.0`. Do not modify prior rules directly without appending a formal CR entry below specifying Schema, API, and UI impact.
+
+| CR ID | Date | Author / Approver | Summary of Scope Change | Impacted Rules / Steps | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: |
+| **`CR-000`** | 2026-11-12 | Ashikur + Principal Spec Audit | Initial Production Baseline Lock (`Rules #1 – #23`, 7 Core + 4 Growth Collections, Unified Payment Adapter, 5-Role RBAC, Zero-Latency Storefront & Admin SLAs, WCAG AA & CSP). | Step 1 Baseline | 🔒 **LOCKED** |
 
 👉 **Next Step:** `[ধাপ ২] Schema, Interface & Response Envelope Locked`

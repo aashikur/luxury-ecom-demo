@@ -1,5 +1,7 @@
 # 04. API Layer & Media Upload Pipeline
 
+> **Status:** Tier 4 Historical MVP Study Note (`v1`). For authoritative CR-Locked API security (`SUPER_ADMIN` RBAC on `/api/config`, AES-256 secrets, rate limits, & `API_REFERENCE.md`), follow [`docs/pipeline/01-scope-and-business-rules.md`](./pipeline/01-scope-and-business-rules.md) & [`docs/postman/API_REFERENCE.md`](./postman/API_REFERENCE.md).
+
 ## 1. What We Built
 * **Media Upload API:** `src/app/api/upload/route.ts`
   * `POST`: Directly uploads multipart image buffers to Cloudflare R2 bucket (`ecom-demo`).

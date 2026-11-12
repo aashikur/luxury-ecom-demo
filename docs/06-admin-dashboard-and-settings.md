@@ -1,5 +1,7 @@
 # 06: Admin Dashboard & Store Settings Guide
 
+> **Status:** Tier 4 Historical MVP Study Note (`v1` — early 5-tab settings). Expanded to **7 modules**, `SUPER_ADMIN`-only RBAC, `next/dynamic` lazy tabs, & `.aggregate()` KPIs — see [`docs/10-store-settings-and-configuration-scope.md`](./10-store-settings-and-configuration-scope.md) & [`Rule #23`](./pipeline/01-scope-and-business-rules.md).
+
 ## 1. What We Built
 - **Isolated Admin Route Group**: Created `src/app/(admin)/admin/` with an enterprise-grade dark sidebar (`bg-zinc-950`) inspired by the Apex Dashboard reference.
 - **Admin Layout (`layout.tsx`)**: High-contrast dark navigation with Overview, Commerce (Orders, Products), System (Settings), live store shortcut, and admin profile card.
@@ -32,7 +34,7 @@
 ---
 
 ## 4. Sources & Cross References
-- Settings Page: [`src/app/(admin)/admin/settings/page.tsx`](file:///e:/WebDevs/Testing/e-com/src/app/(admin)/admin/settings/page.tsx)
-- Settings Client Component: [`src/components/admin/SettingsFormClient.tsx`](file:///e:/WebDevs/Testing/e-com/src/components/admin/SettingsFormClient.tsx)
-- Admin Layout: [`src/app/(admin)/admin/layout.tsx`](file:///e:/WebDevs/Testing/e-com/src/app/(admin)/admin/layout.tsx)
-- API Reference: [`docs/postman/API_REFERENCE.md`](file:///e:/WebDevs/Testing/e-com/docs/postman/API_REFERENCE.md)
+- Settings Page: [`src/app/(admin)/admin/settings/page.tsx`](file:///c:/WebDevs/luxury-ecom-demo/src/app/(admin)/admin/settings/page.tsx)
+- Settings Client Component: [`src/components/admin/SettingsFormClient.tsx`](file:///c:/WebDevs/luxury-ecom-demo/src/components/admin/SettingsFormClient.tsx)
+- Admin Layout: [`src/app/(admin)/admin/layout.tsx`](file:///c:/WebDevs/luxury-ecom-demo/src/app/(admin)/admin/layout.tsx)
+- API Reference: [`docs/postman/API_REFERENCE.md`](./postman/API_REFERENCE.md)
