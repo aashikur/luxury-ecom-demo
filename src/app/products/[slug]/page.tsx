@@ -9,8 +9,8 @@ import ProductDetailView from '@/components/storefront/ProductDetailView';
 import CartDrawer from '@/components/storefront/CartDrawer';
 import Footer from '@/components/storefront/Footer';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Incremental Static Regeneration (ISR) - 60s fallback window paired with on-demand revalidatePath (Rule #7 & #21)
+export const revalidate = 60;
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -20,8 +20,26 @@ export default async function ProductPage({ params }: ProductPageProps) {
   await connectDB();
   const { slug } = await params;
 
-  // 1. Fetch StoreConfig
-  const config = await StoreConfig.findOne({ isActive: true }).lean();
+  // 1. Parallel Fetch: StoreConfig + Target Product concurrently (Zero-Waterfall)
+  const [config, rawProduct] = await Promise.all([
+    StoreConfig.findOne({ isActive: true })
+      .select('branding logistics courier.provider payment.manualBkash.number')
+      .lean(),
+    Product.findOne({ slug, isActive: true }).lean(),
+  ]);
+
+  if (!rawProduct) {
+    notFound();
+  }
+
+  // 2. Fetch Related Products with strict card projection (Rule #21)
+  const rawRelated = await Product.find({
+    _id: { $ne: rawProduct._id },
+    isActive: true,
+  })
+    .select('title slug basePrice discountPrice maxPrice media categoryName inStock stockStatus hasVariants')
+    .limit(4)
+    .lean();
 
   const branding = config?.branding || {
     storeName: 'Aurem Luxury',
@@ -37,21 +55,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
     insideDhakaFee: 70,
     outsideDhakaFee: 130,
   };
-
-  // 2. Fetch Active Product by Slug
-  const rawProduct = await Product.findOne({ slug, isActive: true }).lean();
-
-  if (!rawProduct) {
-    notFound();
-  }
-
-  // 3. Fetch Related Products
-  const rawRelated = await Product.find({
-    _id: { $ne: rawProduct._id },
-    isActive: true,
-  })
-    .limit(4)
-    .lean();
 
   const product = JSON.parse(JSON.stringify(rawProduct));
   const relatedProducts = JSON.parse(JSON.stringify(rawRelated));

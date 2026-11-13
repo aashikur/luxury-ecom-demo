@@ -126,14 +126,6 @@ function NavLinks({ accentColor }: { accentColor: string }) {
   );
 }
 
-function SearchParamsWatcher({ onParamChange }: { onParamChange: () => void }) {
-  const searchParams = useSearchParams();
-  useEffect(() => {
-    onParamChange();
-  }, [searchParams, onParamChange]);
-  return null;
-}
-
 export default function Navbar({ storeName, accentColor }: NavbarProps) {
   const { totalItems, setIsCartOpen } = useCart();
   const pathname = usePathname();
@@ -198,9 +190,6 @@ export default function Navbar({ storeName, accentColor }: NavbarProps) {
 
             <Suspense fallback={null}>
               <NavLinks accentColor={accentColor} />
-            </Suspense>
-            <Suspense fallback={null}>
-              <SearchParamsWatcher onParamChange={() => setIsDrawerOpen(false)} />
             </Suspense>
           </div>
 
