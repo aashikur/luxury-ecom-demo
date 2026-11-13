@@ -29,18 +29,19 @@ export default function HeroBanner({
   const eyebrowText = subtitle || `${storeName.toUpperCase()} // ARCHIVE`;
 
   return (
-    <section className="max-w-[1360px] mx-auto px-4 sm:px-8 pt-6 pb-12">
-      <div className="relative rounded-md overflow-hidden bg-zinc-950 text-white min-h-[460px] sm:min-h-[540px] flex items-center justify-center text-center">
+    <section className="w-full max-w-full m-0 p-0">
+      <div className="relative w-full overflow-hidden bg-zinc-950 text-white min-h-[480px] sm:min-h-[560px] flex items-center justify-center text-center">
         {/* Editorial Campaign Background */}
         <img
           src={bgImage}
           alt={title}
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-55"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-80"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent sm:bg-gradient-to-r sm:from-black/80 sm:via-black/50 sm:to-black/80" />
+        {/* Soft 0.5 Opacity Overlay */}
+        <div className="absolute inset-0 bg-black/50" />
 
         {/* Hero Content */}
-        <div className="relative z-10 w-full px-6 sm:px-16 py-16 max-w-3xl mx-auto">
+        <div className="relative z-10 w-full px-6 sm:px-16 py-20 max-w-3xl mx-auto">
           <p
             style={{ color: accentColor }}
             className="text-xs font-bold uppercase tracking-[0.35em] mb-4"
@@ -48,12 +49,12 @@ export default function HeroBanner({
             {eyebrowText}
           </p>
 
-          <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight leading-[1.03] mb-4 text-white">
+          <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight leading-[1.03] mb-4 text-white drop-shadow-sm">
             {title}
           </h1>
 
           {description && (
-            <p className="text-sm sm:text-base text-zinc-300 tracking-wide mb-8 max-w-xl mx-auto">
+            <p className="text-sm sm:text-base text-zinc-200 tracking-wide mb-8 max-w-xl mx-auto drop-shadow-xs">
               {description}
             </p>
           )}
@@ -61,7 +62,7 @@ export default function HeroBanner({
           <div className="flex justify-center">
             <Link
               href={buttonLink}
-              className="inline-block px-8 py-3.5 bg-white text-zinc-950 text-xs font-bold uppercase tracking-[0.2em] hover:bg-zinc-200 transition"
+              className="inline-block px-8 py-3.5 bg-white text-zinc-950 text-xs font-bold uppercase tracking-[0.2em] hover:bg-zinc-200 transition shadow-lg cursor-pointer"
             >
               {buttonText}
             </Link>

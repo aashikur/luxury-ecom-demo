@@ -24,9 +24,10 @@ body {
   font-family: var(--font-serif);
 }
 
-/* Custom smooth scroll and subtle luxury scrollbar */
+/* Custom smooth scroll and stable scrollbar gutter (Prevents horizontal jump on modal/drawer open) */
 html {
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 ::selection {

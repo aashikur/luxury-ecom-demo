@@ -51,7 +51,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   }
 
   if (category) {
-    filter.primaryCategory = new RegExp(`^${category}$`, 'i');
+    const escaped = category.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); filter.$or = [{ categorySlug: new RegExp(`^${escaped}$`, 'i') }, { categoryPath: new RegExp(`^${escaped}$`, 'i') }, { primaryCategory: new RegExp(`^${escaped}$`, 'i') }];
   }
 
   // 3. Sorting
@@ -91,7 +91,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         <div className="flex flex-col sm:flex-row items-baseline justify-between gap-4 pb-6 border-b border-zinc-200">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-zinc-950">
-              {collection ? collection.replace('-', ' ') : 'STORE ARCHIVE'}
+              {collection ? collection.replace(/-/g, ' ') : category ? category.replace(/-/g, ' ') : 'STORE ARCHIVE'}
             </h1>
             <p className="text-xs text-zinc-500 mt-1 tracking-wider uppercase">
               Showing {products.length} engineered garments
