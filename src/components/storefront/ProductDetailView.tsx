@@ -114,9 +114,9 @@ export default function ProductDetailView({
 
   // Images resolution (supports variant specific image override)
   const images =
-    product.images?.length > 0
-      ? product.images
-      : [{ url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80', key: '' }];
+    (product.media?.length > 0 ? product.media : product.images?.length > 0 ? product.images : null) || [
+      { url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80', key: '' },
+    ];
   
   const currentImage =
     selectedVariant?.image?.url || images[activeGalleryIdx]?.url || images[0]?.url;
@@ -266,7 +266,7 @@ export default function ProductDetailView({
       <nav className="flex items-center gap-1.5 text-xs text-zinc-400 mb-6">
         <Link href="/" className="hover:text-zinc-900 transition">Home</Link>
         <span>/</span>
-        <Link href="/shop" className="hover:text-zinc-900 transition">{product.primaryCategory || 'Store'}</Link>
+        <Link href="/shop" className="hover:text-zinc-900 transition">{product.categoryName || product.primaryCategory || 'Store'}</Link>
         <span>/</span>
         <span className="text-zinc-900 font-medium truncate">{product.title}</span>
       </nav>
@@ -576,7 +576,7 @@ export default function ProductDetailView({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <span className="font-bold text-zinc-900">Primary Category:</span>
-                <span>{product.primaryCategory}</span>
+                <span>{product.categoryName || product.primaryCategory}</span>
               </div>
               {product.brandName && (
                 <div className="grid grid-cols-2 gap-2">

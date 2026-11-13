@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface HeroBannerProps {
   storeName?: string;
@@ -31,10 +32,13 @@ export default function HeroBanner({
   return (
     <section className="w-full max-w-full m-0 p-0">
       <div className="relative w-full overflow-hidden bg-zinc-950 text-white min-h-[480px] sm:min-h-[560px] flex items-center justify-center text-center">
-        {/* Editorial Campaign Background */}
-        <img
+        {/* Editorial Campaign Background - Next.js High Priority LCP Image */}
+        <Image
           src={bgImage}
           alt={title}
+          fill
+          priority
+          sizes="100vw"
           className="absolute inset-0 w-full h-full object-cover object-center opacity-80"
         />
         {/* Soft 0.5 Opacity Overlay */}

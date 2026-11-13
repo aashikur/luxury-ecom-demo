@@ -126,10 +126,17 @@ function NavLinks({ accentColor }: { accentColor: string }) {
   );
 }
 
+function SearchParamsWatcher({ onParamChange }: { onParamChange: () => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    onParamChange();
+  }, [searchParams, onParamChange]);
+  return null;
+}
+
 export default function Navbar({ storeName, accentColor }: NavbarProps) {
   const { totalItems, setIsCartOpen } = useCart();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const brandNameFirst = storeName.split(' ')[0] || 'Aurem';
 
   // Mobile / Slide-Over Menu Drawer State
@@ -142,7 +149,7 @@ export default function Navbar({ storeName, accentColor }: NavbarProps) {
   // Close drawer on route change
   useEffect(() => {
     setIsDrawerOpen(false);
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   // Lock body scroll when drawer is open
   useEffect(() => {
@@ -191,6 +198,9 @@ export default function Navbar({ storeName, accentColor }: NavbarProps) {
 
             <Suspense fallback={null}>
               <NavLinks accentColor={accentColor} />
+            </Suspense>
+            <Suspense fallback={null}>
+              <SearchParamsWatcher onParamChange={() => setIsDrawerOpen(false)} />
             </Suspense>
           </div>
 
@@ -320,16 +330,16 @@ export default function Navbar({ storeName, accentColor }: NavbarProps) {
 
                         {/* Collapsible Subcategories */}
                         {isOpen && (
-                          <div className="pl-3 pt-2 pb-1 space-y-2.5">
+                          <div className="pl-3 pt-2 pb-1 space-y-2">
                             {cat.subcategories.map((sub) => (
                               <Link
                                 key={sub.slug}
                                 href={`/shop?category=${sub.slug}`}
                                 onClick={() => setIsDrawerOpen(false)}
-                                className="flex items-center justify-between text-xs text-zinc-600 hover:text-zinc-950 font-medium py-1 transition cursor-pointer group"
+                                className="flex items-center justify-between text-[16px] font-light text-zinc-600 hover:text-zinc-950 py-1.5 transition cursor-pointer group"
                               >
                                 <span>{sub.title}</span>
-                                <ArrowRight className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-950 group-hover:translate-x-0.5 transition" />
+                                <ArrowRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-950 group-hover:translate-x-0.5 transition" />
                               </Link>
                             ))}
                           </div>

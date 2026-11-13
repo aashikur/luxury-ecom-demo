@@ -404,7 +404,7 @@ Provides the high-converting luxury e-commerce navigation pattern: `[Logo] [ Men
 
 ### Rule #21: Zero-Latency Performance, Projections, Streaming & Image SLA
 - **Mandatory `.select()` Projections & `.lean()`:**
-  - **Catalog / Card Grids (`/`, `/shop`, `/category/[slug]`, `/collections/[slug]`, `/brand/[slug]`, Related):** Query ONLY card-required fields (`title`, `slug`, `basePrice`, `discountPrice`, `maxPrice`, `inStock`, `stockStatus`, `primaryCategory`, `hasVariants`, and cover `images` sliced to 1) via `.lean()` — NEVER pull `description`, `sizeChart`, `specifications`, or `modifierGroups` (cuts payload 70–90%).
+  - **Catalog / Card Grids (`/`, `/shop`, `/category/[slug]`, `/collections/[slug]`, `/brand/[slug]`, Related):** Query ONLY card-required fields (`title`, `slug`, `basePrice`, `discountPrice`, `maxPrice`, `inStock`, `stockStatus`, `categoryName`, `hasVariants`, and cover `media` sliced to 1) via `.lean()` — NEVER pull `description`, `sizeChart`, `specifications`, or `modifierGroups` (cuts payload 70–90%).
   - **Public `StoreConfig` Projection:** Select only storefront-safe fields (`branding`, `logistics`, `homeSections`, `headerNavLinks`, `features`, public pixel IDs) — strip all server secrets.
   - **Zero Double-Serialization:** Replace `JSON.parse(JSON.stringify(...))` on large lists with lightweight typed DTO mappers.
 - **Zero-Waterfall `Promise.all` Rule:** Independent server queries (`StoreConfig`, `Product`, `Category`) MUST execute in parallel via `Promise.all`. List endpoints require bounded pagination (`limit <= 48`) and compound indexes.
@@ -454,6 +454,24 @@ Provides the high-converting luxury e-commerce navigation pattern: `[Logo] [ Men
 
 ---
 
+### Rule #24: Technical SEO, Dynamic Metadata & Crawler Governance
+- **Crawler Budget & Path Governance (`src/app/robots.ts`):**
+  - Allow root and public catalogs (`/`, `/shop`, `/products/*`, `/category/*`, `/brand/*`).
+  - Strict `disallow` on `/admin/`, `/api/`, `/checkout/`, `/account/`, and query-based sorting/filtering patterns (`/*?*sort=`, `/*?*filter=`) to prevent crawl budget exhaustion.
+  - Link authoritative `sitemap.xml` directly in `robots.ts`.
+- **Dynamic XML Sitemap (`src/app/sitemap.ts`):**
+  - Query active products (`isActive: true`), categories, and collections with `slug` and `updatedAt` for automatic `<lastmod>` timestamps.
+- **Dynamic Metadata & Self-Referencing Canonical URLs:**
+  - All dynamic storefront routes (`/products/[slug]`, `/category/[slug]`, `/brand/[slug]`) MUST export `generateMetadata` supplying distinct page `title`, `description`, Open Graph images (1200x630), Twitter cards, and `alternates.canonical` pointing to the canonical product URL to prevent duplicate content penalties from URL query parameters.
+- **Rich Snippets via JSON-LD (`ProductJsonLd`):**
+  - Dynamic PDPs MUST inject Schema.org `Product` and `Offer` JSON-LD scripts containing currency (`BDT`), price, availability (`InStock`/`OutOfStock`), and brand identity for Google Shopping/Search rich card qualification.
+- **Admin & API Indexing Shield:**
+  - All `/admin/**` routes MUST enforce `robots: { index: false, follow: false }` metadata and `X-Robots-Tag: noindex, nofollow` headers to eliminate administrative data exposure.
+- **Strict 404/410 Handling:**
+  - Out-of-stock items remain indexed with availability `OutOfStock`. Permanently deleted/delisted items trigger Next.js `notFound()` (true HTTP 404/410 status code; never soft-404 200 OKs).
+
+---
+
 ## 3. Step 1 Sign-Off Checklist
 
 - [x] Top-level collections strictly capped at 7 Core + 4 Growth/Taxonomy (11 Total).
@@ -480,15 +498,17 @@ Provides the high-converting luxury e-commerce navigation pattern: `[Logo] [ Men
 - [x] Zero-latency SLA: mandatory `.select()` projections, `.lean()`, `Promise.all`, `loading.tsx` skeletons, `useLinkStatus`, mobile 2-col `384w` `<Image sizes>`, & `sin1` region co-location locked.
 - [x] WCAG AA 4.5:1 contrast, heading order, ARIA label parity, & Incognito Lighthouse Launch Gate locked.
 - [x] Admin Dashboard Performance & Anti-Over-Engineering rules (fixed shell + `{children}` `loading.tsx`, `useLinkStatus()`, URL SearchParams server pagination `limit <= 50`, list projections, `.aggregate()` KPIs, lazy-loaded tabs, & server-passed taxonomies) locked.
+- [x] Technical SEO, dynamic sitemap/robots, canonical URLs, JSON-LD Schema.org, & admin indexing shield locked (Rule #24).
 
 ---
 
 ## 4. Change Request (CR) Governance & Log
 
-> **Rule:** Step 1 (`Rules #1 – #23`) is frozen at Baseline `v1.0`. Do not modify prior rules directly without appending a formal CR entry below specifying Schema, API, and UI impact.
+> **Rule:** Step 1 (`Rules #1 – #24`) is frozen at Baseline `v1.1`. Do not modify prior rules directly without appending a formal CR entry below specifying Schema, API, and UI impact.
 
 | CR ID | Date | Author / Approver | Summary of Scope Change | Impacted Rules / Steps | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: |
 | **`CR-000`** | 2026-11-12 | Ashikur + Principal Spec Audit | Initial Production Baseline Lock (`Rules #1 – #23`, 7 Core + 4 Growth Collections, Unified Payment Adapter, 5-Role RBAC, Zero-Latency Storefront & Admin SLAs, WCAG AA & CSP). | Step 1 Baseline | 🔒 **LOCKED** |
+| **`CR-001`** | 2026-11-13 | Ashikur + AI Senior Engineer | Add Rule #24: Technical SEO & Crawler Governance (`robots.ts`, `sitemap.ts`, `generateMetadata`, JSON-LD schema, canonical tags, admin noindex shield). | Rule #24, Storefront PDP & Admin | 🔒 **LOCKED** |
 
 👉 **Next Step:** `[ধাপ ২] Schema, Interface & Response Envelope Locked`

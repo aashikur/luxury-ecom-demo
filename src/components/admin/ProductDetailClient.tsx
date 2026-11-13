@@ -22,9 +22,9 @@ export default function ProductDetailClient({ product }: { product: any }) {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
 
   const images =
-    product.images?.length > 0
-      ? product.images
-      : [{ url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80', key: '' }];
+    (product.media?.length > 0 ? product.media : product.images?.length > 0 ? product.images : null) || [
+      { url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80', key: '' },
+    ];
   const currentImage = images[activeImageIdx]?.url || images[0]?.url;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -143,7 +143,7 @@ export default function ProductDetailClient({ product }: { product: any }) {
                   </label>
                   <div className="space-y-1">
                     <Badge variant="secondary">
-                      {product.primaryCategory || 'General'}
+                      {product.categoryName || product.primaryCategory || 'General'}
                     </Badge>
                     <span className="px-2 py-0.5 rounded bg-slate-50 text-slate-500 text-[10px] font-mono border border-slate-100 block w-fit">
                       {product.productType || 'CLOTHING'}

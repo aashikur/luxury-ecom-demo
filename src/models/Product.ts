@@ -4,10 +4,16 @@ export type ProductType = 'REGULAR' | 'CLOTHING' | 'GADGET' | 'FOOD' | 'SERVICE'
 export type ProductStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 export type StockStatus = 'AUTO' | 'FORCE_OUT_OF_STOCK' | 'PRE_ORDER';
 
-export interface IProductImage {
+export interface IProductMedia {
   url: string;
-  key: string;
+  key?: string;
+  thumbnailUrl?: string;
+  type: 'IMAGE' | 'VIDEO';
+  videoProvider?: 'YOUTUBE' | 'VIMEO' | 'R2' | 'BUNNY_STREAM';
+  altText?: string;
 }
+
+export type IProductImage = IProductMedia;
 
 // 1. Dynamic Variant Axis (Renders selector buttons on PDP: e.g. Size, Color, RAM, Storage, Region)
 export interface IVariantOptionGroup {
@@ -18,32 +24,29 @@ export interface IVariantOptionGroup {
   }[];
 }
 
-// 2. Universal Variant Item (Supports Clothing Sizes + Gadget RAM/ROM Pricing & Stock)
+export interface IVariantSelectedOption {
+  name: string;
+  value: string;
+}
+
+// 2. Universal Variant Item (Multi-Niche: Clothing, Gadgets, Perfumes, Footwear)
 export interface IVariant {
-  _id?: mongoose.Types.ObjectId;
+  _id?: string | mongoose.Types.ObjectId;
   sku: string;
-  label?: string;      // Auto-computed or custom: e.g. "XL / Black" or "12GB / 256GB / Official"
+  title?: string;
+  label?: string;      // Alias for title
+  selectedOptions: IVariantSelectedOption[];
 
-  // Backward-compatible Clothing fields (no strict enum so Regular/Gadgets/Shoes don't break)
-  size?: string;       // e.g. "S", "M", "L", "XL", "XXL", "42", "Free Size", or ""
-  colorName?: string;
-  colorHex?: string;
-
-  // Dynamic Key-Value Attributes for Gadgets & Multi-Axis Products
-  attributes?: {
-    key: string;       // e.g. "RAM", "Storage", "Region"
-    value: string;     // e.g. "12GB", "256GB", "Official"
-  }[];
-
-  // Variant-Level Pricing (If undefined on Clothing, falls back to root Product basePrice/discountPrice)
+  // Variant-Level Pricing (If undefined, falls back to root Product basePrice/discountPrice)
   price?: number;
   discountPrice?: number;
   costPrice?: number;
+  wholesalePrice?: number;
 
   // Variant Inventory Control
   stock: number;
-  stockStatus?: StockStatus; // Allows forcing a single variant OOS without losing `stock` count
-  image?: IProductImage;     // Optional variant-specific image swap
+  stockStatus?: StockStatus;
+  image?: IProductMedia;
   isDefault?: boolean;
   isActive?: boolean;
 }
@@ -82,6 +85,7 @@ export interface IProduct extends Document {
   title: string;
   slug: string;
   description: string;
+  highlights?: string[]; // Bullet points for quick highlights & specifications
   productType: ProductType;
   hasVariants: boolean; // false = Regular Single Product, true = Variant Matrix Product
 
@@ -89,7 +93,7 @@ export interface IProduct extends Document {
   categoryId?: mongoose.Types.ObjectId | null;
   categorySlug?: string;
   categoryPath?: string[];
-  primaryCategory: string;
+  categoryName: string;
   brandName?: string;
   collections: string[];
   tags?: string[];
@@ -104,13 +108,9 @@ export interface IProduct extends Document {
   stockStatus: StockStatus;
   inStock: boolean;     // Auto-computed boolean for instant UI badge & filter queries
 
-  // Media
-  images: IProductImage[];
-  video?: {
-    provider: 'YOUTUBE' | 'R2' | 'BUNNY_STREAM';
-    url: string;
-    videoId?: string;
-  };
+  // Media (Single Source of Truth)
+  media: IProductMedia[];
+  images?: IProductMedia[]; // Fallback accessor for existing UI components
 
   // Flexible Engines
   variantOptions: IVariantOptionGroup[];
@@ -133,6 +133,7 @@ const ProductSchema = new Schema<IProduct>(
     title: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
     description: { type: String, default: '' },
+    highlights: [{ type: String, trim: true }],
     productType: {
       type: String,
       enum: ['REGULAR', 'CLOTHING', 'GADGET', 'FOOD', 'SERVICE'],
@@ -144,7 +145,7 @@ const ProductSchema = new Schema<IProduct>(
     categoryId: { type: Schema.Types.ObjectId, ref: 'Category', default: null, index: true },
     categorySlug: { type: String, default: '', index: true },
     categoryPath: [{ type: String, index: true }],
-    primaryCategory: { type: String, required: true, index: true },
+    categoryName: { type: String, required: true, trim: true, index: true },
     brandName: { type: String, default: '', index: true },
     collections: [{ type: String, index: true }],
     tags: [{ type: String, index: true }],
@@ -162,21 +163,20 @@ const ProductSchema = new Schema<IProduct>(
     },
     inStock: { type: Boolean, default: true, index: true },
 
-    images: [
+    media: [
       {
         url: { type: String, required: true },
-        key: { type: String, required: true },
+        key: { type: String, default: '' },
+        thumbnailUrl: { type: String, default: '' },
+        type: { type: String, enum: ['IMAGE', 'VIDEO'], default: 'IMAGE' },
+        videoProvider: {
+          type: String,
+          enum: ['YOUTUBE', 'VIMEO', 'R2', 'BUNNY_STREAM'],
+          default: 'YOUTUBE',
+        },
+        altText: { type: String, default: '' },
       },
     ],
-    video: {
-      provider: {
-        type: String,
-        enum: ['YOUTUBE', 'R2', 'BUNNY_STREAM'],
-        default: 'YOUTUBE',
-      },
-      url: { type: String, default: '' },
-      videoId: { type: String, default: '' },
-    },
 
     variantOptions: [
       {
@@ -193,19 +193,18 @@ const ProductSchema = new Schema<IProduct>(
     variants: [
       {
         sku: { type: String, required: true, trim: true },
+        title: { type: String, default: '' },
         label: { type: String, default: '' },
-        size: { type: String, default: '' },
-        colorName: { type: String, default: '' },
-        colorHex: { type: String, default: '' },
-        attributes: [
+        selectedOptions: [
           {
-            key: { type: String, required: true },
+            name: { type: String, required: true },
             value: { type: String, required: true },
           },
         ],
         price: { type: Number, min: 0 },
         discountPrice: { type: Number, min: 0 },
         costPrice: { type: Number, min: 0 },
+        wholesalePrice: { type: Number, min: 0 },
         stock: { type: Number, required: true, min: 0, default: 0 },
         stockStatus: {
           type: String,
@@ -293,15 +292,17 @@ ProductSchema.pre('save', function () {
     // Sum physical warehouse stock without destroying counts on FORCE_OUT_OF_STOCK
     this.totalStock = activeVariants.reduce((sum, v) => sum + (v.stock || 0), 0);
 
-    // Auto-build readable label for each variant if omitted
+    // Auto-build readable title and label for each variant if omitted
     activeVariants.forEach((v) => {
-      if (!v.label) {
-        if (v.attributes && v.attributes.length > 0) {
-          v.label = v.attributes.map((a) => a.value).join(' / ');
+      if (!v.title && !v.label) {
+        if (v.selectedOptions && v.selectedOptions.length > 0) {
+          v.title = v.selectedOptions.map((o) => o.value).join(' / ');
         } else {
-          v.label = [v.size, v.colorName].filter(Boolean).join(' / ') || v.sku;
+          v.title = v.sku;
         }
       }
+      if (!v.title && v.label) v.title = v.label;
+      if (!v.label && v.title) v.label = v.title;
     });
 
     // Compute price range if variants have custom prices (e.g. Gadgets / XXL clothing)
@@ -348,7 +349,8 @@ ProductSchema.index({ isActive: 1, isPinned: -1, priority: -1, createdAt: -1 });
 ProductSchema.index({ categorySlug: 1, isActive: 1, isPinned: -1, priority: -1, createdAt: -1 });
 ProductSchema.index({ categoryPath: 1, isActive: 1, isPinned: -1, priority: -1, createdAt: -1 });
 ProductSchema.index({ collections: 1, isActive: 1, isPinned: -1, priority: -1, createdAt: -1 });
-ProductSchema.index({ 'variants.attributes.key': 1, 'variants.attributes.value': 1 });
+ProductSchema.index({ categoryName: 1, isActive: 1 });
+ProductSchema.index({ 'variants.selectedOptions.name': 1, 'variants.selectedOptions.value': 1 });
 
 export const Product: Model<IProduct> =
   mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);

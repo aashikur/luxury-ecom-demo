@@ -19,7 +19,8 @@ export interface ProductCardProps {
     inStock?: boolean;
     stockStatus?: StockStatus;
     totalStock?: number;
-    images: { url: string; key: string }[];
+    media?: { url: string; key?: string; type?: string }[];
+    images?: { url: string; key?: string }[];
     variants?: {
       _id?: string;
       size?: string;
@@ -61,6 +62,7 @@ export default function ProductCard({
   );
 
   const defaultImage =
+    product.media?.[0]?.url ||
     product.images?.[0]?.url ||
     'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80';
 

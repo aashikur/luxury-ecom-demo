@@ -147,6 +147,10 @@ The platform architecture is strictly bounded to **7 Core Collections + 4 Growth
                       └─────────────────┘             └─────────────────┘
 ```
 
+> [!NOTE]
+> **POJO / Full-Stack Type Standard:**
+> All collection interfaces in this specification are pure Plain Old JavaScript Objects (POJOs) without Mongoose `extends Document` coupling. This guarantees 100% type-safety and seamless serialization across Next.js Server Components, Client Components, `.lean()` query projections, and client API response envelopes (`ApiResponse<T>`).
+
 ---
 
 ### Collection 1: `StoreConfig` (`storeconfigs`) — Singleton
@@ -342,7 +346,8 @@ export interface IStoreConfigFeatures {
   sslCommerzEnabled?: boolean;
 }
 
-export interface IStoreConfig extends Document {
+export interface IStoreConfig {
+  _id?: string;
   branding: IStoreConfigBranding;
   homeSections: IHomeSection[];
   headerNavLinks: IHeaderNavLink[];
@@ -364,7 +369,8 @@ export interface IStoreConfig extends Document {
 Houses the 3-level physical classification tree (`Root ➔ Sub-Category ➔ Item Type`) using Materialized Path `ancestors[]`.
 
 ```typescript
-export interface ICategory extends Document {
+export interface ICategory {
+  _id?: string;
   name: string;                                  // e.g. "Hoodies"
   slug: string;                                  // e.g. "hoodies" (Unique, indexed)
   parentId: mongoose.Types.ObjectId | null;      // null for Root (Level 0)
@@ -388,8 +394,13 @@ export interface ICategory extends Document {
 
 Promotional marketing tags (`Winter Drop 2026`, `Flash Sale`) decoupled from physical categories.
 
+> [!IMPORTANT]
+> **Integrity & Anti-Drift Rule:**
+> All marketing collections MUST exist as documents in this `Collection` schema. Loose, unmanaged string tags ("hanging in the air") are strictly prohibited. When an admin selects or adds a collection in the Product Form, it references `Collection.slug`. Any new collection created on-the-fly calls `POST /api/collections` to persist a verified `Collection` document first, ensuring global visibility and campaign configurability.
+
 ```typescript
-export interface ICollection extends Document {
+export interface ICollection {
+  _id?: string;
   title: string;                                 // e.g. "Winter Drop 2026"
   slug: string;                                  // e.g. "winter-drop-2026" (Unique, indexed)
   description?: string;
@@ -415,7 +426,8 @@ export interface ICollection extends Document {
 Manages brand entities (Apple, Samsung, Sony, Aurem) for multi-niche stores.
 
 ```typescript
-export interface IBrand extends Document {
+export interface IBrand {
+  _id?: string;
   name: string;                                  // e.g. "Apple" (Unique)
   slug: string;                                  // e.g. "apple" (Unique, indexed)
   logo?: {
@@ -443,9 +455,13 @@ export type ProductType = 'REGULAR' | 'CLOTHING' | 'GADGET' | 'FOOD' | 'SERVICE'
 export type ProductStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 export type StockStatus = 'AUTO' | 'FORCE_OUT_OF_STOCK' | 'PRE_ORDER';
 
-export interface IProductImage {
-  url: string;
-  key: string;
+export interface IProductMedia {
+  url: string;                                   // Image/Video asset URL
+  key?: string;                                  // Cloudflare R2 key (empty if external embed)
+  thumbnailUrl?: string;                         // Video poster thumbnail (required for VIDEO type)
+  type: 'IMAGE' | 'VIDEO';                       // Polymorphic media discriminator
+  videoProvider?: 'YOUTUBE' | 'VIMEO' | 'R2' | 'BUNNY_STREAM'; // Provider for video assets
+  altText?: string;
 }
 
 export interface IVariantOptionGroup {
@@ -456,26 +472,25 @@ export interface IVariantOptionGroup {
   }[];
 }
 
+export interface IVariantSelectedOption {
+  name: string;                                  // Option Axis name: e.g. "Size", "Color", "Volume", "Storage"
+  value: string;                                 // Option Value: e.g. "XL", "Acid Black", "100ml", "256GB"
+}
+
 export interface IVariant {
-  _id?: mongoose.Types.ObjectId;
+  _id?: string;
   sku: string;                                   // Unique variant SKU
-  label?: string;                                // e.g. "XL / Acid Black" or "16GB / 256GB"
-  size?: string;                                 // e.g. "S", "M", "L", "XL"
-  colorName?: string;
-  colorHex?: string;
-  attributes?: {
-    key: string;                                 // e.g. "RAM", "Region"
-    value: string;                               // e.g. "16GB", "USA"
-  }[];
-  price?: number;                                // Override price (falls back to basePrice)
-  discountPrice?: number;
-  costPrice?: number;
-  wholesalePrice?: number;                       // Future B2B wholesale price
-  stock: number;                                 // Granular variant inventory
-  stockStatus?: StockStatus;
-  image?: IProductImage;                         // Variant-specific image swap
-  isDefault?: boolean;
-  isActive?: boolean;
+  title: string;                                 // Human-readable title: "XL / Acid Black", "100ml / EDP"
+  selectedOptions: IVariantSelectedOption[];     // Fully dynamic dimension bindings (Zero hardcoded crutches)
+  price?: number;                                // Override price (falls back to root basePrice if omitted)
+  discountPrice?: number;                        // Active variant discount price
+  costPrice?: number;                            // Unit cost for margin calculation
+  wholesalePrice?: number;                       // Approved B2B tier wholesale price
+  stock: number;                                 // Granular variant warehouse stock
+  stockStatus?: StockStatus;                     // Override stock status (e.g. FORCE_OUT_OF_STOCK)
+  image?: IProductMedia;                         // Variant-specific image swap
+  isDefault?: boolean;                           // Pre-selected variant on PDP load
+  isActive?: boolean;                            // Soft toggle (defaults to true)
 }
 
 export interface IModifierGroupOption {
@@ -508,22 +523,24 @@ export interface ISpecificationGroup {
   }[];
 }
 
-export interface IProduct extends Document {
+export interface IProduct {
+  _id?: string;
   title: string;
   slug: string;                                  // Unique, indexed
   description: string;
+  highlights?: string[];                         // Structured bullet points (Checkmarks / Key Specs)
   productType: ProductType;
   hasVariants: boolean;                          // false = Regular, true = Variant Matrix
 
   // Taxonomy & Brand
   categoryId?: mongoose.Types.ObjectId | null;   // Reference to Category
-  categorySlug?: string;                         // Indexed for flat routing
+  categorySlug?: string;                         // Indexed for flat routing e.g. "hoodies"
   categoryPath?: string[];                       // ["men", "topwear", "hoodies"] for breadcrumbs
-  primaryCategory: string;                       // Normalized root category name
+  categoryName: string;                          // Denormalized display label (e.g. "Hoodies")
   brandId?: mongoose.Types.ObjectId | null;      // Optional reference to Brand
   brandName?: string;                            // Denormalized name for zero-join queries
   brandSlug?: string;                            // Indexed for /brand/[slug] filtering
-  collections: string[];                         // Array of collection slugs
+  collections: string[];                         // Array of validated Collection.slug foreign keys (Zero-join query)
   tags?: string[];
 
   // Pricing & Currency
@@ -540,13 +557,8 @@ export interface IProduct extends Document {
   stockStatus: StockStatus;
   inStock: boolean;                              // Auto-computed boolean (totalStock > 0)
 
-  // Media
-  images: IProductImage[];
-  video?: {
-    provider: 'YOUTUBE' | 'R2' | 'BUNNY_STREAM';
-    url: string;
-    videoId?: string;
-  };
+  // Media (Single Source of Truth — Zero Duplication)
+  media: IProductMedia[];                        // Unified gallery with natural sequence [p][v][p]
 
   // Modular Subdocuments
   variantOptions: IVariantOptionGroup[];
@@ -562,6 +574,7 @@ export interface IProduct extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
 ```
 
 ---
@@ -662,7 +675,8 @@ export interface IOrderCourier {
   returnedAt?: Date;
 }
 
-export interface IOrder extends Document {
+export interface IOrder {
+  _id?: string;
   orderNumber: string;                           // Human-friendly unique ID: "AUR-1042"
   idempotencyKey?: string;                       // Client UUID to prevent duplicate checkout submissions
   customer: IOrderCustomer;
@@ -704,7 +718,8 @@ export type UserRole =
   | 'ADMIN'                                      // Store manager (catalog & orders; no StoreConfig)
   | 'SUPER_ADMIN';                               // Platform owner (exclusive StoreConfig & secrets)
 
-export interface IUser extends Document {
+export interface IUser {
+  _id?: string;
   name: string;
   email: string;                                 // Unique, indexed
   phone?: string;                                // 11-digit BD phone
@@ -733,7 +748,8 @@ Auto-created from phone numbers across guest checkouts; tracks delivery history 
 ```typescript
 export type FraudRiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'BLACKLIST';
 
-export interface ICustomer extends Document {
+export interface ICustomer {
+  _id?: string;
   phone: string;                                 // Primary key: 11-digit BD phone (Unique, indexed)
   name: string;
   defaultAddress?: string;
@@ -765,7 +781,8 @@ Voucher management with spending thresholds, expiration dates, and usage quotas.
 ```typescript
 export type CouponDiscountType = 'PERCENTAGE' | 'FLAT_AMOUNT';
 
-export interface ICoupon extends Document {
+export interface ICoupon {
+  _id?: string;
   code: string;                                  // Normalized uppercase (Unique, indexed)
   discountType: CouponDiscountType;
   discountValue: number;                         // e.g. 15 (%) or 200 (৳)
@@ -791,7 +808,8 @@ Verified customer ratings, text reviews, and uploaded photos.
 ```typescript
 export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
-export interface IReview extends Document {
+export interface IReview {
+  _id?: string;
   productId: mongoose.Types.ObjectId;            // Reference to Product (Indexed)
   orderId?: mongoose.Types.ObjectId;             // Reference to Order
   customerPhone: string;                         // 11-digit BD phone
@@ -827,7 +845,8 @@ export type AuditAction =
   | 'USER_ROLE_CHANGE'
   | 'ENTITY_DELETE';
 
-export interface IAuditLog extends Document {
+export interface IAuditLog {
+  _id?: string;
   actorId: mongoose.Types.ObjectId;              // Reference to User._id
   actorName: string;
   actorRole: UserRole;
@@ -955,8 +974,8 @@ To prevent accidental data leaks or over-fetching:
    // Exclude heavy descriptions, size charts, specifications, and extra variants
    const PRODUCT_CARD_PROJECTION =
      'title slug basePrice discountPrice maxPrice inStock stockStatus ' +
-     'primaryCategory hasVariants images brandName brandSlug';
-   // images sliced to 1: { images: { $slice: 1 } }
+     'categoryName hasVariants media brandName brandSlug';
+   // media sliced to 1: { media: { $slice: 1 } }
    ```
 3. **Guest Order Tracking IDOR Protection (`/api/orders/track`):**
    - Query strictly requires: `{ orderNumber, 'customer.phone': { $regex: `${last4Digits}$` } }`.

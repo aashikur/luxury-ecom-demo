@@ -37,7 +37,8 @@ interface ProductItem {
   title: string;
   slug: string;
   description: string;
-  primaryCategory: string;
+  categoryName?: string;
+  primaryCategory?: string;
   productType?: string;
   hasVariants?: boolean;
   stockStatus?: string;
@@ -108,7 +109,7 @@ export default function ProductsTableClient({
 
   // Unique categories
   const categories = useMemo(() => {
-    const cats = new Set(products.map((p) => p.primaryCategory).filter(Boolean));
+    const cats = new Set(products.map((p) => p.categoryName || p.primaryCategory).filter((c): c is string => Boolean(c)));
     return ['ALL', ...Array.from(cats)];
   }, [products]);
 
@@ -123,14 +124,15 @@ export default function ProductsTableClient({
       if (activeTab === 'DRAFT' && !isDraft) return false;
       if (activeTab === 'ARCHIVED' && !isArchived) return false;
 
-      if (selectedCategory !== 'ALL' && p.primaryCategory !== selectedCategory) {
+      const catName = p.categoryName || p.primaryCategory;
+      if (selectedCategory !== 'ALL' && catName !== selectedCategory) {
         return false;
       }
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesTitle = p.title.toLowerCase().includes(q);
-        const matchesCat = p.primaryCategory?.toLowerCase().includes(q);
+        const matchesCat = catName?.toLowerCase().includes(q);
         if (!matchesTitle && !matchesCat) return false;
       }
 
@@ -220,7 +222,7 @@ export default function ProductsTableClient({
     const headers = ['Title,Category,Status,TotalStock,Price\n'];
     const rows = filteredProducts.map((p) => {
       const totalStock = p.totalStock ?? (p.variants?.reduce((s, v) => s + v.stock, 0) || 0);
-      return `"${p.title}","${p.primaryCategory}",${p.isActive ? 'Active' : 'Draft'},${totalStock},${p.basePrice}\n`;
+      return `"${p.title}","${p.categoryName || p.primaryCategory || 'General'}",${p.isActive ? 'Active' : 'Draft'},${totalStock},${p.basePrice}\n`;
     });
     const blob = new Blob([...headers, ...rows], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -424,7 +426,7 @@ export default function ProductsTableClient({
                     {/* Category Pill */}
                     <TableCell>
                       <Badge variant="secondary">
-                        {product.primaryCategory || 'General'}
+                        {product.categoryName || product.primaryCategory || 'General'}
                       </Badge>
                     </TableCell>
 

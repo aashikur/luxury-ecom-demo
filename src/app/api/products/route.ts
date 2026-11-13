@@ -26,29 +26,54 @@ const SEED_PRODUCTS = [
     slug: 'vintage-heavyweight-acid-wash-hoodie',
     description:
       '450 GSM French Terry Cotton. Custom vintage acid wash with dropped shoulders, double-layered hood, and raw distressing.',
-    primaryCategory: 'Hoodie',
+    categoryName: 'Hoodie',
     collections: ['hoodies', 'winter-drop-2026', 'featured'],
     basePrice: 1850,
     discountPrice: 1450,
-    images: [
+    media: [
       {
         url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80',
         key: 'seed/hoodie-1.webp',
+        type: 'IMAGE',
       },
       {
         url: 'https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=800&q=80',
         key: 'seed/hoodie-2.webp',
+        type: 'IMAGE',
       },
     ],
-    video: {
-      provider: 'YOUTUBE',
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      videoId: 'dQw4w9WgXcQ',
-    },
+    variantOptions: [
+      { name: 'Size', values: [{ label: 'M' }, { label: 'L' }, { label: 'XL' }] },
+      { name: 'Color', values: [{ label: 'Acid Black', meta: '#18181B' }] },
+    ],
     variants: [
-      { size: 'M', stock: 12, sku: 'HD-ACID-M', colorName: 'Acid Black' },
-      { size: 'L', stock: 8, sku: 'HD-ACID-L', colorName: 'Acid Black' },
-      { size: 'XL', stock: 0, sku: 'HD-ACID-XL', colorName: 'Acid Black' }, // Out of stock demo
+      {
+        title: 'M / Acid Black',
+        sku: 'HD-ACID-M',
+        stock: 12,
+        selectedOptions: [
+          { name: 'Size', value: 'M' },
+          { name: 'Color', value: 'Acid Black' },
+        ],
+      },
+      {
+        title: 'L / Acid Black',
+        sku: 'HD-ACID-L',
+        stock: 8,
+        selectedOptions: [
+          { name: 'Size', value: 'L' },
+          { name: 'Color', value: 'Acid Black' },
+        ],
+      },
+      {
+        title: 'XL / Acid Black',
+        sku: 'HD-ACID-XL',
+        stock: 0,
+        selectedOptions: [
+          { name: 'Size', value: 'XL' },
+          { name: 'Color', value: 'Acid Black' },
+        ],
+      },
     ],
     sizeChart: [
       { size: 'M', chest: '44', length: '28', sleeve: '25' },
@@ -64,24 +89,49 @@ const SEED_PRODUCTS = [
     slug: 'oversized-minimalist-boxy-tee-240-gsm',
     description:
       '240 GSM Combed Cotton with high-density silicone chest branding. Boxy streetwear fit with ribbed crew collar.',
-    primaryCategory: 'T-Shirt',
+    categoryName: 'T-Shirt',
     collections: ['t-shirts', 'essentials', 'featured'],
     basePrice: 950,
     discountPrice: 790,
-    images: [
+    media: [
       {
         url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80',
         key: 'seed/tee-1.webp',
+        type: 'IMAGE',
       },
     ],
-    video: {
-      provider: 'YOUTUBE',
-      url: '',
-    },
+    variantOptions: [
+      { name: 'Size', values: [{ label: 'S' }, { label: 'M' }, { label: 'L' }] },
+      { name: 'Color', values: [{ label: 'Bone White', meta: '#F5F5F0' }] },
+    ],
     variants: [
-      { size: 'S', stock: 15, sku: 'TEE-BOXY-S', colorName: 'Bone White' },
-      { size: 'M', stock: 20, sku: 'TEE-BOXY-M', colorName: 'Bone White' },
-      { size: 'L', stock: 6, sku: 'TEE-BOXY-L', colorName: 'Bone White' },
+      {
+        title: 'S / Bone White',
+        sku: 'TEE-BOXY-S',
+        stock: 15,
+        selectedOptions: [
+          { name: 'Size', value: 'S' },
+          { name: 'Color', value: 'Bone White' },
+        ],
+      },
+      {
+        title: 'M / Bone White',
+        sku: 'TEE-BOXY-M',
+        stock: 20,
+        selectedOptions: [
+          { name: 'Size', value: 'M' },
+          { name: 'Color', value: 'Bone White' },
+        ],
+      },
+      {
+        title: 'L / Bone White',
+        sku: 'TEE-BOXY-L',
+        stock: 6,
+        selectedOptions: [
+          { name: 'Size', value: 'L' },
+          { name: 'Color', value: 'Bone White' },
+        ],
+      },
     ],
     sizeChart: [
       { size: 'S', chest: '40', length: '27', sleeve: '9' },
@@ -97,20 +147,49 @@ const SEED_PRODUCTS = [
     slug: 'relaxed-fit-utility-cargo-trousers',
     description:
       'Engineered Ripstop Cotton with 6-pocket utility layout, adjustable ankle drawstrings, and matte black hardware.',
-    primaryCategory: 'Bottoms',
+    categoryName: 'Bottoms',
     collections: ['pants', 'winter-drop-2026'],
     basePrice: 1650,
     discountPrice: 1350,
-    images: [
+    media: [
       {
         url: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=800&q=80',
         key: 'seed/cargo-1.webp',
+        type: 'IMAGE',
       },
     ],
+    variantOptions: [
+      { name: 'Size', values: [{ label: 'M' }, { label: 'L' }, { label: 'XL' }] },
+      { name: 'Color', values: [{ label: 'Matte Olive', meta: '#556B2F' }] },
+    ],
     variants: [
-      { size: 'M', stock: 10, sku: 'CRG-UTL-M', colorName: 'Matte Olive' },
-      { size: 'L', stock: 7, sku: 'CRG-UTL-L', colorName: 'Matte Olive' },
-      { size: 'XL', stock: 4, sku: 'CRG-UTL-XL', colorName: 'Matte Olive' },
+      {
+        title: 'M / Matte Olive',
+        sku: 'CRG-UTL-M',
+        stock: 10,
+        selectedOptions: [
+          { name: 'Size', value: 'M' },
+          { name: 'Color', value: 'Matte Olive' },
+        ],
+      },
+      {
+        title: 'L / Matte Olive',
+        sku: 'CRG-UTL-L',
+        stock: 7,
+        selectedOptions: [
+          { name: 'Size', value: 'L' },
+          { name: 'Color', value: 'Matte Olive' },
+        ],
+      },
+      {
+        title: 'XL / Matte Olive',
+        sku: 'CRG-UTL-XL',
+        stock: 4,
+        selectedOptions: [
+          { name: 'Size', value: 'XL' },
+          { name: 'Color', value: 'Matte Olive' },
+        ],
+      },
     ],
     sizeChart: [
       { size: 'M', chest: '30-32', length: '39' },
@@ -162,7 +241,7 @@ export async function GET(request: NextRequest) {
         { categoryPath: categorySlug },
       ];
     } else if (category) {
-      filter.primaryCategory = new RegExp(`^${category}$`, 'i');
+      filter.categoryName = new RegExp(`^${category}$`, 'i');
     }
 
     // 3. Query with compound index sorting (isPinned -> priority -> createdAt)
@@ -205,14 +284,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // 1. Required field validations
-    if (!body.title || !body.basePrice || !body.primaryCategory) {
+    const catName = body.categoryName || body.primaryCategory;
+    if (!body.title || !body.basePrice || !catName) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Title, basePrice, and primaryCategory are required.',
+          error: 'Title, basePrice, and categoryName are required.',
         },
         { status: 400 }
       );
+    }
+    body.categoryName = catName;
+    if (!body.media && body.images) {
+      body.media = body.images.map((img: any) => ({
+        ...img,
+        type: img.type || 'IMAGE',
+      }));
     }
 
     // 2. Auto-generate URL slug if not provided

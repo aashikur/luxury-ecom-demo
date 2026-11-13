@@ -8,8 +8,10 @@ interface ProductItem {
   slug: string;
   basePrice: number;
   discountPrice?: number;
-  images: { url: string; key: string }[];
+  media?: { url: string; key?: string }[];
+  images?: { url: string; key?: string }[];
   collections?: string[];
+  categoryName?: string;
   primaryCategory?: string;
 }
 

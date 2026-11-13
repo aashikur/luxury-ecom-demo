@@ -144,7 +144,7 @@ export default function AdminShellClient({
   const brandHeader = (showCloseButton?: boolean) => (
     <div className="h-16 px-5 border-b border-zinc-900 flex items-center justify-between shrink-0">
       <Link
-        href="/admin"
+        href="/"
         onClick={() => setIsMobileMenuOpen(false)}
         className="flex items-center gap-3 group"
       >

@@ -30,7 +30,7 @@ export interface IOrder extends Document {
     phone: string;
     email?: string;
     address: string;
-    deliveryZone: 'INSIDE_DHAKA' | 'OUTSIDE_DHAKA';
+    deliveryZone: 'INSIDE_DHAKA' | 'DHAKA_SUBURBS' | 'OUTSIDE_DHAKA';
     note?: string;
   };
   items: IOrderItem[];
@@ -78,7 +78,7 @@ const OrderSchema = new Schema<IOrder>(
       address: { type: String, required: true, trim: true },
       deliveryZone: {
         type: String,
-        enum: ['INSIDE_DHAKA', 'OUTSIDE_DHAKA'],
+        enum: ['INSIDE_DHAKA', 'DHAKA_SUBURBS', 'OUTSIDE_DHAKA'],
         required: true,
       },
       note: { type: String, default: '' },

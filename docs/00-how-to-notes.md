@@ -18,6 +18,7 @@ To prevent confusion between **CR-Locked Production Rules**, **Domain Specificat
 * `docs/09-database-collection-architecture.md` — 7 Core + 4 Growth MongoDB collection boundaries (11 total).
 * `docs/10-store-settings-and-configuration-scope.md` — 7-module `StoreConfig` specification & 3-Layer Secret Shield.
 * `docs/11-nextjs-caching-ssg-dynamic-rendering-and-revalidation.md` — Next.js 16 Split Cache, `getPublicStoreConfig()`, `bf-cache`, & `revalidateTag`.
+* `docs/12-seo-metadata-and-crawler-architecture.md` — Technical SEO, `robots.ts`, dynamic `sitemap.ts`, `generateMetadata`, JSON-LD schema & admin shielding.
 * `docs/PROMPT_LIBRARY.md` — Ready-to-use AI/developer engineering prompts.
 
 ### Tier 3: Live API Contract

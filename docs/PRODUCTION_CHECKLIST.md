@@ -665,6 +665,16 @@ response. Repeat after logout.
     HIT.
 -   [ ] Test checkout and admin pages without relying on CDN cache.
 
+### Technical SEO and crawler governance
+
+-   [ ] Confirm `robots.ts` allows public storefront and disallows `/admin/`, `/api/`, `/checkout/`, `/account/`, and query-based filter/sort strings.
+-   [ ] Confirm dynamic `sitemap.ts` includes active products, categories, and priority rankings with accurate `lastModified` timestamps.
+-   [ ] Dynamic product/category pages export `generateMetadata` with unique title, description, OG image, and self-referencing canonical URL.
+-   [ ] Dynamic product pages render inline JSON-LD Schema.org structured data (`Product`, `Offer`, `Brand`, `InStock`/`OutOfStock`).
+-   [ ] Admin layout (`(admin)/layout.tsx`) sets `robots: { index: false, follow: false }` and responses emit `X-Robots-Tag: noindex, nofollow`.
+-   [ ] Out-of-stock items remain indexed with `OutOfStock` availability; discontinued items return proper HTTP 404/410 (never soft 404).
+-   [ ] Submit verified `sitemap.xml` to Google Search Console upon domain launch.
+
 ------------------------------------------------------------------------
 
 ## 10. API, background work, and reliability

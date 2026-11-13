@@ -75,7 +75,7 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
   const variantsSumStock = existingVariants.reduce((sum: number, v: any) => sum + (v.stock || 0), 0);
   const totalStock = product?.totalStock ?? (existingVariants.length > 0 ? variantsSumStock : 0);
 
-  const [images, setImages] = useState<MediaItem[]>(product?.images || []);
+  const [images, setImages] = useState<MediaItem[]>(product?.media || product?.images || []);
   const initialKeys = useRef<Set<string>>(
     new Set((product?.images || []).map((img: MediaItem) => img.key))
   );
@@ -266,20 +266,31 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
     });
   };
 
-  const handleAddCustomTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleAddCustomTag = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
-      const cleanSlug = customTagInput
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
+      const rawTitle = customTagInput.trim();
+      if (!rawTitle) return;
 
-      if (cleanSlug && !form.collections.includes(cleanSlug)) {
-        setForm((prev) => ({
-          ...prev,
-          collections: [...prev.collections, cleanSlug],
-        }));
+      try {
+        const res = await fetch('/api/collections', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: rawTitle, isActive: true }),
+        });
+        const data = await res.json();
+        if (data.success && data.data) {
+          await fetchTaxonomies();
+          const newSlug = data.data.slug;
+          if (!form.collections.includes(newSlug)) {
+            setForm((prev) => ({
+              ...prev,
+              collections: [...prev.collections, newSlug],
+            }));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to create collection in DB:', err);
       }
       setCustomTagInput('');
     }
@@ -318,6 +329,7 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
         categoryId: form.categoryId || undefined,
         categorySlug: form.categorySlug || undefined,
         categoryPath: form.categoryPath.length > 0 ? form.categoryPath : undefined,
+        categoryName: form.primaryCategory || 'Garments',
         primaryCategory: form.primaryCategory || 'Garments',
         collections: form.collections,
         status: form.status,
@@ -357,6 +369,16 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
         }
       }
 
+      const formattedMedia = (images.length > 0 ? images : [
+        {
+          url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80',
+          key: 'seed/placeholder.webp',
+        },
+      ]).map((img: any) => ({
+        ...img,
+        type: img.type || 'IMAGE',
+      }));
+
       if (isEdit && product) {
         const res = await fetch(`/api/products/${product._id}`, {
           method: 'PUT',
@@ -365,7 +387,8 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
             ...payload,
             totalStock: finalTotalStock,
             variants: finalVariants,
-            images: images,
+            media: formattedMedia,
+            images: formattedMedia,
           }),
         });
 
@@ -389,12 +412,8 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
             ...payload,
             totalStock: finalTotalStock,
             variants: finalVariants,
-            images: images.length > 0 ? images : [
-              {
-                url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80',
-                key: 'seed/placeholder.webp',
-              },
-            ],
+            media: formattedMedia,
+            images: formattedMedia,
           }),
         });
 
@@ -696,7 +715,7 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
                 </div>
 
                 <Input
-                  placeholder="Custom tag (press Enter)"
+                  placeholder="+ Add new collection to database (press Enter)"
                   value={customTagInput}
                   onChange={(e) => setCustomTagInput(e.target.value)}
                   onKeyDown={handleAddCustomTag}

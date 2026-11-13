@@ -122,14 +122,15 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Cascade delete associated image assets from Cloudflare R2 (skip seed assets)
-    if (deleted.images && deleted.images.length > 0) {
-      const keysToDelete = deleted.images
-        .map((img: { key?: string }) => img.key)
-        .filter((key): key is string => Boolean(key && !key.startsWith('seed/')));
+    // Cascade delete associated assets from Cloudflare R2 (skip seed assets)
+    const mediaList = deleted.media || (deleted as any).images || [];
+    if (mediaList.length > 0) {
+      const keysToDelete = mediaList
+        .map((m: { key?: string }) => m.key)
+        .filter((key: any): key is string => Boolean(key && !key.startsWith('seed/')));
 
       if (keysToDelete.length > 0) {
-        await Promise.allSettled(keysToDelete.map((key) => deleteFromR2(key)));
+        await Promise.allSettled(keysToDelete.map((key: string) => deleteFromR2(key)));
       }
     }
 
@@ -151,7 +152,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       {
         success: true,
         message: 'Product and associated storage assets deleted successfully',
-        deletedImageKeys: deleted.images.map((img) => img.key),
+        deletedMediaKeys: mediaList.map((m: any) => m.key).filter(Boolean),
       },
       { status: 200 }
     );

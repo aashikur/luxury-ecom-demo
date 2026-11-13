@@ -105,3 +105,48 @@
 ### Task #13: Step 2 Schema, Interface & Response Envelope Lock
 * **Files Created/Modified:** `docs/pipeline/02-schema-interface-and-response-envelope.md`, `docs/pipeline/scope.md`.
 * **Changes:** Fully codified Step 2 of the Senior Master Pipeline: (1) Standardized universal API response envelope (`ApiResponse<T>`, `ApiErrorResponse`, `ApiPaginationMeta`, and `ApiErrorCode` enum); (2) Codified exact TypeScript interfaces across all 11 collections (`StoreConfig`, `Category`, `Collection`, `Brand`, `Product`, `Order`, `User`, `Customer`, `Coupon`, `Review`, `AuditLog`); (3) Formulated cross-collection relationship and compound index specifications; (4) Locked server-authoritative checkout Zod allowlists (`CreateOrderSchema`), hard-capped pagination (`limit <= 50`), public vs admin `.select()` projection filters, and atomic stock decrements with `inventoryState` anti-double-restore safeguards. Formally marked Step 2 🔒 **LOCKED**.
+
+### Task #14: Product Media Architecture & Future-Proof Video Scope Lock (v1 vs v2)
+* **Files Modified:** `docs/pipeline/02-schema-interface-and-response-envelope.md`, `docs/pipeline/scope.md`, `src/models/Product.ts`.
+* **Changes:** Future-proofed product media and description specifications without introducing breaking migrations:
+  1. **v1 Media Scope (Active):** High-speed client-side canvas compression (`3:4 WebP`, `1200px cap`, `80-180KB`) into Cloudflare R2 + responsive Next.js `<Image sizes>` dynamic edge thumbnails.
+  2. **v2 Media Scope (Roadmapped & Schema-Ready):** Polymorphic mixed-media gallery (`[picture] [video] [picture]` custom ordering). Primary video provider roadmapped as YouTube embed / YouTube Shorts (zero cost, adaptive bitrate streaming, and automatic high-resolution thumbnail API `img.youtube.com/vi/{id}/hqdefault.jpg`), with architectural hooks for Bunny.net / Cloudflare Stream and self-hosted R2 MP4.
+  3. **Forward-Compatible Schema Update:** Updated `IProductImage` and `ProductSchema` with optional fields: `thumbnailUrl?: string`, `type?: 'IMAGE' | 'VIDEO'`, `videoProvider?: 'YOUTUBE' | 'VIMEO' | 'R2' | 'BUNNY_STREAM'`, and optional R2 `key` (`default: ''` so external video embeds pass validation).
+  4. **Product Bullet Highlights:** Added `highlights?: string[]` to `IProduct` and `ProductSchema` for structured bullet points and specifications on PDPs alongside markdown descriptions. All changes verified clean with TypeScript `tsc --noEmit`.
+
+### Task #15: Marketing Collections Integrity & Anti-Drift Architecture Scope Lock
+* **Files Modified:** `docs/pipeline/02-schema-interface-and-response-envelope.md`, `docs/pipeline/scope.md`.
+* **Changes:** Resolved architectural ambiguity regarding `Product.collections: string[]`:
+  1. **Integrity Rule:** `Product.collections` is strictly an array of validated `Collection.slug` foreign keys, never unmanaged "in-the-air" strings. All marketing collections must exist as first-class documents in the `Collection` (`collections`) collection to enable global campaign banners, dates, and homepage section curation.
+  2. **Zero-Join Performance:** Retained `string[]` (slug) instead of `ObjectId[]` to enable 1ms multikey indexed catalog filtering (`Product.find({ collections: slug })`) without `$lookup` join overhead.
+  3. **In-Line Creation Architecture:** Prohibited disconnected local tag entry; mandated that in-form creation of new collections must persist through `POST /api/collections` so newly created campaigns become instantly available across all products.
+  4. **Pure POJO Specification Standard:** Removed all legacy Mongoose `extends Document` inheritance across all 11 collection interfaces in `02-schema-interface-and-response-envelope.md`, standardizing on pure Plain Old JavaScript Objects (POJOs) with explicit `_id?: string` to guarantee 100% type compatibility with `.lean()` queries and Next.js client component serialization.
+
+### Task #16: Greenfield Taxonomy Architecture (`categoryName` & `categorySlug` Pure Symmetry)
+* **Files Modified:** `docs/pipeline/01-scope-and-business-rules.md`, `docs/pipeline/02-schema-interface-and-response-envelope.md`, `docs/pipeline/scope.md`.
+* **Changes:** Completely eliminated legacy baggage (`primaryCategory`) from the architectural scope and specifications:
+  1. Standardized on pure, clean symmetry: `categorySlug` (indexed URL routing key) and `categoryName` (denormalized human-readable display label for zero-join catalog rendering), matching `brandSlug` and `brandName`.
+  2. Purged all legacy references across Rule #21 projections, Collection 5 `IProduct` interfaces, and catalog DTO specifications to ensure a clean, zero-overhead foundation ahead of Step 3 and Step 4 backend execution.
+
+### Task #17: Unified Media Pipeline Lock (`media: IProductMedia[]` Single Source of Truth)
+* **Files Modified:** `docs/pipeline/01-scope-and-business-rules.md`, `docs/pipeline/02-schema-interface-and-response-envelope.md`, `docs/pipeline/scope.md`.
+* **Changes:** Completely eliminated dual-media redundancy and consolidated gallery architecture:
+  1. Purged the separate root `video?: { provider, url, videoId }` object and replaced legacy `images: IProductImage[]` with a unified polymorphic array: `media: IProductMedia[]`.
+  2. Standardized `IProductMedia` with explicit fields: `url` (asset URL), `key?` (R2 storage key for deletion), `thumbnailUrl?` (video poster thumbnail frame), `type: 'IMAGE' | 'VIDEO'` (discriminator), `videoProvider?` ('YOUTUBE' | 'VIMEO' | 'R2' | 'BUNNY_STREAM'), and `altText?`.
+  3. Natural sequence preserved: mixed gallery ordering `[picture][video][picture]` is determined naturally by array index position, eliminating multi-field synchronization overhead. Updated Rule #21 and catalog card projections (`media: { $slice: 1 }`).
+
+### Task #18: Universal Dynamic Variant Architecture Lock (`selectedOptions` Standard)
+* **Files Modified:** `docs/pipeline/02-schema-interface-and-response-envelope.md`, `docs/pipeline/scope.md`.
+* **Changes:** Future-proofed variant matrix schema to natively support all e-commerce niches (Clothing, Perfumes, Gadgets, Food, Footwear) without hardcoded crutches:
+  1. Purged hardcoded legacy fields (`size`, `colorName`, `colorHex`, and loose `attributes`) from `IVariant`.
+  2. Standardized on the industry-standard dimensional model: `selectedOptions: IVariantSelectedOption[]` (`name: string; value: string;`) pairing cleanly with parent `variantOptions: IVariantOptionGroup[]`.
+  3. Clarified architectural purpose of modular subdocuments: `variantOptions` (interactive UI selector buttons), `variants` (physical inventory SKUs & custom pricing), `sizeChart` (apparel measurement guide popup), `specifications` (structured technical fact table for perfume notes, fabric GSM, and electronics), and `modifierGroups` (unbundled optional add-ons like gift packaging or chargers without SKU explosion).
+
+### Task #19: Codebase Field Name Synchronization (Zero UI Bloat Pre-Schema Alignment)
+* **Files Modified:** `src/models/Product.ts`, `src/models/Order.ts`, `src/app/api/products/route.ts`, `src/app/api/products/[slug]/route.ts`, `src/app/page.tsx`, `src/app/shop/page.tsx`, `src/components/admin/ProductFormClient.tsx`, `src/components/admin/ProductsTableClient.tsx`, `src/components/admin/ProductDetailClient.tsx`, `src/components/storefront/ProductCard.tsx`, `src/components/storefront/ProductDetailView.tsx`, `src/components/storefront/CollectionSection.tsx`, `docs/pipeline/scope.md`.
+* **Changes:** Synchronized all existing model and API field names ahead of Step 3 database schema construction without introducing unnecessary UI redesigns:
+  1. `categoryName` strictly enforced across models, APIs, seeds, and table/card views.
+  2. `media: IProductMedia[]` unified across `Product.ts`, R2 deletion cascade handlers, and client cards.
+  3. Universal `selectedOptions` + `title` integrated into `IVariant` and `ProductSchema` index.
+  4. Added `'DHAKA_SUBURBS'` deliveryZone enum to `Order.ts` aligning with Rule #2.
+  5. 100% verified with `tsc --noEmit` (0 errors).
