@@ -66,6 +66,12 @@ export interface IStoreConfig extends Document {
       insideDhaka: string;
       outsideDhaka: string;
     };
+    socialLinks?: {
+      facebook?: string;
+      instagram?: string;
+      youtube?: string;
+      tiktok?: string;
+    };
   };
   tracking: {
     metaPixelId?: string;
@@ -266,6 +272,12 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
       estimatedDeliveryDays: {
         insideDhaka: { type: String, default: '24-48 Hours' },
         outsideDhaka: { type: String, default: '3-5 Days' },
+      },
+      socialLinks: {
+        facebook: { type: String, default: '' },
+        instagram: { type: String, default: '' },
+        youtube: { type: String, default: '' },
+        tiktok: { type: String, default: '' },
       },
     },
     tracking: {

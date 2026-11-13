@@ -74,6 +74,11 @@ Manages delivery tariffs, delivery policy, free shipping progress bar, and custo
   - Support Email: e.g. `support@aurem.com`
   - Helpline Availability Hours: e.g. `10:00 AM - 10:00 PM (Everyday)`
   - Showroom / Outlet Address: e.g. `Banani 11, Dhaka, Bangladesh`
+- **Social Media Links (`socialLinks`)**:
+  - Facebook Page URL: e.g. `https://facebook.com/aurem.garments`
+  - Instagram Profile URL: e.g. `https://instagram.com/aurem.luxury`
+  - YouTube Channel URL: e.g. `https://youtube.com/@aurem`
+  - TikTok Profile URL: e.g. `https://tiktok.com/@aurem`
 - **Delivery Policy Note**: Checkout trust reminder (e.g. *"পণ্য ডেলিভারিম্যানের সামনে চেক করে গ্রহণ করুন"*).
 
 ---

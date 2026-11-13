@@ -102,6 +102,12 @@ const DEFAULT_CONFIG_SEED = {
       insideDhaka: '24-48 Hours',
       outsideDhaka: '3-5 Days',
     },
+    socialLinks: {
+      facebook: 'https://facebook.com/aurem.official',
+      instagram: 'https://instagram.com/aurem.official',
+      youtube: '',
+      tiktok: '',
+    },
   },
   tracking: {
     metaPixelId: '',

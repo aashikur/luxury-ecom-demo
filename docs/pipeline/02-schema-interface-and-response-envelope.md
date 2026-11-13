@@ -230,6 +230,12 @@ export interface IStoreConfigLogistics {
     suburbsDhaka?: string;                       // e.g. "2-3 Days"
     outsideDhaka: string;                        // e.g. "3-5 Days"
   };
+  socialLinks?: {
+    facebook?: string;                           // e.g. "https://facebook.com/aurem.garments"
+    instagram?: string;                          // e.g. "https://instagram.com/aurem.luxury"
+    youtube?: string;                            // e.g. "https://youtube.com/@aurem"
+    tiktok?: string;                             // e.g. "https://tiktok.com/@aurem"
+  };
 }
 
 export interface IStoreConfigTracking {
