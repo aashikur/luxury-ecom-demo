@@ -7,10 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:db": "node scripts/test-db.mjs"
+    "test:db": "node scripts/test-db.mjs",
+    "db:seed": "node scripts/seed.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1164.0",
+    "better-auth": "^1.7.23",
     "cloudinary": "^2.11.0",
     "lucide-react": "^1.70.0",
     "mongoose": "^9.12.0",

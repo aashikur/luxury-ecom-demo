@@ -13,8 +13,6 @@ export interface IProductMedia {
   altText?: string;
 }
 
-export type IProductImage = IProductMedia;
-
 // 1. Dynamic Variant Axis (Renders selector buttons on PDP: e.g. Size, Color, RAM, Storage, Region)
 export interface IVariantOptionGroup {
   name: string;        // e.g. "Size", "Color", "RAM", "Storage", "Warranty"
@@ -110,7 +108,6 @@ export interface IProduct extends Document {
 
   // Media (Single Source of Truth)
   media: IProductMedia[];
-  images?: IProductMedia[]; // Fallback accessor for existing UI components
 
   // Flexible Engines
   variantOptions: IVariantOptionGroup[];
@@ -124,6 +121,8 @@ export interface IProduct extends Document {
   isActive: boolean;    // Auto-synced: true when status === 'PUBLISHED'
   isPinned: boolean;
   priority: number;
+  createdBy?: string;
+  updatedBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -266,6 +265,8 @@ const ProductSchema = new Schema<IProduct>(
     isActive: { type: Boolean, default: true, index: true },
     isPinned: { type: Boolean, default: false, index: true },
     priority: { type: Number, default: 0, index: true },
+    createdBy: { type: String, default: 'ADMIN' },
+    updatedBy: { type: String, default: 'ADMIN' },
   },
   {
     timestamps: true,

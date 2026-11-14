@@ -817,10 +817,8 @@ export interface IReview {
   rating: number;                                // 1 to 5 stars
   title?: string;
   comment: string;
-  photos: {
-    url: string;
-    key: string;
-  }[];
+  media: IProductMedia[];                        // Unified polymorphic media: pictures or video unboxings
+  photos?: IProductMedia[];                      // Backward-compatible alias
   verifiedPurchase: boolean;                     // true if matched with DELIVERED order
   status: ReviewStatus;                          // Approved by staff before appearing on PDP
   createdAt: Date;

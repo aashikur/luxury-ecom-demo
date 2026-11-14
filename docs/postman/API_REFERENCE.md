@@ -173,7 +173,50 @@
 
 ---
 
-## 7. v2 Target Endpoints Locked in Step 1 Scope (Upcoming in Step 2 & Step 4)
+### `POST /api/courier/dispatch`
+* **Consumer / Who uses it:** Admin Orders Table (`ADMIN` / `SUPER_ADMIN` / `MODERATOR`).
+* **Purpose:** 1-Click order dispatch to Steadfast Courier. Creates a live consignment via Steadfast API or automatic sandbox fallback, populates consignment ID and tracking code on the order, advances order status to `SHIPPED`, and revalidates `/admin/orders`.
+* **Request:**
+  ```json
+  {
+    "orderId": "6af0f4...",
+    "orderNumber": "AUR-54812",
+    "operator": "ADMIN"
+  }
+  ```
+* **Success Response (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "success": true,
+      "consignmentId": "SF-482910",
+      "trackingCode": "TRK-98124501",
+      "provider": "STEADFAST",
+      "status": "in_review"
+    },
+    "message": "Order successfully booked with STEADFAST. Tracking: TRK-98124501"
+  }
+  ```
+
+---
+
+## 7. Authentication & Staff Session Engine (Better Auth)
+
+### `ALL /api/auth/[...all]`
+* **Consumer / Who uses it:** Staff, Admin Dashboard, Customer Phone OTP / Social Login.
+* **Engine:** Better Auth with MongoDB native adapter, Email & Password, Phone Number OTP plugin, and Admin RBAC plugin.
+* **Core Endpoints Handled:**
+  - `POST /api/auth/sign-in/email`: Staff/Admin email & password authentication.
+  - `POST /api/auth/sign-out`: Session termination and cookie revocation.
+  - `GET /api/auth/get-session`: Edge/Server session verification returning `{ user, session }`.
+  - `POST /api/auth/phone-number/send-otp`: Sends 4-6 digit SMS OTP to 11-digit BD phone numbers.
+  - `POST /api/auth/phone-number/verify`: Verifies customer OTP and issues authenticated session cookie.
+* **Session Cookies:** `better-auth.session_token` (`HttpOnly`, `SameSite=Lax`, `Secure` in production).
+
+---
+
+## 8. v2 Target Endpoints Locked in Step 1 Scope (Upcoming in Step 4)
 
 | Endpoint | Consumer / Auth | Purpose (Scope Rule Reference) |
 | :--- | :--- | :--- |

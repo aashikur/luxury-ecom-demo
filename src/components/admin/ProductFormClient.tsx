@@ -75,9 +75,9 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
   const variantsSumStock = existingVariants.reduce((sum: number, v: any) => sum + (v.stock || 0), 0);
   const totalStock = product?.totalStock ?? (existingVariants.length > 0 ? variantsSumStock : 0);
 
-  const [images, setImages] = useState<MediaItem[]>(product?.media || product?.images || []);
+  const [images, setImages] = useState<MediaItem[]>(product?.media || []);
   const initialKeys = useRef<Set<string>>(
-    new Set((product?.images || []).map((img: MediaItem) => img.key))
+    new Set((product?.media || []).map((img: MediaItem) => img.key).filter((k: string | undefined): k is string => Boolean(k)))
   );
   const sessionUploadedKeys = useRef<string[]>([]);
 
@@ -96,7 +96,7 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
     categoryId: product?.categoryId || '',
     categorySlug: product?.categorySlug || '',
     categoryPath: (product?.categoryPath as string[]) || [],
-    primaryCategory: product?.primaryCategory || (isEdit ? 'Garments' : ''),
+    categoryName: product?.categoryName || (isEdit ? 'Garments' : ''),
     collections: (product?.collections as string[]) || ['winter-drop-2026'],
     status: (product?.status as ProductStatus) || (product?.isActive ? 'PUBLISHED' : 'DRAFT'),
   });
@@ -212,7 +212,7 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
         categoryId: active._id,
         categorySlug: active.slug,
         categoryPath: pathSlugs,
-        primaryCategory: active.name,
+        categoryName: active.name,
       }));
     } else {
       setForm((prev) => ({
@@ -329,8 +329,7 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
         categoryId: form.categoryId || undefined,
         categorySlug: form.categorySlug || undefined,
         categoryPath: form.categoryPath.length > 0 ? form.categoryPath : undefined,
-        categoryName: form.primaryCategory || 'Garments',
-        primaryCategory: form.primaryCategory || 'Garments',
+        categoryName: form.categoryName || 'Garments',
         collections: form.collections,
         status: form.status,
         isActive: form.status === 'PUBLISHED',

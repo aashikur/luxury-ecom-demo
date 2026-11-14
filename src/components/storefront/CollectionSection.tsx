@@ -9,10 +9,8 @@ interface ProductItem {
   basePrice: number;
   discountPrice?: number;
   media?: { url: string; key?: string }[];
-  images?: { url: string; key?: string }[];
   collections?: string[];
   categoryName?: string;
-  primaryCategory?: string;
 }
 
 interface CollectionSectionProps {

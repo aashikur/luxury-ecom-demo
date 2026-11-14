@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { connectDB } from '@/lib/db';
 import Product from '@/models/Product';
+import { apiSuccess, apiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic';
  * 
  * 1. QUERY ENGINE:
  *    - ?collection=hoodies -> Queries indexed `collections` array
- *    - ?category=T-Shirt  -> Queries primaryCategory
+ *    - ?category=t-shirts -> Queries categorySlug
  *    - Compound sorting: isPinned (-1) -> priority (-1) -> createdAt (-1)
  * 
  * 2. AUTO-SEEDING:
@@ -283,23 +284,13 @@ export async function POST(request: NextRequest) {
     await connectDB();
     const body = await request.json();
 
-    // 1. Required field validations
-    const catName = body.categoryName || body.primaryCategory;
-    if (!body.title || !body.basePrice || !catName) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Title, basePrice, and categoryName are required.',
-        },
-        { status: 400 }
+    // 1. Required field validations (Strict Step 2 Standard: No legacy aliases)
+    if (!body.title || !body.basePrice || !body.categoryName) {
+      return apiError(
+        'Title, basePrice, and categoryName are required.',
+        'VALIDATION_ERROR',
+        400
       );
-    }
-    body.categoryName = catName;
-    if (!body.media && body.images) {
-      body.media = body.images.map((img: any) => ({
-        ...img,
-        type: img.type || 'IMAGE',
-      }));
     }
 
     // 2. Auto-generate URL slug if not provided
@@ -316,7 +307,11 @@ export async function POST(request: NextRequest) {
       body.slug = `${body.slug}-${Date.now().toString().slice(-4)}`;
     }
 
-    // 3. Create product
+    // 3. Assign Audit Actor Defaults
+    body.createdBy = body.createdBy || 'ADMIN';
+    body.updatedBy = body.updatedBy || 'ADMIN';
+
+    // 4. Create product
     const product = await Product.create(body);
 
     // Revalidate all caches across storefront and admin
@@ -332,17 +327,13 @@ export async function POST(request: NextRequest) {
       console.warn('Revalidation notice:', revErr);
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: 'Product created successfully',
-        data: product,
-      },
-      { status: 201 }
-    );
+    return apiSuccess(product, {
+      message: 'Product created successfully',
+      status: 201,
+    });
   } catch (error: unknown) {
     console.error('Product POST Error:', error);
     const message = error instanceof Error ? error.message : 'Failed to create product';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return apiError(message, 'INTERNAL_ERROR', 500);
   }
 }

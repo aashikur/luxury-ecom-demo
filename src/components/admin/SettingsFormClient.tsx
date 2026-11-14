@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Save,
   Truck,
@@ -10,6 +10,8 @@ import {
   Sliders,
   ChevronUp,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Eye,
   EyeOff,
   Activity,
@@ -38,6 +40,41 @@ export default function SettingsFormClient({ initialConfig }: { initialConfig: a
   >('branding');
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = () => {
+    if (tabsRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = tabsRef.current;
+      setCanScrollLeft(scrollLeft > 4);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, []);
+
+  const scrollTabs = (direction: 'left' | 'right') => {
+    if (tabsRef.current) {
+      tabsRef.current.scrollBy({
+        left: direction === 'left' ? -220 : 220,
+        behavior: 'smooth',
+      });
+      setTimeout(checkScroll, 250);
+    }
+  };
+
+  const handleTabsWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (e.deltaY !== 0 && tabsRef.current) {
+      tabsRef.current.scrollLeft += e.deltaY;
+      checkScroll();
+    }
+  };
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -145,26 +182,58 @@ export default function SettingsFormClient({ initialConfig }: { initialConfig: a
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-slate-200 no-scrollbar">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-md text-sm font-medium transition cursor-pointer whitespace-nowrap ${
-                isActive
-                  ? 'bg-slate-100 text-[#060d11] font-semibold border border-slate-300 shadow-xs'
-                  : 'text-slate-600 hover:text-[#060d11] hover:bg-slate-50'
-              }`}
-            >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-[#076E46]' : 'text-slate-400'}`} />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+      {/* Tab Navigation with Left/Right Scroll Controls & MouseWheel Support */}
+      <div className="relative border-b border-slate-200">
+        {/* Left Scroll Button */}
+        {canScrollLeft && (
+          <button
+            type="button"
+            onClick={() => scrollTabs('left')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-white/95 border border-slate-300 shadow-md flex items-center justify-center text-slate-700 hover:text-[#060d11] hover:bg-slate-50 transition cursor-pointer"
+            aria-label="Scroll tabs left"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Tabs Container */}
+        <div
+          ref={tabsRef}
+          onScroll={checkScroll}
+          onWheel={handleTabsWheel}
+          className="flex items-center gap-1.5 overflow-x-auto pb-2.5 pt-0.5 scroll-smooth scrollbar-thin scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400"
+        >
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-md text-sm font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${
+                  isActive
+                    ? 'bg-slate-100 text-[#060d11] font-semibold border border-slate-300 shadow-xs'
+                    : 'text-slate-600 hover:text-[#060d11] hover:bg-slate-50 border border-transparent'
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? 'text-[#076E46]' : 'text-slate-400'}`} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right Scroll Button */}
+        {canScrollRight && (
+          <button
+            type="button"
+            onClick={() => scrollTabs('right')}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-white/95 border border-slate-300 shadow-md flex items-center justify-center text-slate-700 hover:text-[#060d11] hover:bg-slate-50 transition cursor-pointer"
+            aria-label="Scroll tabs right"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* =====================================================================

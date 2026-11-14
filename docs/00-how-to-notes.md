@@ -1,8 +1,7 @@
 # 00. Documentation Protocol & Note-Taking Standard
 
 > **Directive for All AI Assistants & Engineers Working on this Codebase:**  
-> Maintain documentation in this `docs/` directory strictly following this protocol. Do not write massive 1,000-line unorganized text blocks. Keep every lesson split, modular, and instantly scannable for quick revision and interview prep.
-
+> Maintain documentation in this `docs/` directory strictly following this protocol. Do not write massive 1,000-line unorganized text blocks. Keep every lesson split, modular, and instantly scannable for tutorial,  quick revision and interview prep.
 ---
 
 ## 1. Documentation Separation of Concerns (SoC) & Master Index

@@ -16,6 +16,8 @@ export interface ICollection extends Document {
   isActive: boolean;
   startDate?: Date;
   endDate?: Date;
+  createdBy?: string;
+  updatedBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +37,8 @@ const CollectionSchema = new Schema<ICollection>(
     isActive: { type: Boolean, default: true, index: true },
     startDate: { type: Date },
     endDate: { type: Date },
+    createdBy: { type: String, default: 'ADMIN' },
+    updatedBy: { type: String, default: 'ADMIN' },
   },
   {
     timestamps: true,

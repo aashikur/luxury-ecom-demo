@@ -38,7 +38,6 @@ interface ProductItem {
   slug: string;
   description: string;
   categoryName?: string;
-  primaryCategory?: string;
   productType?: string;
   hasVariants?: boolean;
   stockStatus?: string;
@@ -47,7 +46,7 @@ interface ProductItem {
   collections?: string[];
   basePrice: number;
   discountPrice?: number;
-  images: { url: string; key: string }[];
+  media?: { url: string; key?: string }[];
   variants?: { size: string; stock: number; sku?: string }[];
   isActive: boolean;
   createdAt: string;
@@ -109,7 +108,7 @@ export default function ProductsTableClient({
 
   // Unique categories
   const categories = useMemo(() => {
-    const cats = new Set(products.map((p) => p.categoryName || p.primaryCategory).filter((c): c is string => Boolean(c)));
+    const cats = new Set(products.map((p) => p.categoryName).filter((c): c is string => Boolean(c)));
     return ['ALL', ...Array.from(cats)];
   }, [products]);
 
@@ -124,7 +123,7 @@ export default function ProductsTableClient({
       if (activeTab === 'DRAFT' && !isDraft) return false;
       if (activeTab === 'ARCHIVED' && !isArchived) return false;
 
-      const catName = p.categoryName || p.primaryCategory;
+      const catName = p.categoryName;
       if (selectedCategory !== 'ALL' && catName !== selectedCategory) {
         return false;
       }
@@ -222,7 +221,7 @@ export default function ProductsTableClient({
     const headers = ['Title,Category,Status,TotalStock,Price\n'];
     const rows = filteredProducts.map((p) => {
       const totalStock = p.totalStock ?? (p.variants?.reduce((s, v) => s + v.stock, 0) || 0);
-      return `"${p.title}","${p.categoryName || p.primaryCategory || 'General'}",${p.isActive ? 'Active' : 'Draft'},${totalStock},${p.basePrice}\n`;
+      return `"${p.title}","${p.categoryName || 'General'}",${p.isActive ? 'Active' : 'Draft'},${totalStock},${p.basePrice}\n`;
     });
     const blob = new Blob([...headers, ...rows], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -382,7 +381,7 @@ export default function ProductsTableClient({
             ) : (
               filteredProducts.map((product) => {
                 const rowStock = product.totalStock ?? (product.variants?.reduce((s, v) => s + (v.stock || 0), 0) || 0);
-                const thumb = product.images?.[0]?.url || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80';
+                const thumb = product.media?.[0]?.url || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80';
                 const isMenuOpen = activeMenuId === product._id;
                 const isEditingStock = editingStockId === product._id;
                 const isPublished = product.status === 'PUBLISHED' || (!product.status && product.isActive);
@@ -426,7 +425,7 @@ export default function ProductsTableClient({
                     {/* Category Pill */}
                     <TableCell>
                       <Badge variant="secondary">
-                        {product.categoryName || product.primaryCategory || 'General'}
+                        {product.categoryName || 'General'}
                       </Badge>
                     </TableCell>
 

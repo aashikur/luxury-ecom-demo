@@ -35,7 +35,7 @@ async function getStoreData() {
       .lean(),
     Product.find({ isActive: true })
       .select(
-        'title slug basePrice discountPrice maxPrice media collections categorySlug categoryPath primaryCategory hasVariants inStock stockStatus priority isPinned createdAt'
+        'title slug basePrice discountPrice maxPrice media collections categorySlug categoryPath categoryName hasVariants inStock stockStatus priority isPinned createdAt'
       )
       .sort({ isPinned: -1, priority: -1, createdAt: -1 })
       .lean(),
@@ -163,16 +163,16 @@ export default async function HomePage() {
                       collections?: string[];
                       categorySlug?: string;
                       categoryPath?: string[];
-                      primaryCategory?: string;
+                      categoryName?: string;
                     }) => {
                       const inCollections = p.collections?.some((c) => c.toLowerCase() === targetSlug);
                       const inCatSlug = p.categorySlug?.toLowerCase() === targetSlug;
                       const inCatPath = p.categoryPath?.some((cp) => cp.toLowerCase() === targetSlug);
-                      const normCat = (p.primaryCategory || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                      const inPrimaryCat = normCat
+                      const normCat = (p.categoryName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                      const inCatName = normCat
                         ? normCat.includes(targetSlug) || targetSlug.includes(normCat)
                         : false;
-                      return inCollections || inCatSlug || inCatPath || inPrimaryCat;
+                      return inCollections || inCatSlug || inCatPath || inCatName;
                     }
                   )
                 : cleanProducts;

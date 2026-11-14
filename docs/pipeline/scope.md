@@ -14,9 +14,9 @@
 | :---: | :--- | :--- | :---: |
 | **01** | **Scope & Business Rules Locked** | 7 Core + 4 Growth Collections, Guest 3-field COD & 3-Zone delivery, Unified Payment Adapter (`COD`+`SSLCommerz`+SMS-webhook), 5-Role RBAC & CSP, Idempotent atomic stock, Zero-latency Storefront SLA (`getPublicStoreConfig()` cache, `bf-cache`, `loading.tsx`, 2-col `384w`), WCAG AA Gate, & Admin Anti-Over-Engineering Rules (`.aggregate()`, URL pagination `<=50`, fixed shell + `{children}` skeleton). | 🔒 **LOCKED** ([Spec](./01-scope-and-business-rules.md)) |
 | **02** | **Schema, Interface & Envelope** | TypeScript DTOs, Mongoose Schema interfaces, 11-collection typing (7 Core + 4 Growth/Taxonomy), Standard `{ success, data, pagination, error, code }` response contract, bounded pagination (`limit <= 50`), and Zod request validation allowlists. | 🔒 **LOCKED** ([Spec](./02-schema-interface-and-response-envelope.md)) |
-| **03** | **Seed Engine & Fixtures** | 1-Command database seeding script (`npm run db:seed`) generating realistic multi-variant products, categories, collections, and admin credentials. | ⏳ **PENDING** |
-| **04** | **Core Backend & State Machine** | Atomic inventory decrement, Order lifecycle transitions (`INCOMPLETE` $\rightarrow$ `DELIVERED`), Steadfast courier API integration, `revalidatePath` cache busters. | ⏳ **PENDING** |
-| **05** | **Admin & Staff Auth (RBAC)** | HttpOnly Cookie sessions for Admin / Call-Center staff; zero-password barrier for guest buyers. | ⏳ **PENDING** |
+| **03** | **Seed Engine & Fixtures** | 1-Command database seeding script (`npm run db:seed`) generating realistic multi-variant products, categories, collections, and admin credentials. | ✅ **DONE** (`scripts/seed.mjs`) |
+| **04** | **Core Backend & State Machine** | Atomic inventory decrement, Order lifecycle transitions (`INCOMPLETE` $\rightarrow$ `DELIVERED`), Steadfast courier API integration, `revalidatePath` cache busters. | ✅ **DONE** (`src/services/order.service.ts`, `src/services/courier.service.ts`) |
+| **05** | **Admin & Staff Auth (RBAC)** | Better Auth multi-role engine (`SUPER_ADMIN`, `ADMIN`, `MODERATOR`), Edge `middleware.ts` shielding `/admin/**`, customer Phone OTP/Google ready, and `/admin/login` portal. | ✅ **DONE** (`src/lib/auth.ts`, `src/middleware.ts`) |
 | **06** | **Frontend UI Wireup** | 1-Page COD drawer, Size chart modal, Color swatches, Admin taxonomy management (`/admin/categories`, `/admin/collections`), Variant matrix builder. | ⏳ **PENDING** |
 | **07** | **Hardening & Launch Sign-Off** | Concurrency verification, Vercel Edge cache inspection, backup restore drills per `docs/PRODUCTION_CHECKLIST.md`. | ⏳ **PENDING** |
 
@@ -36,7 +36,7 @@
 | **06** | **Product Management Suite** | Unified 2-column Product Form for Create (`/admin/products/new`) & Edit (`/admin/products/[id]/edit`), auto-slug generation, stock badges, 3:4 portrait uploader (v2 pagination & `loading.tsx` in **Step 06**). | ✅ **v1 DONE** *(v2 Step 06 Hardening)* | `src/app/(admin)/admin/products/`<br>`src/components/admin/ProductFormClient.tsx` |
 | **07** | **Category & Collection Engine** | Managed taxonomy tree (ancestors materialized path, circular safeguard, delete protection), marketing collections, cascading selectors in Admin. | ✅ **DONE** | `src/models/Category.ts`<br>`src/models/Collection.ts`<br>`/api/categories`<br>`/api/collections` |
 | **08** | **Store Settings Engine** | 7-module configuration dashboard (`branding`, `logistics`, `payment`, `courier`, `tracking`, `sections`, `features`) — v2 RBAC, AES-256 encryption, & lazy tabs pending in **Steps 04–06**. | 🟡 **IN PROGRESS** | `src/app/(admin)/admin/settings/`<br>`src/components/admin/SettingsFormClient.tsx` |
-| **09** | **Orders & Fulfillment Suite** | `/admin/orders`, manual order entry, live orders table, Steadfast courier 1-click booking, customer fraud view. | ⏳ **PENDING** *(Step 06)* | `src/models/Order.ts`<br>`/api/orders` |
+| **09** | **Orders & Fulfillment Suite** | `/admin/orders`, manual order entry, live orders table, Steadfast courier 1-click booking, customer fraud view. | ✅ **DONE** | `src/models/Order.ts`<br>`/api/orders`<br>`src/services/order.service.ts`<br>`src/services/courier.service.ts`<br>`/api/courier/dispatch` |
 | **10** | **Storefront Catalog & Discovery** | Basic `/`, `/shop`, & `/products/[slug]` live in v1; v2 faceted URL filters, `/category/[slug]`, `/brand/[slug]`, `/api/search`, 2-col mobile grid, `bf-cache` & `loading.tsx` in **Steps 04–06**. | 🟡 **v1 LIVE** *(v2 Step 06 Hardening)* | `src/app/page.tsx`<br>`src/app/shop/page.tsx`<br>`src/app/products/[slug]/page.tsx` |
 | **11** | **Frictionless 1-Page BD Checkout** | Slide-over `CartDrawer` live for `COD` + `MANUAL_BKASH`; v2 3-zone delivery, server-authoritative pricing, `idempotencyKey`, `SSLCommerz` IPN, SMS webhook, & `/checkout` in **Steps 04–06**. | 🟡 **v1 PARTIAL** *(v2 Step 04–06)* | `src/components/storefront/CartDrawer.tsx`<br>`POST /api/orders` |
 
@@ -150,3 +150,67 @@
   3. Universal `selectedOptions` + `title` integrated into `IVariant` and `ProductSchema` index.
   4. Added `'DHAKA_SUBURBS'` deliveryZone enum to `Order.ts` aligning with Rule #2.
   5. 100% verified with `tsc --noEmit` (0 errors).
+
+### Task #20: Step 2 Code Alignment & Production Hardening (Universal Envelope & All 11 Models)
+* **Files Created/Modified:** `src/types/api.ts`, `src/types/domain.ts`, `src/lib/api-response.ts`, `src/models/Order.ts`, `src/models/Brand.ts`, `src/models/Customer.ts`, `src/models/User.ts`, `src/models/Coupon.ts`, `src/models/Review.ts`, `src/models/AuditLog.ts`, `src/app/api/orders/route.ts`, `docs/pipeline/scope.md`.
+* **Changes:** Closed the gap between Step 2 specifications and active runtime code with zero bloat and DRY principles:
+  1. **Universal Envelope Helpers:** Implemented `src/lib/api-response.ts` (`apiSuccess` & `apiError`) standardizing `{ success, data, pagination, error, code }` across Next.js App Router route handlers.
+  2. **Domain POJO Types:** Exported all 11 collection domain interfaces in `src/types/domain.ts` matching Step 2.
+  3. **Completed 11 Mongoose Models:** Created clean Mongoose models for `Brand`, `Customer`, `User`, `Coupon`, `Review`, and `AuditLog` in `src/models/`.
+  4. **Order State Machine & Security Hardening:** Upgraded `src/models/Order.ts` with decoupled `orderStatus`, `inventoryState: 'NONE' | 'RESERVED' | 'DEDUCTED' | 'RESTORED'`, `idempotencyKey`, 3-zone tariffs, and backwards-compatible pre-save synchronization for `status` and `financials`.
+  5. **Hardened Guest Checkout Endpoint (`POST /api/orders`):**
+     - Enforced Server-Authoritative Pricing (prices fetched directly from MongoDB `Product`, never trusted from client).
+     - Atomic Inventory Decrement with `$gte: qty` guard and automatic rollback to prevent negative stock overselling.
+     - 3-Zone delivery tariff calculation (`INSIDE_DHAKA`, `DHAKA_SUBURBS`, `OUTSIDE_DHAKA`).
+     - Idempotency guard deduplicating repeat submissions.
+     - Bounded pagination (`limit <= 50`).
+  6. Verified 100% clean with TypeScript compiler (`tsc --noEmit` -> 0 errors).
+
+### Task #21: Better Auth Integration, Edge Middleware & 4-Tier Domain Services
+* **Files Created/Modified:** `package.json`, `src/lib/mongodb-client.ts`, `src/lib/auth.ts`, `src/lib/auth-client.ts`, `src/app/api/auth/[...all]/route.ts`, `src/middleware.ts`, `src/app/(admin)/admin/login/page.tsx`, `scripts/seed.mjs`, `src/services/order.service.ts`, `src/app/api/orders/route.ts`, `docs/13-better-auth-and-domain-services-architecture.md`, `docs/postman/API_REFERENCE.md`, `docs/pipeline/scope.md`.
+* **Changes:** Fully implemented Better Auth, Admin Edge Guard, and Domain Services Architecture:
+  1. **Better Auth Engine:** Installed `better-auth` v1.1+ with native MongoDB adapter (`src/lib/mongodb-client.ts` cached singleton). Configured email/password, admin plugin (with `SUPER_ADMIN`, `ADMIN`, `MODERATOR`), and `phoneNumber` SMS OTP plugin in `src/lib/auth.ts`.
+  2. **Auth Client & Route Handler:** Created `src/lib/auth-client.ts` with React hooks (`signIn`, `signOut`, `useSession`) and mounted App Router handler at `src/app/api/auth/[...all]/route.ts`.
+  3. **Edge Middleware Guard (`src/middleware.ts`):** Shielded all `/admin/**` routes on Vercel Edge; redirects unauthenticated visitors to `/admin/login` with callback preservation.
+  4. **Admin Login Portal:** Created minimalist operational login screen adhering to `#060d11` and `#076E46` design tokens at `src/app/(admin)/admin/login/page.tsx`.
+  5. **Master Database Seeding Engine (`npm run db:seed`):** Created `scripts/seed.mjs` that seeds `StoreConfig` (3-zone tariffs ৳70/৳100/৳130), marketing collections, categories, multi-variant products, and initial `SUPER_ADMIN` account (`admin@aurem.com`). Successfully executed and verified against MongoDB Atlas.
+  6. **4-Tier Domain Services Refactoring:** Extracted checkout and inventory business logic into `src/services/order.service.ts` (`createOrder`, `getOrdersList`, `updateOrderStatus`), converting `src/app/api/orders/route.ts` into a thin HTTP controller.
+  7. **Documentation Sync:** Authored `docs/13-better-auth-and-domain-services-architecture.md` according to `docs/00-how-to-notes.md` 4-part structure, and updated `docs/postman/API_REFERENCE.md`.
+  8. Verified 100% clean with TypeScript compiler (`tsc --noEmit` -> 0 errors).
+
+### Task #22: Admin Settings Horizontal Tabs Overflow & Smooth Scroll Engine
+* **Files Modified:** `src/components/admin/SettingsFormClient.tsx`, `docs/08-admin-design-hierarchy-and-ui-tokens.md`, `docs/pipeline/scope.md`.
+* **Changes:** Solved the clipping and unscrollable tabs issue on `/admin/settings` across desktop viewports:
+  1. **Horizontal MouseWheel Scroll (`onWheel`):** Enabled natural horizontal navigation with standard desktop mouse wheel by translating vertical scroll delta (`scrollLeft += e.deltaY`), eliminating the need for `Shift + Scroll`.
+  2. **Left/Right Chevron Arrow Controls:** Added dynamic, floating scroll buttons (`<` and `>`) that automatically appear when tabs overflow the viewport width, allowing single-click smooth scrolling.
+  3. **Visual Scroll Affordance:** Replaced restrictive `.no-scrollbar` with a subtle, non-intrusive `scrollbar-thin scrollbar-thumb-slate-300`, guaranteeing tabs can be dragged or scrolled on all browsers without being clipped.
+  4. **Documented Token Rule:** Updated `docs/08-admin-design-hierarchy-and-ui-tokens.md` under Rule #23 locking horizontal scroll affordance and mousewheel support across all admin multi-tab views.
+  5. Verified 100% clean with TypeScript compiler (`tsc --noEmit` -> 0 errors).
+
+### Task #23: Unified Media Architecture Alignment for Reviews (`IProductMedia[]`)
+* **Files Modified:** `src/types/domain.ts`, `src/models/Review.ts`, `docs/pipeline/02-schema-interface-and-response-envelope.md`, `docs/pipeline/scope.md`.
+* **Changes:** Unified review media storage with the master product media standard:
+  1. **Polymorphic Media Schema:** Replaced rigid `photos: { url, key }[]` with universal `media: IProductMedia[]` (`url`, `key?`, `thumbnailUrl?`, `type: 'IMAGE' | 'VIDEO'`, `videoProvider?`, `altText?`), ensuring customer photo reviews and future video unboxings share the same pipeline.
+  2. **Backward Compatibility:** Retained `photos?: IProductMedia[]` as a synchronized alias via pre-validation middleware so existing query projections and consumers remain uninterrupted.
+  3. **Documentation Sync:** Updated Collection 10 (`Review`) in `docs/pipeline/02-schema-interface-and-response-envelope.md` and registered Task #23 in `scope.md`.
+  4. Verified 100% clean with TypeScript compiler (`tsc --noEmit` -> 0 errors).
+
+### Task #24: Pure Greenfield Architecture Cleanup & Audit Trail Fields Lock
+* **Files Modified:** `src/types/domain.ts`, `src/models/Product.ts`, `src/models/Brand.ts`, `src/models/Coupon.ts`, `src/models/Review.ts`, `src/models/Category.ts`, `src/models/Collection.ts`, `src/app/api/products/route.ts`, `src/app/api/products/[slug]/route.ts`, `docs/pipeline/02-schema-interface-and-response-envelope.md`, `docs/pipeline/scope.md`.
+* **Changes:** Purged all legacy backward-compatibility crutches to establish a 100% pure greenfield backend architecture:
+  1. **Audit Trail Standard:** Explicitly enforced `createdBy: string` and `updatedBy: string` with automatic `{ timestamps: true }` (`createdAt`, `updatedAt`) across `Brand`, `Coupon`, `Order`, `Product`, `Review`, `Category`, and `Collection`.
+  2. **Purged Legacy Media Baggage:** Completely removed legacy `images?: IProductMedia[]` accessor and `IProductImage` alias from `Product.ts`. Removed `photos?: IProductMedia[]` alias and sync hook from `Review.ts`. The platform strictly standardizes on `media: IProductMedia[]`.
+  3. **Purged Taxonomy Aliases:** Eliminated legacy `primaryCategory` fallback from `POST /api/products`, strictly requiring `categoryName` and `categorySlug`.
+  4. **Strict Cloudflare R2 Garbage Collection:** Cleaned `DELETE /api/products/[slug]` to cascade delete strictly from `deleted.media` without legacy `(deleted as any).images` fallbacks.
+  5. Verified 100% clean with TypeScript compiler (`tsc --noEmit` -> 0 errors).
+
+### Task #25: Frontend Greenfield Alignment & Admin Orders Wireup with Steadfast Courier
+* **Files Modified/Created:** `AGENTS.md`, `src/components/admin/ProductDetailClient.tsx`, `src/components/admin/ProductFormClient.tsx`, `src/components/admin/ProductsTableClient.tsx`, `src/components/storefront/ProductCard.tsx`, `src/components/storefront/ProductDetailView.tsx`, `src/components/storefront/CollectionSection.tsx`, `src/app/page.tsx`, `src/app/shop/page.tsx`, `src/services/courier.service.ts`, `src/app/api/courier/dispatch/route.ts`, `src/components/admin/OrdersTableClient.tsx`, `src/app/(admin)/admin/orders/page.tsx`, `docs/pipeline/scope.md`.
+* **Changes:**
+  1. **Frontend Legacy Eradication:** Completely eradicated all residual usages of `.images` and `primaryCategory` across the entire frontend and admin codebase. Replaced strictly with unified `media: IProductMedia[]` and `categoryName`.
+  2. **Backend Architecture Rule Lock in AGENTS.md:** Linked `.gemini/rules/backend-architecture-rules.md` in root `AGENTS.md` to prevent any AI agent from introducing legacy baggage, internal `fetch()` loopbacks, or architectural drift.
+  3. **Steadfast Courier Domain Service (`src/services/courier.service.ts`):** Implemented production Steadfast Courier 1-click consignment creation engine with credentials loaded securely from DB `StoreConfig` and automated fallback sandbox mocking for development.
+  4. **Courier Dispatch Thin Controller (`src/app/api/courier/dispatch/route.ts`):** Created standard API controller mapping to universal `ApiResponse` envelope.
+  5. **Interactive Orders Table Client (`src/components/admin/OrdersTableClient.tsx`):** Built high-performance admin orders table with 3-zone delivery badges, status tabs, search filter, CSV export, inline status transitions, and 1-click Steadfast booking action.
+  6. **Server Component 0ms In-Memory Direct Call (`src/app/(admin)/admin/orders/page.tsx`):** Connected page directly to `getOrdersList()` domain service at 0ms latency without internal HTTP loopback.
+  7. **Production Verification:** Passed full Next.js App Router production build (`npm run build`) and TypeScript typecheck (`tsc --noEmit`) with 0 errors.

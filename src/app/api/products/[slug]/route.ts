@@ -72,6 +72,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    body.updatedBy = body.updatedBy || 'ADMIN';
     Object.assign(product, body);
     const updated = await product.save();
 
@@ -123,7 +124,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Cascade delete associated assets from Cloudflare R2 (skip seed assets)
-    const mediaList = deleted.media || (deleted as any).images || [];
+    const mediaList = deleted.media || [];
     if (mediaList.length > 0) {
       const keysToDelete = mediaList
         .map((m: { key?: string }) => m.key)

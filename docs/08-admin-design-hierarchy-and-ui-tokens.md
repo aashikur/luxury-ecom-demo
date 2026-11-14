@@ -42,3 +42,13 @@ All dashboard views must import from `@/components/ui`:
 - `Input`, `Select`, `Textarea`
 - `Badge`
 - `TableContainer`, `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`
+
+---
+
+## 4. Multi-Tab Navigation & Horizontal Overflow Standard
+
+When rendering multi-module tabs (e.g., `/admin/settings` with 7 modules):
+1. **MouseWheel Horizontal Translation (`onWheel`):** The tabs container must listen to `onWheel` and translate `e.deltaY` into `scrollLeft`, allowing desktop users with a standard mouse wheel to smoothly scroll left and right without holding `Shift`.
+2. **Left / Right Chevron Controls:** Floating `<` and `>` arrow buttons must dynamically appear when content overflows, providing single-click accessibility.
+3. **No Hidden Overflow Traps:** Never use `.no-scrollbar` on overflow-critical tab bars. Use a subtle `scrollbar-thin scrollbar-thumb-slate-300` to guarantee visual affordance and drag capability.
+4. **Non-Compressible Tab Items:** Every tab button must enforce `shrink-0 whitespace-nowrap` so labels and badges never distort when viewport width contracts.

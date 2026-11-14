@@ -16,6 +16,8 @@ export interface ICategory extends Document {
   displayOrder: number;
   isFeaturedHome: boolean;
   isActive: boolean;
+  createdBy?: string;
+  updatedBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +42,8 @@ const CategorySchema = new Schema<ICategory>(
     displayOrder: { type: Number, default: 0 },
     isFeaturedHome: { type: Boolean, default: false, index: true },
     isActive: { type: Boolean, default: true, index: true },
+    createdBy: { type: String, default: 'ADMIN' },
+    updatedBy: { type: String, default: 'ADMIN' },
   },
   {
     timestamps: true,

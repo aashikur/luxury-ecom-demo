@@ -51,7 +51,12 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   }
 
   if (category) {
-    const escaped = category.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); filter.$or = [{ categorySlug: new RegExp(`^${escaped}$`, 'i') }, { categoryPath: new RegExp(`^${escaped}$`, 'i') }, { categoryName: new RegExp(`^${escaped}$`, 'i') }, { primaryCategory: new RegExp(`^${escaped}$`, 'i') }];
+    const escaped = category.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    filter.$or = [
+      { categorySlug: new RegExp(`^${escaped}$`, 'i') },
+      { categoryPath: new RegExp(`^${escaped}$`, 'i') },
+      { categoryName: new RegExp(`^${escaped}$`, 'i') },
+    ];
   }
 
   // 3. Sorting

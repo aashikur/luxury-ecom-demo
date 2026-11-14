@@ -25,3 +25,13 @@ All public storefront pages and admin routes must adhere to the SEO specificatio
 - Admin routes (`/admin/**`) and internal API routes MUST be shielded from indexing via `robots: { index: false, follow: false }` and `X-Robots-Tag: noindex, nofollow`.
 - Crawlers are governed via App Router native `src/app/robots.ts` and `src/app/sitemap.ts`.
 - Deleted or inactive products must trigger Next.js `notFound()` (true HTTP 404/410, never soft 404). First catalog image and PDP hero image must use `<Image priority sizes="..." />` to protect LCP Core Web Vitals.
+
+## Backend Architecture & Clean Domain Service Rules
+All backend development, database interaction, authentication, and API endpoints must adhere strictly to the 8 golden rules specified in `.gemini/rules/backend-architecture-rules.md` and `docs/13-better-auth-and-domain-services-architecture.md`:
+- **4-Tier Clean Architecture:** Transport (`src/app/api/**/route.ts` thin controllers) -> Domain Services (`src/services/*.service.ts` pure business logic) -> Persistence (`src/models/*.ts` Mongoose singletons) -> Adapters (`src/lib/*`).
+- **No Internal `fetch()`:** Server Components (`page.tsx`) MUST call Domain Services directly in memory at 0ms latency; never loopback `fetch('/api/...')`.
+- **Zero Legacy Baggage:** Use pure schema fields (`media: IProductMedia[]`, `categoryName`). Never re-introduce fallback crutches (`images`, `photos`, `primaryCategory`).
+- **Zero-Trust Pricing & Atomic Stock:** Prices must be resolved server-side from DB; inventory decrements strictly require `{ 'variants.stock': { $gte: qty } }`.
+- **Universal Envelope:** All API responses must use `ApiResponse<T>` (`apiSuccess` / `apiError`).
+- **Better Auth & Edge Security:** `/admin/**` protected by Edge middleware reading Better Auth session tokens.
+
