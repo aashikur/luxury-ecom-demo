@@ -22,7 +22,11 @@ export default function ProductDetailClient({ product }: { product: any }) {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
 
   const images =
-    (product.media?.length > 0 ? product.media : null) || [
+    (product.media?.length > 0
+      ? product.media
+      : product.images?.length > 0
+      ? product.images
+      : null) || [
       { url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80', key: '', type: 'IMAGE' },
     ];
   const currentImage = images[activeImageIdx]?.url || images[0]?.url;

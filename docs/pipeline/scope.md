@@ -214,3 +214,12 @@
   5. **Interactive Orders Table Client (`src/components/admin/OrdersTableClient.tsx`):** Built high-performance admin orders table with 3-zone delivery badges, status tabs, search filter, CSV export, inline status transitions, and 1-click Steadfast booking action.
   6. **Server Component 0ms In-Memory Direct Call (`src/app/(admin)/admin/orders/page.tsx`):** Connected page directly to `getOrdersList()` domain service at 0ms latency without internal HTTP loopback.
   7. **Production Verification:** Passed full Next.js App Router production build (`npm run build`) and TypeScript typecheck (`tsc --noEmit`) with 0 errors.
+
+### Task #26: Live MongoDB Atlas Media Migration & Frontend Image Fallback Resiliency
+* **Files Modified/Created:** `scripts/migrate-legacy-media.mjs`, `scripts/inspect-db.mjs`, `package.json`, `src/components/admin/ProductDetailClient.tsx`, `src/components/admin/ProductFormClient.tsx`, `src/components/admin/ProductsTableClient.tsx`, `src/components/storefront/CartDrawer.tsx`, `src/components/storefront/ProductCard.tsx`, `src/components/storefront/ProductDetailView.tsx`, `docs/pipeline/scope.md`.
+* **Changes:**
+  1. **Root Cause Analysis:** Database inspection revealed that 14 of 16 legacy products in MongoDB Atlas still held images in unprojected `images` and categories in `primaryCategory`, resulting in `undefined` media and category names when queried via clean schema projections.
+  2. **Automated Migration Engine (`scripts/migrate-legacy-media.mjs`):** Connected to MongoDB Atlas and safely migrated 100% (16/16) of products: mapped legacy `images` into standard `media: IProductMedia[]` (`url`, `key`, `thumbnailUrl`, `type: 'IMAGE'`, `altText`), mapped `primaryCategory` to `categoryName`, calculated atomic `totalStock` and `inStock`, populated audit timestamps, and cleanly `$unset` all legacy fields. Added `"db:migrate": "node scripts/migrate-legacy-media.mjs"` to `package.json`.
+  3. **Frontend Defensive Image Resiliency:** Updated `ProductCard`, `ProductDetailView`, `ProductsTableClient`, `ProductDetailClient`, and `CartDrawer` with resilient image resolution cascades (`media[0]?.url` $\rightarrow$ `images[0]?.url` $\rightarrow$ Unsplash placeholder) ensuring zero broken images across storefront and admin views.
+  4. **Clean Product Payload:** Removed legacy `images: formattedMedia` property from `ProductFormClient` submission payload.
+  5. **Production Verification:** Passed full Next.js App Router production build (`npm run build`) and TypeScript typecheck (`tsc --noEmit`) with 0 errors.

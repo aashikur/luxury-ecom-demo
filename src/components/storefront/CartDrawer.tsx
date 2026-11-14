@@ -220,7 +220,7 @@ export default function CartDrawer({
                       className="py-3.5 flex items-center gap-3.5"
                     >
                       <img
-                        src={item.image}
+                        src={item.image || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80'}
                         alt={item.title}
                         className="w-16 h-20 object-cover bg-zinc-100 shrink-0 border border-zinc-100"
                       />

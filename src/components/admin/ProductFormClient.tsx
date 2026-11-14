@@ -75,9 +75,10 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
   const variantsSumStock = existingVariants.reduce((sum: number, v: any) => sum + (v.stock || 0), 0);
   const totalStock = product?.totalStock ?? (existingVariants.length > 0 ? variantsSumStock : 0);
 
-  const [images, setImages] = useState<MediaItem[]>(product?.media || []);
+  const productMediaList = (product?.media?.length > 0 ? product.media : product?.images) || [];
+  const [images, setImages] = useState<MediaItem[]>(productMediaList);
   const initialKeys = useRef<Set<string>>(
-    new Set((product?.media || []).map((img: MediaItem) => img.key).filter((k: string | undefined): k is string => Boolean(k)))
+    new Set(productMediaList.map((img: MediaItem) => img.key).filter((k: string | undefined): k is string => Boolean(k)))
   );
   const sessionUploadedKeys = useRef<string[]>([]);
 
@@ -387,7 +388,6 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
             totalStock: finalTotalStock,
             variants: finalVariants,
             media: formattedMedia,
-            images: formattedMedia,
           }),
         });
 
@@ -412,7 +412,6 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
             totalStock: finalTotalStock,
             variants: finalVariants,
             media: formattedMedia,
-            images: formattedMedia,
           }),
         });
 
