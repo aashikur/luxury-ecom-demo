@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Next.js Edge Middleware for Administrative Route Shielding
- * Automatically guards /admin/** while permitting public access to /admin/login and storefront.
+ * NOTE: Temporarily bypassed upon request so frontend & backend admin operations
+ * work without mandatory authentication.
  */
 export async function middleware(request: NextRequest) {
+  // --- TEMPORARILY DISABLED AUTH GUARD ---
+  // To re-enable Better Auth edge shielding, uncomment the block below:
+  /*
   const { pathname } = request.nextUrl;
 
-  // 1. Guard all /admin/** routes except the login screen and public static assets
   if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
     const sessionCookie =
       request.cookies.get('better-auth.session_token') ||
@@ -19,6 +22,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
   }
+  */
 
   return NextResponse.next();
 }

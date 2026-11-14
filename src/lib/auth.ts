@@ -13,7 +13,9 @@ const getBaseURL = () => {
 
 export const auth = betterAuth({
   database: mongodbAdapter(mongoDb),
-  secret: process.env.BETTER_AUTH_SECRET,
+  secret:
+    process.env.BETTER_AUTH_SECRET ||
+    'aurem-dev-temporary-secret-key-min-32-chars-long!!',
   baseURL: getBaseURL(),
   trustedOrigins: [
     'http://localhost:3000',

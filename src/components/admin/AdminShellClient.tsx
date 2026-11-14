@@ -53,6 +53,11 @@ export default function AdminShellClient({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Standalone layout for login screen (hide admin shell)
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
+
   const navLinks = [
     {
       group: 'OVERVIEW',
