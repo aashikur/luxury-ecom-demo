@@ -1,13 +1,13 @@
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 import { connectDB } from '@/lib/db';
-import StoreConfig, { IStoreConfigDocument } from '@/models/StoreConfig';
+import StoreConfig, { IStoreConfig } from '@/models/StoreConfig';
 
 /**
  * Triggers Dual Next.js Cache Invalidation for Store Configuration
  */
 export function invalidateConfigCaches() {
   try {
-    revalidateTag('store-config');
+    revalidateTag('store-config', 'max');
     revalidatePath('/');
     revalidatePath('/shop');
     revalidatePath('/admin');
@@ -20,11 +20,16 @@ export function invalidateConfigCaches() {
 /**
  * Internal un-cached fetcher for StoreConfig singleton
  */
-async function fetchStoreConfigDocument(): Promise<IStoreConfigDocument | null> {
-  await connectDB();
-  const config = await StoreConfig.findOne({ isActive: true }).lean();
-  if (!config) return null;
-  return JSON.parse(JSON.stringify(config));
+async function fetchStoreConfigDocument(): Promise<IStoreConfig | null> {
+  try {
+    await connectDB();
+    const config = await StoreConfig.findOne({ isActive: true }).lean();
+    if (!config) return null;
+    return JSON.parse(JSON.stringify(config));
+  } catch (err) {
+    console.warn('Notice: StoreConfig DB connection deferred:', err instanceof Error ? err.message : err);
+    return null;
+  }
 }
 
 /**
@@ -44,11 +49,12 @@ export const getPublicStoreConfig = unstable_cache(
         provider: raw.courier?.provider || 'STEADFAST',
       },
       payment: {
-        cashOnDelivery: raw.payment?.cashOnDelivery || { enabled: true },
+        cashOnDelivery: raw.payment?.cod || { enabled: true },
         manualBkash: {
           enabled: raw.payment?.manualBkash?.enabled ?? true,
-          walletNumber: raw.payment?.manualBkash?.walletNumber || '01700000000',
-          walletType: raw.payment?.manualBkash?.walletType || 'MERCHANT',
+          number: raw.payment?.manualBkash?.number || '01700000000',
+          walletNumber: raw.payment?.manualBkash?.number || '01700000000',
+          accountType: raw.payment?.manualBkash?.accountType || 'MERCHANT',
         },
         sslCommerz: {
           enabled: raw.payment?.sslCommerz?.enabled ?? false,
@@ -66,7 +72,7 @@ export const getPublicStoreConfig = unstable_cache(
 /**
  * Admin StoreConfig fetcher: force-dynamic, full credentials for dashboard settings editor.
  */
-export async function getAdminStoreConfig(): Promise<IStoreConfigDocument | null> {
+export async function getAdminStoreConfig(): Promise<IStoreConfig | null> {
   return fetchStoreConfigDocument();
 }
 
@@ -74,9 +80,9 @@ export async function getAdminStoreConfig(): Promise<IStoreConfigDocument | null
  * Updates StoreConfig singleton with validation and dual cache invalidation.
  */
 export async function updateStoreConfig(
-  dto: Partial<IStoreConfigDocument>,
+  dto: Partial<IStoreConfig>,
   actor: string = 'ADMIN'
-): Promise<IStoreConfigDocument> {
+): Promise<IStoreConfig> {
   await connectDB();
 
   const updated = await StoreConfig.findOneAndUpdate(

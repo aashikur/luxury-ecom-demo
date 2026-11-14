@@ -1,19 +1,28 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Minus, Plus, ShoppingBag, Check, Copy } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, Check, Copy, Tag, AlertCircle } from 'lucide-react';
 import { useCart, getCartItemKey } from '@/context/CartContext';
 
 interface CartDrawerProps {
   insideDhakaFee?: number;
+  dhakaSuburbsFee?: number;
   outsideDhakaFee?: number;
   freeShippingThreshold?: number;
   manualBkashNumber?: string;
   accentColor?: string;
 }
 
+interface AppliedCoupon {
+  code: string;
+  discountAmount: number;
+  discountType?: string;
+  discountValue?: number;
+}
+
 export default function CartDrawer({
   insideDhakaFee = 70,
+  dhakaSuburbsFee = 100,
   outsideDhakaFee = 130,
   freeShippingThreshold = 2500,
   manualBkashNumber = '01700000000',
@@ -22,7 +31,7 @@ export default function CartDrawer({
   const { cart, isCartOpen, setIsCartOpen, updateQuantity, clearCart, subtotal } =
     useCart();
 
-  const [deliveryZone, setDeliveryZone] = useState<'INSIDE_DHAKA' | 'OUTSIDE_DHAKA'>(
+  const [deliveryZone, setDeliveryZone] = useState<'INSIDE_DHAKA' | 'DHAKA_SUBURBS' | 'OUTSIDE_DHAKA'>(
     'INSIDE_DHAKA'
   );
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'MANUAL_BKASH'>('COD');
@@ -37,6 +46,7 @@ export default function CartDrawer({
 
   const [copiedPhone, setCopiedPhone] = useState(false);
 
+  // Recipient form state
   const [customerForm, setCustomerForm] = useState({
     name: '',
     phone: '',
@@ -44,14 +54,24 @@ export default function CartDrawer({
     trxId: '',
   });
 
+  // Coupon state
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+
   const isFreeShipping = subtotal >= freeShippingThreshold && subtotal > 0;
   const deliveryFee =
     cart.length === 0 || isFreeShipping
       ? 0
       : deliveryZone === 'INSIDE_DHAKA'
       ? insideDhakaFee
+      : deliveryZone === 'DHAKA_SUBURBS'
+      ? dhakaSuburbsFee
       : outsideDhakaFee;
-  const grandTotal = Math.max(0, subtotal + deliveryFee);
+
+  const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const grandTotal = Math.max(0, subtotal - discountAmount + deliveryFee);
 
   const copyBkashNumber = () => {
     navigator.clipboard?.writeText(manualBkashNumber);
@@ -59,11 +79,91 @@ export default function CartDrawer({
     setTimeout(() => setCopiedPhone(false), 1500);
   };
 
+  // Silent lead capture when user completes 11-digit mobile number
+  const handlePhoneBlur = async () => {
+    const rawPhone = customerForm.phone.trim();
+    if (/^01[3-9]\d{8}$/.test(rawPhone) && cart.length > 0) {
+      try {
+        await fetch('/api/orders/lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: rawPhone,
+            name: customerForm.name.trim(),
+            address: customerForm.address.trim(),
+            deliveryZone,
+            cartItems: cart.map((item) => ({
+              productId: item.productId,
+              variantId: item.variantId,
+              title: item.title,
+              quantity: item.quantity,
+              unitPrice: item.price,
+            })),
+          }),
+        });
+      } catch {
+        // Silent catch for background lead tracking
+      }
+    }
+  };
+
+  // Coupon validation
+  const handleApplyCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCouponError(null);
+
+    const cleanCode = couponCodeInput.trim().toUpperCase();
+    if (!cleanCode) return;
+
+    setIsApplyingCoupon(true);
+
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: cleanCode,
+          subtotal,
+          customerPhone: customerForm.phone.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success && data.data) {
+        setAppliedCoupon({
+          code: data.data.code,
+          discountAmount: data.data.discountAmount,
+          discountType: data.data.discountType,
+          discountValue: data.data.discountValue,
+        });
+        setCouponCodeInput('');
+      } else {
+        setCouponError(data.error || 'Invalid or expired promo code.');
+      }
+    } catch {
+      setCouponError('Failed to validate promo code. Please try again.');
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError(null);
+  };
+
+  // Place order
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!customerForm.name.trim() || !customerForm.phone.trim() || !customerForm.address.trim()) {
-      alert('Please enter your Name, Phone Number, and Delivery Address.');
+      alert('Please enter your Name, 11-Digit Mobile Number, and Full Delivery Address.');
+      return;
+    }
+
+    if (!/^01[3-9]\d{8}$/.test(customerForm.phone.trim())) {
+      alert('Please enter a valid 11-digit Bangladeshi mobile number (e.g. 017XXXXXXXX).');
       return;
     }
 
@@ -100,20 +200,36 @@ export default function CartDrawer({
           })),
           paymentMethod,
           trxId: customerForm.trxId.trim().toUpperCase(),
+          couponCode: appliedCoupon?.code || undefined,
         }),
       });
 
       const data = await response.json();
 
-      if (data.success) {
+      if (data.success && data.data) {
+        const zoneLabel =
+          deliveryZone === 'INSIDE_DHAKA'
+            ? 'Inside Dhaka'
+            : deliveryZone === 'DHAKA_SUBURBS'
+            ? 'Dhaka Suburbs'
+            : 'Outside Dhaka';
+
+        const eta =
+          deliveryZone === 'INSIDE_DHAKA'
+            ? '24-48 Hours'
+            : deliveryZone === 'DHAKA_SUBURBS'
+            ? '2-3 Days'
+            : '3-5 Days';
+
         setOrderSuccess({
           orderId: data.data.orderNumber,
           consignmentId: data.data.courier?.consignmentId || 'SF-PENDING',
-          total: data.data.financials.totalAmount,
-          zone: deliveryZone === 'INSIDE_DHAKA' ? 'Inside Dhaka' : 'Outside Dhaka',
-          eta: deliveryZone === 'INSIDE_DHAKA' ? '24-48 Hours' : '3-5 Days',
+          total: data.data.financials?.totalAmount ?? grandTotal,
+          zone: zoneLabel,
+          eta,
         });
         clearCart();
+        setAppliedCoupon(null);
       } else {
         alert(data.error || 'Failed to place order.');
       }
@@ -166,7 +282,7 @@ export default function CartDrawer({
               <div className="text-xs space-y-2 text-left bg-white p-4 border border-zinc-200">
                 <div className="flex justify-between">
                   <span className="text-zinc-500">Order ID:</span>
-                  <span className="font-bold text-zinc-900">{orderSuccess.orderId}</span>
+                  <span className="font-bold text-zinc-900 font-mono">{orderSuccess.orderId}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">Steadfast ID:</span>
@@ -250,7 +366,7 @@ export default function CartDrawer({
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.productId, itemKey, -1)}
-                          className="p-1.5 text-zinc-500 hover:text-zinc-900 cursor-pointer"
+                          className="p-1.5 text-zinc-500 hover:text-zinc-950 cursor-pointer"
                         >
                           <Minus className="w-3 h-3" />
                         </button>
@@ -260,7 +376,7 @@ export default function CartDrawer({
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.productId, itemKey, 1)}
-                          className="p-1.5 text-zinc-500 hover:text-zinc-900 cursor-pointer"
+                          className="p-1.5 text-zinc-500 hover:text-zinc-950 cursor-pointer"
                         >
                           <Plus className="w-3 h-3" />
                         </button>
@@ -270,54 +386,107 @@ export default function CartDrawer({
                 })}
               </div>
 
-              {/* Delivery Zone Selector */}
+              {/* 3-Zone Delivery Area Selector */}
               <div className="space-y-2">
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-                  Delivery Area
+                  Select Delivery Zone
                 </label>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setDeliveryZone('INSIDE_DHAKA')}
-                    className={`p-3 border text-left text-xs cursor-pointer transition ${
+                    className={`p-2.5 border text-left text-xs cursor-pointer transition ${
                       deliveryZone === 'INSIDE_DHAKA'
                         ? 'border-zinc-950 bg-zinc-50 font-bold'
                         : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
                     }`}
                   >
-                    <div className="flex justify-between">
-                      <span>Inside Dhaka</span>
-                      <span>৳{insideDhakaFee}</span>
-                    </div>
-                    <span className="block text-[10px] text-zinc-400 font-normal mt-0.5">
-                      24-48 Hours
-                    </span>
+                    <span className="block font-semibold">Inside Dhaka</span>
+                    <span className="block text-[11px] font-bold text-zinc-900 mt-0.5">৳{insideDhakaFee}</span>
+                    <span className="block text-[9px] text-zinc-400 font-normal">24-48 Hours</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryZone('DHAKA_SUBURBS')}
+                    className={`p-2.5 border text-left text-xs cursor-pointer transition ${
+                      deliveryZone === 'DHAKA_SUBURBS'
+                        ? 'border-zinc-950 bg-zinc-50 font-bold'
+                        : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
+                    }`}
+                  >
+                    <span className="block font-semibold">Suburbs</span>
+                    <span className="block text-[11px] font-bold text-zinc-900 mt-0.5">৳{dhakaSuburbsFee}</span>
+                    <span className="block text-[9px] text-zinc-400 font-normal">2-3 Days</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setDeliveryZone('OUTSIDE_DHAKA')}
-                    className={`p-3 border text-left text-xs cursor-pointer transition ${
+                    className={`p-2.5 border text-left text-xs cursor-pointer transition ${
                       deliveryZone === 'OUTSIDE_DHAKA'
                         ? 'border-zinc-950 bg-zinc-50 font-bold'
                         : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
                     }`}
                   >
-                    <div className="flex justify-between">
-                      <span>Outside Dhaka</span>
-                      <span>৳{outsideDhakaFee}</span>
-                    </div>
-                    <span className="block text-[10px] text-zinc-400 font-normal mt-0.5">
-                      3-5 Days
-                    </span>
+                    <span className="block font-semibold">Outside Dhaka</span>
+                    <span className="block text-[11px] font-bold text-zinc-900 mt-0.5">৳{outsideDhakaFee}</span>
+                    <span className="block text-[9px] text-zinc-400 font-normal">3-5 Days</span>
                   </button>
                 </div>
               </div>
 
-              {/* Recipient Details */}
-              <form id="checkout-form" onSubmit={handlePlaceOrder} className="space-y-2.5">
+              {/* Coupon / Promo Code Box */}
+              <div className="space-y-2 pt-1 border-t border-zinc-100">
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-                  Recipient Details
+                  Promo / Coupon Code
+                </label>
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs">
+                    <div className="flex items-center gap-2">
+                      <Tag className="w-3.5 h-3.5 text-emerald-700" />
+                      <span className="font-mono font-bold">{appliedCoupon.code}</span>
+                      <span>(-৳{appliedCoupon.discountAmount.toLocaleString()})</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-xs text-red-600 font-bold hover:underline cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter promo code"
+                      value={couponCodeInput}
+                      onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                      className="flex-1 px-3 py-2 border border-zinc-300 font-mono text-xs uppercase focus:outline-none focus:border-zinc-950"
+                    />
+                    <button
+                      type="button"
+                      disabled={isApplyingCoupon || !couponCodeInput.trim()}
+                      onClick={handleApplyCoupon}
+                      className="px-4 py-2 bg-zinc-950 text-white text-xs font-bold uppercase tracking-wider hover:bg-zinc-800 transition disabled:opacity-50 cursor-pointer"
+                    >
+                      {isApplyingCoupon ? 'Verifying...' : 'Apply'}
+                    </button>
+                  </div>
+                )}
+                {couponError && (
+                  <p className="text-[11px] text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    <span>{couponError}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* 3-Field Guest Recipient Details */}
+              <form id="checkout-form" onSubmit={handlePlaceOrder} className="space-y-2.5 pt-1 border-t border-zinc-100">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                  Recipient Details (3-Field Guest Checkout)
                 </label>
                 <input
                   type="text"
@@ -332,8 +501,9 @@ export default function CartDrawer({
                 <input
                   type="tel"
                   required
-                  placeholder="Phone Number (017XXXXXXXX)"
+                  placeholder="11-Digit Mobile (017XXXXXXXX)"
                   value={customerForm.phone}
+                  onBlur={handlePhoneBlur}
                   onChange={(e) =>
                     setCustomerForm((p) => ({ ...p, phone: e.target.value }))
                   }
@@ -342,7 +512,7 @@ export default function CartDrawer({
                 <textarea
                   rows={2}
                   required
-                  placeholder="Full Delivery Address"
+                  placeholder="Delivery Address (House, Road, Area, City)"
                   value={customerForm.address}
                   onChange={(e) =>
                     setCustomerForm((p) => ({ ...p, address: e.target.value }))
@@ -383,7 +553,7 @@ export default function CartDrawer({
                   {paymentMethod === 'MANUAL_BKASH' && (
                     <div className="p-3 bg-zinc-50 border border-zinc-200 space-y-2 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="text-zinc-500">Send Money Number:</span>
+                        <span className="text-zinc-500">bKash Personal/Merchant:</span>
                         <button
                           type="button"
                           onClick={copyBkashNumber}
@@ -400,7 +570,7 @@ export default function CartDrawer({
                       <input
                         type="text"
                         required
-                        placeholder="Enter TrxID (e.g. BL9A7X92Q)"
+                        placeholder="Enter 10-character TrxID (e.g. BL9A7X92Q)"
                         value={customerForm.trxId}
                         onChange={(e) =>
                           setCustomerForm((p) => ({
@@ -426,12 +596,18 @@ export default function CartDrawer({
                 <span>Subtotal</span>
                 <span>{subtotal.toLocaleString()}৳</span>
               </div>
+              {appliedCoupon && (
+                <div className="flex justify-between text-emerald-600 font-medium">
+                  <span>Discount ({appliedCoupon.code})</span>
+                  <span>-৳{appliedCoupon.discountAmount.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between text-zinc-500">
-                <span>Delivery</span>
+                <span>Delivery ({deliveryZone === 'INSIDE_DHAKA' ? 'Inside' : deliveryZone === 'DHAKA_SUBURBS' ? 'Suburbs' : 'Outside'})</span>
                 <span>{isFreeShipping ? 'FREE' : `${deliveryFee}৳`}</span>
               </div>
               <div className="flex justify-between text-sm font-bold text-zinc-900 pt-2 border-t border-zinc-200">
-                <span>Total</span>
+                <span>Total Payable</span>
                 <span>{grandTotal.toLocaleString()}৳</span>
               </div>
             </div>

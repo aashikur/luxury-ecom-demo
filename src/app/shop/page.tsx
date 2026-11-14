@@ -1,8 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import { connectDB } from '@/lib/db';
-import StoreConfig from '@/models/StoreConfig';
-import Product from '@/models/Product';
+import { getPublicStoreConfig } from '@/services/config.service';
+import { getProductsList } from '@/services/product.service';
 import TopBar from '@/components/storefront/TopBar';
 import Navbar from '@/components/storefront/Navbar';
 import ProductCard from '@/components/storefront/ProductCard';
@@ -21,11 +20,19 @@ interface ShopPageProps {
 }
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
-  await connectDB();
   const { collection, category, sort } = await searchParams;
 
-  // 1. Fetch StoreConfig
-  const config = await StoreConfig.findOne({ isActive: true }).lean();
+  // Zero-Waterfall Concurrent Domain Service Queries
+  const [config, productsResult] = await Promise.all([
+    getPublicStoreConfig(),
+    getProductsList({
+      collection,
+      category,
+      categorySlug: category,
+      sort,
+      limit: 50,
+    }),
+  ]);
 
   const branding = config?.branding || {
     storeName: 'Aurem Luxury',
@@ -33,40 +40,21 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     colors: { accent: '#B8860B' },
   };
 
-  const logistics = config?.logistics || {
-    freeShippingThreshold: 2500,
-    supportPhone: '01700000000',
-    showroomAddress: 'Banani 11, Dhaka, Bangladesh',
-    whatsappNumber: '8801700000000',
-    insideDhakaFee: 70,
-    outsideDhakaFee: 130,
+  const logistics = {
+    freeShippingThreshold: config?.logistics?.freeShippingThreshold ?? 2500,
+    supportPhone: config?.logistics?.supportPhone || '01700000000',
+    showroomAddress: config?.logistics?.showroomAddress || 'Banani 11, Dhaka, Bangladesh',
+    whatsappNumber: config?.logistics?.whatsappNumber || '8801700000000',
+    insideDhakaFee: config?.logistics?.insideDhakaFee ?? 70,
+    dhakaSuburbsFee: config?.logistics?.suburbsDhakaFee ?? 100,
+    outsideDhakaFee: config?.logistics?.outsideDhakaFee ?? 130,
   };
 
-  // 2. Build Query Filter
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const filter: Record<string, any> = { isActive: true };
-
-  if (collection) {
-    filter.collections = collection;
-  }
-
-  if (category) {
-    const escaped = category.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    filter.$or = [
-      { categorySlug: new RegExp(`^${escaped}$`, 'i') },
-      { categoryPath: new RegExp(`^${escaped}$`, 'i') },
-      { categoryName: new RegExp(`^${escaped}$`, 'i') },
-    ];
-  }
-
-  // 3. Sorting
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let sortOption: Record<string, any> = { isPinned: -1, priority: -1, createdAt: -1 };
-  if (sort === 'price-asc') sortOption = { basePrice: 1 };
-  if (sort === 'price-desc') sortOption = { basePrice: -1 };
-
-  const rawProducts = await Product.find(filter).sort(sortOption).lean();
-  const products = JSON.parse(JSON.stringify(rawProducts));
+  const products = productsResult.products.map((p: any) => ({
+    ...p,
+    _id: String(p._id),
+  }));
 
   const filterTabs = [
     { label: 'ALL PRODUCTS', href: '/shop', active: !collection && !category },
@@ -107,7 +95,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <div className="flex items-center gap-3 text-xs">
             <span className="text-zinc-400 font-medium uppercase tracking-wider">Sort:</span>
             <Link
-              href={`/shop?${collection ? `collection=${collection}&` : ''}sort=price-asc`}
+              href={`/shop?${collection ? `collection=${collection}&` : ''}${category ? `category=${category}&` : ''}sort=price-asc`}
               className={`hover:text-zinc-950 transition ${
                 sort === 'price-asc' ? 'font-bold text-zinc-950 underline underline-offset-4' : 'text-zinc-500'
               }`}
@@ -116,7 +104,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             </Link>
             <span>•</span>
             <Link
-              href={`/shop?${collection ? `collection=${collection}&` : ''}sort=price-desc`}
+              href={`/shop?${collection ? `collection=${collection}&` : ''}${category ? `category=${category}&` : ''}sort=price-desc`}
               className={`hover:text-zinc-950 transition ${
                 sort === 'price-desc' ? 'font-bold text-zinc-950 underline underline-offset-4' : 'text-zinc-500'
               }`}
@@ -156,9 +144,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
-            {products.map((product: { _id: string; title: string; slug: string; basePrice: number; discountPrice?: number; images: { url: string; key: string }[] }) => (
+            {products.map((product) => (
               <ProductCard
-                key={product._id}
+                key={String(product._id)}
                 product={product}
                 accentColor={branding.colors?.accent || '#B8860B'}
               />
@@ -170,9 +158,10 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       {/* 4. Slide-Over 1-Page COD Checkout Drawer */}
       <CartDrawer
         insideDhakaFee={logistics.insideDhakaFee}
+        dhakaSuburbsFee={logistics.dhakaSuburbsFee}
         outsideDhakaFee={logistics.outsideDhakaFee}
         freeShippingThreshold={logistics.freeShippingThreshold}
-        manualBkashNumber={config?.payment?.manualBkash?.number || logistics.supportPhone}
+        manualBkashNumber={config?.payment?.manualBkash?.walletNumber || logistics.supportPhone}
         accentColor={branding.colors?.accent}
       />
 

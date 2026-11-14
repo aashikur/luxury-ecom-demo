@@ -1,7 +1,7 @@
 import React from 'react';
-import { connectDB } from '@/lib/db';
-import StoreConfig, { IHomeSection } from '@/models/StoreConfig';
-import Product from '@/models/Product';
+import type { IHomeSection } from '@/models/StoreConfig';
+import { getPublicStoreConfig } from '@/services/config.service';
+import { getProductsList } from '@/services/product.service';
 import TopBar from '@/components/storefront/TopBar';
 import Navbar from '@/components/storefront/Navbar';
 import HeroBanner from '@/components/storefront/HeroBanner';
@@ -11,7 +11,7 @@ import ProductDetailView from '@/components/storefront/ProductDetailView';
 import CartDrawer from '@/components/storefront/CartDrawer';
 import Footer from '@/components/storefront/Footer';
 
-// Incremental Static Regeneration (ISR) - 60s fallback window paired with on-demand revalidatePath('/', 'page') (Rule #7)
+// Incremental Static Regeneration (ISR) - 60s fallback window paired with dual revalidation (Rule #7)
 export const revalidate = 60;
 
 /**
@@ -20,32 +20,14 @@ export const revalidate = 60;
  * ============================================================================
  * 
  * 1. Zero-Waterfall: StoreConfig & Product queries run concurrently via Promise.all.
- * 2. Strict Field Projections: .select() pulls only card-required attributes,
- *    reducing payload transfer size by 80-90%.
- * 3. ISR Caching: Next.js pre-renders the homepage, serving visitors in < 30ms from
- *    cache with zero database hits until revalidation.
+ * 2. 4-Tier Clean Architecture: Domain services (getPublicStoreConfig, getProductsList).
+ * 3. Tagged Cache: Next.js unstable_cache tagged ['store-config'] and dual invalidation.
  */
-async function getStoreData() {
-  await connectDB();
-
-  // Zero-Waterfall Concurrent Queries + Strict Projections
-  const [config, products] = await Promise.all([
-    StoreConfig.findOne({ isActive: true })
-      .select('branding homeSections logistics courier.provider payment.manualBkash.number')
-      .lean(),
-    Product.find({ isActive: true })
-      .select(
-        'title slug basePrice discountPrice maxPrice media collections categorySlug categoryPath categoryName hasVariants inStock stockStatus priority isPinned createdAt'
-      )
-      .sort({ isPinned: -1, priority: -1, createdAt: -1 })
-      .lean(),
-  ]);
-
-  return { config, products };
-}
-
 export default async function HomePage() {
-  const { config, products } = await getStoreData();
+  const [config, productsResult] = await Promise.all([
+    getPublicStoreConfig(),
+    getProductsList({ limit: 50 }),
+  ]);
 
   const branding = config?.branding || {
     storeName: 'Aurem Luxury',
@@ -56,18 +38,21 @@ export default async function HomePage() {
     colors: { accent: '#B8860B' },
   };
 
-  const logistics = config?.logistics || {
-    freeShippingThreshold: 2500,
-    supportPhone: '01700000000',
-    showroomAddress: 'Banani 11, Dhaka, Bangladesh',
-    whatsappNumber: '8801700000000',
-    insideDhakaFee: 70,
-    outsideDhakaFee: 130,
+  const logistics = {
+    freeShippingThreshold: config?.logistics?.freeShippingThreshold ?? 2500,
+    supportPhone: config?.logistics?.supportPhone || '01700000000',
+    showroomAddress: config?.logistics?.showroomAddress || 'Banani 11, Dhaka, Bangladesh',
+    whatsappNumber: config?.logistics?.whatsappNumber || '8801700000000',
+    insideDhakaFee: config?.logistics?.insideDhakaFee ?? 70,
+    dhakaSuburbsFee: config?.logistics?.suburbsDhakaFee ?? 100,
+    outsideDhakaFee: config?.logistics?.outsideDhakaFee ?? 130,
   };
 
-  // Convert Mongoose Documents to plain objects for React Props
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cleanProducts = products ? JSON.parse(JSON.stringify(products)) : [];
+  const cleanProducts = productsResult.products.map((p: any) => ({
+    ...p,
+    _id: String(p._id),
+  }));
 
   const activeSections: IHomeSection[] = (config?.homeSections || [])
     .filter((sec: IHomeSection) => sec.isActive)
@@ -98,7 +83,7 @@ export default async function HomePage() {
                   (p: { slug: string }) => p.slug === branding.featuredProductSlug
                 ) || cleanProducts[0];
               const related = cleanProducts.filter(
-                (p: { _id: string }) => p._id !== featured._id
+                (p: { _id: string | unknown }) => String(p._id) !== String(featured._id)
               );
               return (
                 <ProductDetailView
@@ -155,26 +140,18 @@ export default async function HomePage() {
               (section.type as string) === 'CATEGORY_GRID' ||
               (section.type as string) === 'CATEGORY_SLIDER'
             ) {
-              // Filter products matching this section's collection or taxonomy
               const targetSlug = (section.collectionSlug || '').toLowerCase().trim();
               const matchedProducts = targetSlug
-                ? cleanProducts.filter(
-                    (p: {
-                      collections?: string[];
-                      categorySlug?: string;
-                      categoryPath?: string[];
-                      categoryName?: string;
-                    }) => {
-                      const inCollections = p.collections?.some((c) => c.toLowerCase() === targetSlug);
-                      const inCatSlug = p.categorySlug?.toLowerCase() === targetSlug;
-                      const inCatPath = p.categoryPath?.some((cp) => cp.toLowerCase() === targetSlug);
-                      const normCat = (p.categoryName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                      const inCatName = normCat
-                        ? normCat.includes(targetSlug) || targetSlug.includes(normCat)
-                        : false;
-                      return inCollections || inCatSlug || inCatPath || inCatName;
-                    }
-                  )
+                ? cleanProducts.filter((p) => {
+                    const inCollections = p.collections?.some((c: string) => c.toLowerCase() === targetSlug);
+                    const inCatSlug = p.categorySlug?.toLowerCase() === targetSlug;
+                    const inCatPath = p.categoryPath?.some((cp: string) => cp.toLowerCase() === targetSlug);
+                    const normCat = (p.categoryName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                    const inCatName = normCat
+                      ? normCat.includes(targetSlug) || targetSlug.includes(normCat)
+                      : false;
+                    return inCollections || inCatSlug || inCatPath || inCatName;
+                  })
                 : cleanProducts;
 
               const isDarkBand =
@@ -203,9 +180,10 @@ export default async function HomePage() {
       {/* 4. Slide-Over 1-Page Bangladesh Checkout Drawer */}
       <CartDrawer
         insideDhakaFee={logistics.insideDhakaFee}
+        dhakaSuburbsFee={logistics.dhakaSuburbsFee}
         outsideDhakaFee={logistics.outsideDhakaFee}
         freeShippingThreshold={logistics.freeShippingThreshold}
-        manualBkashNumber={config?.payment?.manualBkash?.number || logistics.supportPhone}
+        manualBkashNumber={config?.payment?.manualBkash?.walletNumber || logistics.supportPhone}
         accentColor={branding.colors?.accent}
       />
 

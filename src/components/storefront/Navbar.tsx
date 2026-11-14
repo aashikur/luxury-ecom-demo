@@ -3,23 +3,24 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { ShoppingBag, Menu, X, User, ChevronDown, ChevronRight, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Menu, X, User, ChevronDown, ChevronRight, ArrowRight, Truck } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import TrackOrderModal from './TrackOrderModal';
+
+export interface CategoryItem {
+  id: string;
+  title: string;
+  slug: string;
+  subcategories?: { title: string; slug: string }[];
+}
 
 interface NavbarProps {
   storeName: string;
   accentColor: string;
+  categories?: CategoryItem[];
 }
 
-// Static Demo Categories for the Shopify-Style Accordion
-interface CategoryItem {
-  id: string;
-  title: string;
-  slug: string;
-  subcategories: { title: string; slug: string }[];
-}
-
-const DEMO_CATEGORIES: CategoryItem[] = [
+const DEFAULT_CATEGORIES: CategoryItem[] = [
   {
     id: 'men',
     title: 'Men',
@@ -126,16 +127,21 @@ function NavLinks({ accentColor }: { accentColor: string }) {
   );
 }
 
-export default function Navbar({ storeName, accentColor }: NavbarProps) {
+export default function Navbar({
+  storeName,
+  accentColor,
+  categories = DEFAULT_CATEGORIES,
+}: NavbarProps) {
   const { totalItems, setIsCartOpen } = useCart();
   const pathname = usePathname();
   const brandNameFirst = storeName.split(' ')[0] || 'Aurem';
 
   // Mobile / Slide-Over Menu Drawer State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'CATEGORIES' | 'MENU'>('CATEGORIES');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-    men: true, // Default open first category for nice UX
+    [categories[0]?.id || 'men']: true,
   });
 
   // Close drawer on route change
@@ -158,7 +164,10 @@ export default function Navbar({ storeName, accentColor }: NavbarProps) {
   // Handle escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsDrawerOpen(false);
+      if (e.key === 'Escape') {
+        setIsDrawerOpen(false);
+        setIsTrackModalOpen(false);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -209,8 +218,20 @@ export default function Navbar({ storeName, accentColor }: NavbarProps) {
             </Link>
           </div>
 
-          {/* Right: Profile Icon (Admin Link) & Shopping Bag */}
-          <div className="flex items-center justify-end gap-3 sm:gap-5">
+          {/* Right: Track Order, Profile Icon & Shopping Bag */}
+          <div className="flex items-center justify-end gap-2 sm:gap-4">
+            {/* Quick Track Order Action */}
+            <button
+              type="button"
+              onClick={() => setIsTrackModalOpen(true)}
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded text-xs font-medium uppercase tracking-wider transition cursor-pointer"
+              title="Track Order Status"
+              aria-label="Track Order Status"
+            >
+              <Truck className="w-4 h-4" />
+              <span className="hidden md:inline">Track Order</span>
+            </button>
+
             {/* Profile Icon -> Links directly to Admin */}
             <Link
               href="/admin"
@@ -301,8 +322,10 @@ export default function Navbar({ storeName, accentColor }: NavbarProps) {
               {activeTab === 'CATEGORIES' ? (
                 /* Categories Accordion */
                 <div className="space-y-4">
-                  {DEMO_CATEGORIES.map((cat) => {
+                  {categories.map((cat) => {
                     const isOpen = !!expandedCategories[cat.id];
+                    const hasSubs = cat.subcategories && cat.subcategories.length > 0;
+
                     return (
                       <div key={cat.id} className="border-b border-zinc-100 pb-3">
                         <button
@@ -310,22 +333,24 @@ export default function Navbar({ storeName, accentColor }: NavbarProps) {
                           className="w-full flex items-center justify-between py-2 text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 transition cursor-pointer"
                         >
                           <span>{cat.title}</span>
-                          {isOpen ? (
-                            <ChevronDown className="w-4 h-4 text-zinc-400" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4 text-zinc-400" />
+                          {hasSubs && (
+                            isOpen ? (
+                              <ChevronDown className="w-4 h-4 text-zinc-400" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-zinc-400" />
+                            )
                           )}
                         </button>
 
                         {/* Collapsible Subcategories */}
-                        {isOpen && (
+                        {hasSubs && isOpen && (
                           <div className="pl-3 pt-2 pb-1 space-y-2">
-                            {cat.subcategories.map((sub) => (
+                            {cat.subcategories!.map((sub) => (
                               <Link
                                 key={sub.slug}
                                 href={`/shop?category=${sub.slug}`}
                                 onClick={() => setIsDrawerOpen(false)}
-                                className="flex items-center justify-between text-[16px] font-light text-zinc-600 hover:text-zinc-950 py-1.5 transition cursor-pointer group"
+                                className="flex items-center justify-between text-[14px] font-normal text-zinc-600 hover:text-zinc-950 py-1.5 transition cursor-pointer group"
                               >
                                 <span>{sub.title}</span>
                                 <ArrowRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-950 group-hover:translate-x-0.5 transition" />
@@ -386,6 +411,20 @@ export default function Navbar({ storeName, accentColor }: NavbarProps) {
                   >
                     ALL PRODUCTS (ARCHIVE)
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDrawerOpen(false);
+                      setIsTrackModalOpen(true);
+                    }}
+                    className="w-full flex items-center justify-between text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 py-2 border-b border-zinc-100 transition text-left cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Truck className="w-4 h-4 text-zinc-600" />
+                      TRACK ORDER
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-zinc-400" />
+                  </button>
                   <Link
                     href="/admin"
                     onClick={() => setIsDrawerOpen(false)}
@@ -409,6 +448,13 @@ export default function Navbar({ storeName, accentColor }: NavbarProps) {
           </div>
         </div>
       )}
+
+      {/* Track Order Modal */}
+      <TrackOrderModal
+        isOpen={isTrackModalOpen}
+        onClose={() => setIsTrackModalOpen(false)}
+        accentColor={accentColor}
+      />
     </>
   );
 }

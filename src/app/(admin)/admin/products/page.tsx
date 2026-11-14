@@ -1,6 +1,5 @@
 import React from 'react';
-import { connectDB } from '@/lib/db';
-import Product from '@/models/Product';
+import { getProductsList } from '@/services/product.service';
 import ProductsTableClient from '@/components/admin/ProductsTableClient';
 
 export const dynamic = 'force-dynamic';
@@ -12,13 +11,14 @@ export const metadata = {
 };
 
 export default async function AdminProductsPage() {
-  await connectDB();
+  // In-memory zero-network call to Domain Service (Rule 2: No internal fetch loopback, Rule 8: Bounded limit)
+  const { products } = await getProductsList({ all: true, limit: 50 });
 
-  const rawProducts = await Product.find({})
-    .sort({ isPinned: -1, priority: -1, createdAt: -1 })
-    .lean();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cleanProducts = products.map((p: any) => ({
+    ...p,
+    _id: String(p._id),
+  }));
 
-  const products = JSON.parse(JSON.stringify(rawProducts));
-
-  return <ProductsTableClient initialProducts={products} />;
+  return <ProductsTableClient initialProducts={cleanProducts} />;
 }

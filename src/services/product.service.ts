@@ -18,6 +18,7 @@ export interface GetProductsParams {
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
+  sort?: string;
   all?: boolean; // Admin bypass for drafts
 }
 
@@ -31,7 +32,7 @@ export interface ProductsListResult {
  */
 export function invalidateProductCaches(slug?: string) {
   try {
-    revalidateTag('products');
+    revalidateTag('products', 'max');
     revalidatePath('/');
     revalidatePath('/shop');
     revalidatePath('/admin');
@@ -50,11 +51,26 @@ export function invalidateProductCaches(slug?: string) {
 export async function getProductsList(
   params: GetProductsParams = {}
 ): Promise<ProductsListResult> {
-  await connectDB();
-
   const limit = Math.min(Math.max(Number(params.limit) || 20, 1), 50);
   const page = Math.max(Number(params.page) || 1, 1);
   const skip = (page - 1) * limit;
+
+  try {
+    await connectDB();
+  } catch (err) {
+    console.warn('Notice: Products DB connection deferred:', err instanceof Error ? err.message : err);
+    return {
+      products: [],
+      pagination: {
+        total: 0,
+        page,
+        pages: 1,
+        limit,
+        hasNextPage: false,
+        hasPrevPage: false,
+      },
+    };
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const query: any = {};
@@ -119,10 +135,20 @@ export async function getProductsList(
     ];
   }
 
+  // Sorting strategy
+  let sortOption: Record<string, 1 | -1> = { isPinned: -1, priority: -1, createdAt: -1 };
+  if (params.sort === 'price-asc') {
+    sortOption = { basePrice: 1 };
+  } else if (params.sort === 'price-desc') {
+    sortOption = { basePrice: -1 };
+  } else if (params.sort === 'newest') {
+    sortOption = { createdAt: -1 };
+  }
+
   // Zero-waterfall execution
   const [rawProducts, total] = await Promise.all([
     Product.find(query)
-      .sort({ isPinned: -1, priority: -1, createdAt: -1 })
+      .sort(sortOption)
       .skip(skip)
       .limit(limit)
       .select(
@@ -152,20 +178,30 @@ export async function getProductsList(
  * Single Product PDP retrieval by unique slug with lean hydration.
  */
 export async function getProductBySlug(slug: string): Promise<IProduct | null> {
-  await connectDB();
-  const rawProduct = await Product.findOne({ slug }).lean();
-  if (!rawProduct) return null;
-  return JSON.parse(JSON.stringify(rawProduct)) as IProduct;
+  try {
+    await connectDB();
+    const rawProduct = await Product.findOne({ slug }).lean();
+    if (!rawProduct) return null;
+    return JSON.parse(JSON.stringify(rawProduct)) as IProduct;
+  } catch (err) {
+    console.warn('Notice: Product lookup deferred:', err instanceof Error ? err.message : err);
+    return null;
+  }
 }
 
 /**
  * Product lookup by Mongo _id.
  */
 export async function getProductById(id: string): Promise<IProduct | null> {
-  await connectDB();
-  const rawProduct = await Product.findById(id).lean();
-  if (!rawProduct) return null;
-  return JSON.parse(JSON.stringify(rawProduct)) as IProduct;
+  try {
+    await connectDB();
+    const rawProduct = await Product.findById(id).lean();
+    if (!rawProduct) return null;
+    return JSON.parse(JSON.stringify(rawProduct)) as IProduct;
+  } catch (err) {
+    console.warn('Notice: Product lookup deferred:', err instanceof Error ? err.message : err);
+    return null;
+  }
 }
 
 /**

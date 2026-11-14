@@ -25,15 +25,29 @@ export const metadata = {
 export default async function AdminDashboardPage() {
   await connectDB();
 
-  const totalOrders = await Order.countDocuments({});
-  const pendingOrders = await Order.countDocuments({ orderStatus: 'PENDING' });
-  const totalProducts = await Product.countDocuments({ isActive: true });
+  // Zero-Waterfall: Run all 5 analytics queries in parallel via single-trip Promise.all
+  const [totalOrders, pendingOrders, totalProducts, revenueAgg, steadfastDispatches] =
+    await Promise.all([
+      Order.countDocuments({ orderStatus: { $ne: 'INCOMPLETE' } }),
+      Order.countDocuments({ orderStatus: 'PENDING' }),
+      Product.countDocuments({ isActive: true }),
+      Order.aggregate([
+        { $match: { 'payment.status': 'PAID' } },
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+      ]),
+      Order.countDocuments({
+        'courier.consignmentId': { $exists: true, $ne: '' },
+      }),
+    ]);
+
+  const totalRevenueNumber = revenueAgg?.[0]?.total || 0;
+  const formattedRevenue = `৳ ${totalRevenueNumber.toLocaleString('en-US')}`;
 
   const kpis = [
     {
       title: 'Total Revenue',
-      value: '৳ 0',
-      change: '+0% vs last week',
+      value: formattedRevenue,
+      change: 'Verified paid orders',
       icon: DollarSign,
       iconBg: 'bg-emerald-50 text-emerald-700',
     },
@@ -53,8 +67,8 @@ export default async function AdminDashboardPage() {
     },
     {
       title: 'Steadfast Dispatches',
-      value: '0',
-      change: '100% success rate',
+      value: String(steadfastDispatches),
+      change: 'Live booked parcels',
       icon: Truck,
       iconBg: 'bg-purple-50 text-purple-700',
     },

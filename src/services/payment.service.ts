@@ -52,7 +52,7 @@ export async function initiatePayment(
   if (method === 'MANUAL_BKASH' || method === 'MANUAL_NAGAD' || method === 'MANUAL_ROCKET') {
     const config = await StoreConfig.findOne({ isActive: true }).lean();
     const walletNumber =
-      config?.payment?.manualBkash?.walletNumber || '01700000000';
+      config?.payment?.manualBkash?.number || '01700000000';
 
     order.payment = {
       ...order.payment,

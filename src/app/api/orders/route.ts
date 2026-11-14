@@ -47,7 +47,11 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
 
-    const { orders, pagination } = await getOrdersList({ status, page, limit });
+    const { orders, pagination } = await getOrdersList({
+      status: status || undefined,
+      page,
+      limit,
+    });
 
     return apiSuccess(orders, { pagination });
   } catch (error: unknown) {

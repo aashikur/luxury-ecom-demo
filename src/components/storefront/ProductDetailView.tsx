@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Minus, Plus, Ruler, X, Check } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import ProductCard from './ProductCard';
-import { StockStatus, ProductType } from '@/models/Product';
+import type { StockStatus } from '@/models/Product';
 
 interface Variant {
   _id?: string;
@@ -62,6 +62,7 @@ interface ProductDetailProps {
   relatedProducts: any[];
   accentColor?: string;
   insideDhakaFee?: number;
+  dhakaSuburbsFee?: number;
   outsideDhakaFee?: number;
   showroomAddress?: string;
 }
@@ -71,6 +72,7 @@ export default function ProductDetailView({
   relatedProducts,
   accentColor = '#B8860B',
   insideDhakaFee = 70,
+  dhakaSuburbsFee = 100,
   outsideDhakaFee = 130,
   showroomAddress = 'Banani 11, Dhaka',
 }: ProductDetailProps) {
@@ -113,21 +115,15 @@ export default function ProductDetailView({
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
 
   // Images resolution (supports variant specific image override)
-  const images =
-    (product.media?.length > 0
-      ? product.media
-      : (product as any).images?.length > 0
-      ? (product as any).images
-      : null) || [
-      { url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80', key: '', type: 'IMAGE' },
-    ];
-  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const images = (product.media?.length > 0 ? product.media : (product as any).images?.length > 0 ? (product as any).images : null) || [
+    { url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80', key: '', type: 'IMAGE' },
+  ];
+
   const currentImage =
     selectedVariant?.image?.url || images[activeGalleryIdx]?.url || images[0]?.url;
 
   // 1. PRICE RESOLUTION LOGIC:
-  // For a selected variant: variant.discountPrice ?? variant.price ?? product.discountPrice ?? product.basePrice
-  // For regular product: product.discountPrice ?? product.basePrice
   const baseEffectivePrice = hasVariants && selectedVariant
     ? selectedVariant.discountPrice ??
       selectedVariant.price ??
@@ -166,8 +162,6 @@ export default function ProductDetailView({
     : 0;
 
   // 2. STOCK & AVAILABILITY RESOLUTION LOGIC:
-  // If product.hasVariants === false: check product.inStock and product.totalStock
-  // If product.hasVariants === true: check selected variant's stockStatus !== 'FORCE_OUT_OF_STOCK' and (variant.stock > 0 || variant.stockStatus === 'PRE_ORDER')
   let isOutOfStock = false;
   let isPreOrder = false;
 
@@ -204,14 +198,12 @@ export default function ProductDetailView({
     setSelectedModifiers((prev) => {
       const current = prev[group.name] || [];
       if (group.maxSelect === 1) {
-        // Radio style: toggle or select single
         const isCurrent = current.includes(optionLabel);
         if (isCurrent && !group.isRequired) {
           return { ...prev, [group.name]: [] };
         }
         return { ...prev, [group.name]: [optionLabel] };
       } else {
-        // Multi-select checkboxes up to maxSelect
         const exists = current.includes(optionLabel);
         let next: string[];
         if (exists) {
@@ -366,7 +358,7 @@ export default function ProductDetailView({
             <div className="space-y-4 mb-6 pt-2 border-t border-zinc-100">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-800">
-                  {product.productType === 'CLOTHING' ? 'Size / Variant' : 'Select Option'}:{' '}
+                  {product.productType === 'CLOTHING' ? 'Size / Option' : 'Select Option'}:{' '}
                   <strong className="text-zinc-950">
                     {selectedVariant?.label || selectedVariant?.size || selectedVariant?.sku}
                   </strong>
@@ -414,7 +406,7 @@ export default function ProductDetailView({
                     >
                       {v.colorHex && (
                         <span
-                          className="w-2.5 h-2.5 rounded-full border border-black/20"
+                          className="w-3 h-3 rounded-full border border-black/20 shrink-0"
                           style={{ backgroundColor: v.colorHex }}
                         />
                       )}
@@ -422,6 +414,11 @@ export default function ProductDetailView({
                       {v.price && v.price !== product.basePrice && (
                         <span className="text-[10px] opacity-75 font-normal ml-0.5">
                           ({v.discountPrice ?? v.price}৳)
+                        </span>
+                      )}
+                      {v.stock > 0 && v.stock <= 5 && !variantOOS && (
+                        <span className="absolute -top-1.5 -right-1 px-1 bg-amber-500 text-white text-[8px] font-bold rounded-xs">
+                          {v.stock} left
                         </span>
                       )}
                     </button>
@@ -522,13 +519,13 @@ export default function ProductDetailView({
             {isOutOfStock ? 'OUT OF STOCK' : isPreOrder ? 'PRE-ORDER NOW' : 'ORDER NOW'}
           </button>
 
-          {/* Delivery & Showroom Info */}
-          <div className="p-4 bg-zinc-50 border border-zinc-200 text-xs text-zinc-600 space-y-1">
+          {/* 3-Zone Delivery & Showroom Info */}
+          <div className="p-4 bg-zinc-50 border border-zinc-200 text-xs text-zinc-600 space-y-1.5">
             <p>
-              <strong className="text-zinc-900">Delivery:</strong> Inside Dhaka (৳{insideDhakaFee}) • Outside Dhaka (৳{outsideDhakaFee})
+              <strong className="text-zinc-900">Express Delivery:</strong> Inside Dhaka (৳{insideDhakaFee}) • Suburbs (৳{dhakaSuburbsFee}) • Outside Dhaka (৳{outsideDhakaFee})
             </p>
             <p>
-              <strong className="text-zinc-900">Showroom:</strong> {showroomAddress}
+              <strong className="text-zinc-900">Showroom & Collection:</strong> {showroomAddress}
             </p>
           </div>
         </div>
@@ -646,7 +643,7 @@ export default function ProductDetailView({
               </div>
               <button
                 onClick={() => setIsSizeGuideOpen(false)}
-                className="text-zinc-400 hover:text-zinc-900"
+                className="text-zinc-400 hover:text-zinc-900 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -687,9 +684,9 @@ export default function ProductDetailView({
             YOU MAY ALSO LIKE
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
-            {relatedProducts.slice(0, 4).map((rel: any) => (
+            {relatedProducts.slice(0, 4).map((rel) => (
               <ProductCard
-                key={rel._id}
+                key={String(rel._id)}
                 product={rel}
                 accentColor={accentColor}
               />
