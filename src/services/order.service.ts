@@ -4,7 +4,9 @@ import { connectDB } from '@/lib/db';
 import Order, { IOrderItem } from '@/models/Order';
 import Product from '@/models/Product';
 import StoreConfig from '@/models/StoreConfig';
-import { DeliveryZone, OrderStatus } from '@/types/domain';
+import { DeliveryZone, OrderStatus, PaymentMethod } from '@/types/domain';
+import { upsertCustomerOnOrder, updateCustomerDeliveryMetrics } from './customer.service';
+import { validateCoupon, incrementCouponUsage } from './coupon.service';
 
 interface CreateOrderInputCustomer {
   name: string;
@@ -35,7 +37,8 @@ interface CreateOrderInputItem {
 export interface CreateOrderInput {
   customer: CreateOrderInputCustomer;
   items: CreateOrderInputItem[];
-  paymentMethod?: 'COD' | 'SSLCOMMERZ' | 'MANUAL_BKASH' | 'MANUAL_NAGAD' | 'BKASH_PGW';
+  couponCode?: string;
+  paymentMethod?: PaymentMethod;
   senderPhone?: string;
   trxId?: string;
   note?: string;
@@ -49,7 +52,7 @@ export interface OrderServiceResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
-  code?: 'VALIDATION_ERROR' | 'NOT_FOUND' | 'OUT_OF_STOCK' | 'INTERNAL_ERROR';
+  code?: 'VALIDATION_ERROR' | 'NOT_FOUND' | 'OUT_OF_STOCK' | 'INTERNAL_ERROR' | 'COUPON_INVALID';
   status?: number;
 }
 
@@ -172,6 +175,7 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderService
   const {
     customer,
     items,
+    couponCode,
     paymentMethod = 'COD',
     senderPhone,
     trxId,
@@ -298,7 +302,22 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderService
     ? dhakaSuburbsFee
     : outsideDhakaFee;
 
-  const totalAmount = calculatedSubtotal + deliveryFee;
+  // Coupon Validation
+  let discountAmount = 0;
+  let appliedCouponCode = '';
+  if (couponCode && couponCode.trim()) {
+    const couponValidation = await validateCoupon(
+      couponCode,
+      calculatedSubtotal,
+      customer.phone
+    );
+    if (couponValidation.isValid) {
+      discountAmount = couponValidation.discountAmount;
+      appliedCouponCode = couponValidation.code;
+    }
+  }
+
+  const totalAmount = Math.max(0, calculatedSubtotal + deliveryFee - discountAmount);
 
   // Atomic stock decrement
   const initialStatus = status || 'PENDING';
@@ -310,6 +329,11 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderService
       code: 'OUT_OF_STOCK',
       status: 409,
     };
+  }
+
+  // Increment coupon usage after successful stock deduction
+  if (appliedCouponCode) {
+    await incrementCouponUsage(appliedCouponCode);
   }
 
   const randomSuffix = Math.floor(10000 + Math.random() * 90000);
@@ -332,12 +356,13 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderService
     items: normalizedItems,
     subtotal: calculatedSubtotal,
     deliveryFee,
-    discountAmount: 0,
+    discountAmount,
+    couponCode: appliedCouponCode || undefined,
     totalAmount,
     financials: {
       subtotal: calculatedSubtotal,
       deliveryFee,
-      discount: 0,
+      discount: discountAmount,
       totalAmount,
       isAdvancePaid: false,
       advanceAmount: 0,
@@ -361,6 +386,16 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderService
     updatedBy,
   });
 
+  // Upsert Customer profile in background
+  upsertCustomerOnOrder({
+    name: customer.name,
+    phone: customer.phone,
+    address: customer.address,
+    deliveryZone,
+    district: customer.district,
+    totalAmount,
+  }).catch(() => {});
+
   try {
     revalidatePath('/', 'page');
     revalidatePath('/shop', 'page');
@@ -370,46 +405,185 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderService
     console.warn('Revalidation notice:', revErr);
   }
 
-  return { success: true, data: newOrder, status: 201 };
+  return {
+    success: true,
+    data: newOrder,
+    status: 201,
+  };
 }
 
 /**
- * Domain Service: Fetches paginated orders with bounded limit <= 50
+ * Captures silent abandoned cart leads (INCOMPLETE state) upon checkout phone blur.
+ */
+export async function createOrderLead(params: {
+  name?: string;
+  phone: string;
+  address?: string;
+  deliveryZone?: DeliveryZone;
+  cartItems?: CreateOrderInputItem[];
+}): Promise<{ success: boolean; leadId?: string }> {
+  await connectDB();
+  const phone = normalizeBDPhone(params.phone);
+  if (!isValidBDPhone(phone)) return { success: false };
+
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+  // Look for existing recent INCOMPLETE lead for this phone
+  let existingLead = await Order.findOne({
+    'customer.phone': phone,
+    orderStatus: 'INCOMPLETE',
+    createdAt: { $gte: twoHoursAgo },
+  });
+
+  if (existingLead) {
+    if (params.name) existingLead.customer.name = params.name;
+    if (params.address) existingLead.customer.address = params.address;
+    if (params.deliveryZone) existingLead.customer.deliveryZone = params.deliveryZone;
+    await existingLead.save();
+    return { success: true, leadId: existingLead.orderNumber };
+  }
+
+  const orderNumber = `LEAD-${Math.floor(10000 + Math.random() * 90000)}`;
+
+  const lead = await Order.create({
+    orderNumber,
+    customer: {
+      name: params.name || 'Checkout Guest',
+      phone,
+      address: params.address || 'Address pending',
+      deliveryZone: params.deliveryZone || 'INSIDE_DHAKA',
+    },
+    items: [],
+    subtotal: 0,
+    deliveryFee: 0,
+    discountAmount: 0,
+    totalAmount: 0,
+    financials: {
+      subtotal: 0,
+      deliveryFee: 0,
+      discount: 0,
+      totalAmount: 0,
+      isAdvancePaid: false,
+      advanceAmount: 0,
+    },
+    payment: {
+      method: 'COD',
+      status: 'UNPAID',
+    },
+    orderStatus: 'INCOMPLETE',
+    status: 'INCOMPLETE',
+    inventoryState: 'NONE', // Never reserve stock for leads
+    createdBy: 'LEAD_CAPTURE',
+  });
+
+  return { success: true, leadId: lead.orderNumber };
+}
+
+/**
+ * IDOR-safe public guest order tracking (requires orderNumber + last 4 digits of phone).
+ */
+export async function trackOrder(
+  orderNumber: string,
+  phoneLast4: string
+): Promise<{ success: boolean; order?: Record<string, unknown>; error?: string }> {
+  await connectDB();
+
+  if (!orderNumber || !phoneLast4) {
+    return { success: false, error: 'Order Number and phone verification digits are required' };
+  }
+
+  const order = await Order.findOne({
+    orderNumber: orderNumber.trim(),
+  })
+    .select('orderNumber customer.name customer.phone deliveryFee totalAmount orderStatus payment.status courier createdAt items')
+    .lean();
+
+  if (!order) {
+    return { success: false, error: 'Order not found' };
+  }
+
+  const phone = order.customer?.phone || '';
+  if (!phone.endsWith(phoneLast4.trim())) {
+    return { success: false, error: 'Verification failed. Last 4 digits of phone do not match.' };
+  }
+
+  // Sanitize full phone number for privacy
+  const sanitizedCustomer = {
+    name: order.customer.name,
+    phoneMasked: phone.slice(0, 3) + '****' + phone.slice(-4),
+  };
+
+  return {
+    success: true,
+    order: {
+      orderNumber: order.orderNumber,
+      customer: sanitizedCustomer,
+      orderStatus: order.orderStatus,
+      paymentStatus: order.payment?.status,
+      totalAmount: order.totalAmount,
+      courier: order.courier,
+      createdAt: order.createdAt,
+      itemCount: order.items?.length || 0,
+    },
+  };
+}
+
+/**
+ * Domain Service: Fetches orders list with bounded pagination, status filtering and search
  */
 export async function getOrdersList(params: {
-  status?: string | null;
   page?: number;
   limit?: number;
+  status?: string;
+  q?: string;
 }) {
   await connectDB();
 
-  const { status, page = 1, limit = 20 } = params;
-  const boundedLimit = Math.min(Math.max(isNaN(limit) ? 20 : limit, 1), 50);
-  const validPage = Math.max(isNaN(page) ? 1 : page, 1);
+  const limit = Math.min(Math.max(Number(params.limit) || 20, 1), 50);
+  const page = Math.max(Number(params.page) || 1, 1);
+  const skip = (page - 1) * limit;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const filter: Record<string, any> = {};
-  if (status) {
-    filter.$or = [{ orderStatus: status }, { status }];
+  const query: any = {};
+
+  if (params.status && params.status !== 'ALL') {
+    query.$or = [{ orderStatus: params.status }, { status: params.status }];
   }
 
-  const skip = (validPage - 1) * boundedLimit;
+  if (params.q && params.q.trim()) {
+    const regex = new RegExp(params.q.trim(), 'i');
+    query.$or = [
+      { orderNumber: regex },
+      { 'customer.name': regex },
+      { 'customer.phone': regex },
+      { 'courier.consignmentId': regex },
+      { 'courier.trackingCode': regex },
+    ];
+  }
+
   const [orders, total] = await Promise.all([
-    Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(boundedLimit).lean(),
-    Order.countDocuments(filter),
+    Order.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select(
+        'orderNumber customer items financials payment orderStatus status inventoryState courier createdAt totalAmount deliveryFee subtotal discountAmount'
+      )
+      .lean(),
+    Order.countDocuments(query),
   ]);
 
-  const pages = Math.ceil(total / boundedLimit) || 1;
+  const pages = Math.ceil(total / limit) || 1;
 
   return {
     orders,
     pagination: {
       total,
-      page: validPage,
+      page,
       pages,
-      limit: boundedLimit,
-      hasNextPage: validPage < pages,
-      hasPrevPage: validPage > 1,
+      limit,
+      hasNextPage: page < pages,
+      hasPrevPage: page > 1,
     },
   };
 }
@@ -433,10 +607,12 @@ export async function updateOrderStatus(
     return { success: false, error: 'Order not found', code: 'NOT_FOUND', status: 404 };
   }
 
+  const previousStatus = order.orderStatus;
   order.orderStatus = targetStatus;
   order.status = targetStatus;
   order.updatedBy = updatedBy;
 
+  // Rollback stock on cancellation or return
   if (
     (targetStatus === 'CANCELLED' || targetStatus === 'RETURNED') &&
     order.inventoryState === 'DEDUCTED'
@@ -449,6 +625,17 @@ export async function updateOrderStatus(
       }))
     );
     order.inventoryState = 'RESTORED';
+  }
+
+  // Update customer delivery metrics if reaching terminal statuses
+  if (previousStatus !== targetStatus && order.customer?.phone) {
+    if (targetStatus === 'DELIVERED') {
+      updateCustomerDeliveryMetrics(order.customer.phone, 'DELIVERED').catch(() => {});
+    } else if (targetStatus === 'RETURNED') {
+      updateCustomerDeliveryMetrics(order.customer.phone, 'RETURNED').catch(() => {});
+    } else if (targetStatus === 'CANCELLED') {
+      updateCustomerDeliveryMetrics(order.customer.phone, 'CANCELLED').catch(() => {});
+    }
   }
 
   await order.save();

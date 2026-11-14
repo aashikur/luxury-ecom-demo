@@ -1,165 +1,78 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
-import { connectDB } from '@/lib/db';
-import Product from '@/models/Product';
-import { deleteFromR2 } from '@/lib/storage';
+import { NextRequest } from 'next/server';
+import { apiSuccess, apiError } from '@/lib/api-response';
+import {
+  getProductBySlug,
+  getProductById,
+  updateProduct,
+  deleteProduct,
+} from '@/services/product.service';
 
 export const dynamic = 'force-dynamic';
-
-/**
- * ============================================================================
- * LESSON: Dynamic Slug Route Handler in Next.js App Router
- * ============================================================================
- * 
- * In App Router, folder `[slug]` provides `context.params`:
- * Example: GET /api/products/vintage-heavyweight-acid-wash-hoodie
- * -> params.slug = 'vintage-heavyweight-acid-wash-hoodie'
- */
 
 interface RouteParams {
   params: Promise<{ slug: string }>;
 }
 
 /**
- * GET: Fetch single product details by slug (Storefront Product Detail Page)
+ * GET: Fetch single product details by slug or _id
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
-    await connectDB();
     const { slug } = await params;
-
-    // Search by ObjectId if valid 24-char hex, otherwise by slug
-    const query = slug.match(/^[0-9a-fA-F]{24}$/)
-      ? { $or: [{ _id: slug }, { slug }] }
-      : { slug };
-
-    const product = await Product.findOne(query).lean();
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(slug);
+    const product = isObjectId
+      ? await getProductById(slug)
+      : await getProductBySlug(slug);
 
     if (!product) {
-      return NextResponse.json(
-        { success: false, error: 'Product not found' },
-        { status: 404 }
-      );
+      return apiError('Product not found', 'NOT_FOUND', 404);
     }
 
-    return NextResponse.json({ success: true, data: product }, { status: 200 });
+    return apiSuccess(product);
   } catch (error: unknown) {
-    console.error('Product Detail GET Error:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch product';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return apiError(message, 'INTERNAL_ERROR', 500);
   }
 }
 
 /**
- * PUT: Update an existing product (Admin)
+ * PUT: Update an existing product
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    await connectDB();
     const { slug } = await params;
     const body = await request.json();
 
-    const query = slug.match(/^[0-9a-fA-F]{24}$/)
-      ? { $or: [{ _id: slug }, { slug }] }
-      : { slug };
+    const updated = await updateProduct(slug, body, body.updatedBy || 'ADMIN');
 
-    const product = await Product.findOne(query);
-
-    if (!product) {
-      return NextResponse.json(
-        { success: false, error: 'Product not found to update' },
-        { status: 404 }
-      );
+    if (!updated) {
+      return apiError('Product not found to update', 'NOT_FOUND', 404);
     }
 
-    body.updatedBy = body.updatedBy || 'ADMIN';
-    Object.assign(product, body);
-    const updated = await product.save();
-
-    // Revalidate all caches across storefront and admin
-    try {
-      revalidatePath('/', 'page');
-      revalidatePath('/shop', 'page');
-      revalidatePath('/admin', 'page');
-      revalidatePath('/admin/products', 'page');
-      if (updated.slug) {
-        revalidatePath(`/products/${updated.slug}`, 'page');
-      }
-      revalidatePath(`/admin/products/${updated._id}`, 'page');
-      revalidatePath(`/admin/products/${updated._id}/edit`, 'page');
-    } catch (revErr) {
-      console.warn('Revalidation notice:', revErr);
-    }
-
-    return NextResponse.json(
-      { success: true, message: 'Product updated successfully', data: updated },
-      { status: 200 }
-    );
+    return apiSuccess(updated, { message: 'Product updated successfully' });
   } catch (error: unknown) {
-    console.error('Product PUT Error:', error);
     const message = error instanceof Error ? error.message : 'Failed to update product';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return apiError(message, 'INTERNAL_ERROR', 500);
   }
 }
 
 /**
- * DELETE: Soft delete or remove product by slug (Admin)
+ * DELETE: Remove product by slug or id and cascade R2 storage purge
  */
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
-    await connectDB();
     const { slug } = await params;
+    const result = await deleteProduct(slug, 'ADMIN');
 
-    const query = slug.match(/^[0-9a-fA-F]{24}$/)
-      ? { $or: [{ _id: slug }, { slug }] }
-      : { slug };
-
-    const deleted = await Product.findOneAndDelete(query);
-
-    if (!deleted) {
-      return NextResponse.json(
-        { success: false, error: 'Product not found to delete' },
-        { status: 404 }
-      );
+    if (!result.success) {
+      return apiError('Product not found to delete', 'NOT_FOUND', 404);
     }
 
-    // Cascade delete associated assets from Cloudflare R2 (skip seed assets)
-    const mediaList = deleted.media || [];
-    if (mediaList.length > 0) {
-      const keysToDelete = mediaList
-        .map((m: { key?: string }) => m.key)
-        .filter((key: any): key is string => Boolean(key && !key.startsWith('seed/')));
-
-      if (keysToDelete.length > 0) {
-        await Promise.allSettled(keysToDelete.map((key: string) => deleteFromR2(key)));
-      }
-    }
-
-    // Revalidate all caches across storefront and admin
-    try {
-      revalidatePath('/', 'page');
-      revalidatePath('/shop', 'page');
-      revalidatePath('/admin', 'page');
-      revalidatePath('/admin/products', 'page');
-      if (deleted.slug) {
-        revalidatePath(`/products/${deleted.slug}`, 'page');
-      }
-      revalidatePath(`/admin/products/${deleted._id}`, 'page');
-    } catch (revErr) {
-      console.warn('Revalidation notice:', revErr);
-    }
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: 'Product and associated storage assets deleted successfully',
-        deletedMediaKeys: mediaList.map((m: any) => m.key).filter(Boolean),
-      },
-      { status: 200 }
-    );
+    return apiSuccess(result, {
+      message: 'Product and associated storage assets deleted successfully',
+    });
   } catch (error: unknown) {
-    console.error('Product DELETE Error:', error);
     const message = error instanceof Error ? error.message : 'Failed to delete product';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return apiError(message, 'INTERNAL_ERROR', 500);
   }
 }
