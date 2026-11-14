@@ -35,3 +35,21 @@ All backend development, database interaction, authentication, and API endpoints
 - **Universal Envelope:** All API responses must use `ApiResponse<T>` (`apiSuccess` / `apiError`).
 - **Better Auth & Edge Security:** `/admin/**` protected by Edge middleware reading Better Auth session tokens.
 
+## Performance Optimization, Caching & Data-Fetching Rules
+All data access, page rendering, and caching strategies must follow `.gemini/rules/performance-and-caching.md` and `docs/11-nextjs-caching-ssg-dynamic-rendering-and-revalidation.md`:
+- **Strict Projections & Lean Hydration:** Always append `.lean()` and explicit `.select(...)` to all read queries. Never run unprojected `.find()`.
+- **Zero-Waterfall Queries:** Independent queries MUST execute concurrently via `Promise.all([ ... ])`; never sequential `await` loops.
+- **Next.js 16 Split-Cache:** `/admin/**`, `/checkout`, and `/account` are strictly `dynamic = 'force-dynamic'` + `no-store`. Public storefront uses tagged `unstable_cache` (`['products']`, `['store-config']`).
+- **Mobile `bf-cache` Protection:** Public storefront HTML must NEVER use `no-store`; use `must-revalidate` so mobile Back/Forward swipe restores in 0ms.
+- **Dual Invalidation:** Every mutation handler (`POST`, `PUT`, `PATCH`, `DELETE`) MUST invoke both `revalidateTag(...)` and `revalidatePath(...)`.
+- **LCP Gate & R2 WebP:** Catalog images are 3:4 portrait delivered in WebP from Cloudflare R2 CDN. Hero images and first catalog cards MUST use `<Image priority sizes="..." />`.
+- **Connection Pool Singleton:** Database connections must route strictly through `src/lib/db.ts` and `src/lib/mongodb-client.ts` cached in `globalThis`.
+
+## E-Commerce Domain Logic & Bangladesh Localization Rules
+All checkout, payment, order state, and courier integrations must follow `.gemini/rules/ecommerce-business-logic.md` and `docs/pipeline/01-scope-and-business-rules.md`:
+- **Bangladeshi 3-Field Guest Checkout:** Name, 11-digit mobile phone (`/^01[3-9]\d{8}$/`), and Delivery Address. No mandatory account creation or password.
+- **3-Zone Delivery Logistics:** `INSIDE_DHAKA` (৳70), `DHAKA_SUBURBS` (৳100), `OUTSIDE_DHAKA` (৳130), with free shipping threshold support.
+- **Steadfast Courier 1-Click Booking:** 1-click consignment creation via `src/services/courier.service.ts` with automated fallback sandbox simulation in dev.
+- **Anti-Over-Engineering Data Boundaries:** Variants are embedded in `Product.variants[]`. Banners are embedded in `StoreConfig.homeSections[]`. Carts live client-side in Zustand. No separate DB collections for Variants, Banners, or Carts.
+
+
