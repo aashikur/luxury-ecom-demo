@@ -52,10 +52,18 @@ export interface OrderRow {
     note?: string;
   };
   items: OrderItemRow[];
-  subtotal: number;
-  deliveryFee: number;
+  subtotal?: number;
+  deliveryFee?: number;
   discountAmount?: number;
-  totalAmount: number;
+  totalAmount?: number;
+  financials?: {
+    subtotal?: number;
+    deliveryFee?: number;
+    discount?: number;
+    totalAmount?: number;
+    isAdvancePaid?: boolean;
+    advanceAmount?: number;
+  };
   payment: {
     method: string;
     status: 'UNPAID' | 'PENDING_VERIFICATION' | 'PAID' | 'FAILED' | 'REFUNDED';
@@ -216,7 +224,8 @@ export default function OrdersTableClient({
     const rows = filteredOrders
       .map((o) => {
         const dateStr = new Date(o.createdAt).toISOString().split('T')[0];
-        return `"${o.orderNumber}","${o.customer?.name || ''}","${o.customer?.phone || ''}","${o.customer?.deliveryZone || ''}",${o.totalAmount},"${o.payment?.status || ''}","${o.orderStatus || ''}","${o.courier?.trackingCode || ''}","${dateStr}"`;
+        const effectiveTotal = o.totalAmount ?? o.financials?.totalAmount ?? 0;
+        return `"${o.orderNumber}","${o.customer?.name || ''}","${o.customer?.phone || ''}","${o.customer?.deliveryZone || ''}",${effectiveTotal},"${o.payment?.status || ''}","${o.orderStatus || ''}","${o.courier?.trackingCode || ''}","${dateStr}"`;
       })
       .join('\n');
 
@@ -400,10 +409,18 @@ export default function OrdersTableClient({
 
                     {/* Total Amount */}
                     <TableCell className="text-right">
-                      <div className="font-semibold text-[#060d11]">৳{order.totalAmount.toLocaleString()}</div>
-                      <div className="text-[10px] text-slate-400">
-                        {order.deliveryFee > 0 ? `incl. ৳${order.deliveryFee} del` : 'Free shipping'}
-                      </div>
+                      {(() => {
+                        const effectiveTotal = order.totalAmount ?? order.financials?.totalAmount ?? 0;
+                        const effectiveDelivery = order.deliveryFee ?? order.financials?.deliveryFee ?? 0;
+                        return (
+                          <>
+                            <div className="font-semibold text-[#060d11]">৳{effectiveTotal.toLocaleString()}</div>
+                            <div className="text-[10px] text-slate-400">
+                              {effectiveDelivery > 0 ? `incl. ৳${effectiveDelivery} del` : 'Free shipping'}
+                            </div>
+                          </>
+                        );
+                      })()}
                     </TableCell>
 
                     {/* Payment Status */}

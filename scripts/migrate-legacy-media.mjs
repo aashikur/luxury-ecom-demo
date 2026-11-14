@@ -163,7 +163,9 @@ async function migrateDatabase() {
   }
 
   for (const order of orders) {
+    const $set = {};
     let orderChanged = false;
+
     const items = (order.items || []).map((item) => {
       if (!item.image && item.productId) {
         const fallbackUrl = productMediaMap.get(item.productId.toString());
@@ -176,9 +178,47 @@ async function migrateDatabase() {
     });
 
     if (orderChanged) {
+      $set.items = items;
+    }
+
+    // Normalize root financial fields
+    const totalAmount = order.totalAmount ?? order.financials?.totalAmount ?? 0;
+    const subtotal = order.subtotal ?? order.financials?.subtotal ?? 0;
+    const deliveryFee = order.deliveryFee ?? order.financials?.deliveryFee ?? 0;
+    const discountAmount = order.discountAmount ?? order.financials?.discount ?? 0;
+
+    if (order.totalAmount === undefined) {
+      $set.totalAmount = totalAmount;
+      orderChanged = true;
+    }
+    if (order.subtotal === undefined) {
+      $set.subtotal = subtotal;
+      orderChanged = true;
+    }
+    if (order.deliveryFee === undefined) {
+      $set.deliveryFee = deliveryFee;
+      orderChanged = true;
+    }
+    if (order.discountAmount === undefined) {
+      $set.discountAmount = discountAmount;
+      orderChanged = true;
+    }
+
+    const st = order.orderStatus || order.status || 'PENDING';
+    if (!order.orderStatus) {
+      $set.orderStatus = st;
+      orderChanged = true;
+    }
+    if (!order.status) {
+      $set.status = st;
+      orderChanged = true;
+    }
+
+    if (orderChanged) {
+      $set.updatedAt = new Date();
       await db.collection('orders').updateOne(
         { _id: order._id },
-        { $set: { items, updatedAt: new Date() } }
+        { $set }
       );
       updatedOrdersCount++;
     }
