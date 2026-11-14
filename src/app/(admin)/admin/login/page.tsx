@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { signIn } from '@/lib/auth-client';
 
 export default function AdminLoginPage() {
@@ -12,6 +12,7 @@ export default function AdminLoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +63,27 @@ export default function AdminLoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-white py-8 px-6 shadow-sm border border-slate-200 rounded-xl sm:px-10">
+          {/* Quick Demo Credentials / Continue As */}
+          <div className="mb-6 pb-5 border-b border-slate-100">
+            <span className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2.5">
+              Continue as:
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('admin@aurem.com');
+                  setPassword('AdminPassword123!');
+                  setError(null);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#076E46]/10 text-[#076E46] border border-[#076E46]/25 hover:bg-[#076E46] hover:text-white transition shadow-2xs cursor-pointer active:scale-98"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Super Admin
+              </button>
+            </div>
+          </div>
+
           <form className="space-y-5" onSubmit={handleSubmit}>
             {error && (
               <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 flex items-start gap-3">
@@ -108,13 +130,25 @@ export default function AdminLoginPage() {
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="block w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-[#060d11] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#076E46]/20 focus:border-[#076E46] transition"
+                  className="block w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-[#060d11] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#076E46]/20 focus:border-[#076E46] transition"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer transition"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
               </div>
             </div>
 
