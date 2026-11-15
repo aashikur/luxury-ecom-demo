@@ -569,6 +569,39 @@ export default function SettingsFormClient({
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 block mb-1.5">Primary Color</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={config.branding?.colors?.primary || '#060d11'}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        branding: {
+                          ...config.branding,
+                          colors: { ...config.branding.colors, primary: e.target.value },
+                        },
+                      })
+                    }
+                    className="w-10 h-10 rounded border border-slate-300 bg-transparent cursor-pointer"
+                  />
+                  <Input
+                    value={config.branding?.colors?.primary || '#060d11'}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        branding: {
+                          ...config.branding,
+                          colors: { ...config.branding.colors, primary: e.target.value },
+                        },
+                      })
+                    }
+                    className="font-mono text-xs w-36"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 block mb-1.5">Accent Color</label>
                 <div className="flex items-center gap-3">
                   <input
