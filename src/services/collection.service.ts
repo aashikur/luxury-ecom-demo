@@ -19,6 +19,7 @@ export function invalidateCollectionCaches() {
     revalidateTag('collections', 'max');
     revalidatePath('/');
     revalidatePath('/shop');
+    revalidatePath('/admin/collections');
   } catch {
     // Non-request context safeguard
   }

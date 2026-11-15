@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
       revalidatePath('/', 'page');
       revalidatePath('/shop', 'page');
       revalidatePath('/admin/products', 'page');
+      revalidatePath('/admin/collections', 'page');
     } catch {}
 
     return NextResponse.json({ success: true, data: newCollection }, { status: 201 });
@@ -125,6 +126,7 @@ export async function PUT(request: NextRequest) {
       revalidatePath('/', 'page');
       revalidatePath('/shop', 'page');
       revalidatePath('/admin/products', 'page');
+      revalidatePath('/admin/collections', 'page');
     } catch {}
 
     return NextResponse.json({ success: true, data: collection });
@@ -165,6 +167,7 @@ export async function DELETE(request: NextRequest) {
       revalidatePath('/', 'page');
       revalidatePath('/shop', 'page');
       revalidatePath('/admin/products', 'page');
+      revalidatePath('/admin/collections', 'page');
     } catch {}
 
     return NextResponse.json({

@@ -33,9 +33,10 @@ export interface CollectionFormData {
   bannerImage?: { url: string; key: string };
   badgeText?: string;
   displayOrder?: number;
+  isFeaturedHome?: boolean;
+  isActive?: boolean;
   startDate?: string | null;
   endDate?: string | null;
-  isActive?: boolean;
 }
 
 interface CollectionFormProps {
@@ -72,6 +73,12 @@ export default function CollectionFormClient({
   );
   const [endDate, setEndDate] = useState(
     initialData?.endDate ? new Date(initialData.endDate).toISOString().slice(0, 10) : ''
+  );
+
+  // Hidden flags with clean defaults matching Category
+  const [isFeaturedHome] = useState(Boolean(initialData?.isFeaturedHome));
+  const [isActive] = useState(
+    initialData?.isActive !== undefined ? Boolean(initialData.isActive) : true
   );
 
   const [bannerImage, setBannerImage] = useState<{ url: string; key: string }[]>(
@@ -142,6 +149,8 @@ export default function CollectionFormClient({
       bannerImage: bannerImage[0] || { url: '', key: '' },
       badgeText: badgeText.trim(),
       displayOrder: Number(displayOrder) || 0,
+      isFeaturedHome,
+      isActive,
       startDate: startDate ? new Date(startDate).toISOString() : null,
       endDate: endDate ? new Date(endDate).toISOString() : null,
     };
