@@ -326,7 +326,7 @@ export default function SettingsFormClient({
       <div className="space-y-2">
         <Breadcrumb
           items={[
-            { label: 'Admin', href: '/admin' },
+            { label: 'Dashboard', href: '/admin' },
             { label: 'Settings', href: '/admin/settings' },
             {
               label: tabs.find((t) => t.id === activeTab)?.label || 'General',

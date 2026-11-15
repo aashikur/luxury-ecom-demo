@@ -192,5 +192,32 @@ To balance rapid, 1-click merchant deployments with banking-grade credential pro
 ### Layer 4: Exclusive `SUPER_ADMIN` RBAC, Lazy Tabs & Masked Settings UI
 - Accessing and modifying `/admin/settings` (`PUT /api/config`) strictly requires an authenticated **`SUPER_ADMIN`** HttpOnly session cookie (`ADMIN` and `MODERATOR` are blocked — Rule #19) and writes an immutable `AuditLog` entry.
 - Settings tabs in `SettingsFormClient` are code-split and lazy-loaded via `next/dynamic` (Rule #23), sync `initialConfig` via `useEffect`, and call `router.refresh()` on save.
-- Admin input fields render secrets masked (`••••••••••••••••`) to eliminate shoulder surfing or cleartext network echoing.
+- Admin input fields render secrets masked (`••••••••••••••••`) to eliminate shoulder surfing or cleartext network echoing, with one-click eye toggle (`Eye`/`EyeOff`) to inspect or edit.
 - Third-party API interactions (Steadfast booking, bKash PGW / SSLCommerz validation, Meta CAPI dispatch) run **100% server-to-server** inside Next.js API routes where keys are decrypted in server memory in-flight.
+
+---
+
+## 9. Live Production Implementation & Normalization Specification
+
+### 9.1 Data Model Alignment & Enum Normalization
+- **Canonical 3-Block Layout Standard:**
+  1. `HERO_BANNER`: High-impact landing poster / carousel.
+  2. `COLLECTION_SECTION`: Curated product showcase mapped to `collectionSlug` or `categorySlug`.
+  3. `PROMO_CTA_CARD`: Free shipping / courier guarantee banner.
+- **Defensive Type Mapping (`normalizeHomeSections`):**
+  - Legacy seed aliases (`CATEGORY_GRID`, `HERO_CAROUSEL`, `PROMO_BANNER`, `CATEGORY_SLIDER`) are automatically normalized to canonical types on load and save, preventing Mongoose `ValidationError` crashes.
+
+### 9.2 Header Navigation Quick Links Manager (`StoreConfig.headerNavLinks[]`)
+- Embedded directly in `StoreConfig` without separate database collections.
+- Full Admin CRUD operations in `/admin/settings` (`Branding & Identity` tab):
+  - **Add Link:** Modal with category tree quick-picker or custom manual URL.
+  - **Reorder:** Real-time Up / Down numeric sort (`order`).
+  - **Visibility Toggle:** Non-destructive storefront hide / unhide (`👁️`).
+  - **Promotional Badge:** Customizable pill tags (`HOT`, `NEW`, `SALE`).
+- Synchronously ingested by storefront `<Navbar navLinks={config?.headerNavLinks} />` across `/`, `/shop`, and `/products/[slug]`.
+
+### 9.3 Locked Admin UI Design System Compliance
+- **Typography Tokens:** Page heading `text-2xl font-bold tracking-tight text-[#060d11]`, card title `text-base font-semibold leading-none tracking-tight text-[#060d11]`, breadcrumbs `Dashboard > Settings`.
+- **Action Tokens:** Primary button `bg-[#076E46] text-white hover:bg-[#055C3A]`.
+- **Card Surfaces:** Completely unboxed white card bodies with zero nested grey backgrounds (`bg-slate-50`).
+- **Tab Navigation:** Responsive horizontal overflow with mousewheel translation (`onWheel -> scrollLeft`), left/right navigation chevrons, and subtle scroll indicators (`scrollbar-thin scrollbar-thumb-slate-300`).

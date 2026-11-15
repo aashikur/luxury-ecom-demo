@@ -52,3 +52,25 @@ When rendering multi-module tabs (e.g., `/admin/settings` with 7 modules):
 2. **Left / Right Chevron Controls:** Floating `<` and `>` arrow buttons must dynamically appear when content overflows, providing single-click accessibility.
 3. **No Hidden Overflow Traps:** Never use `.no-scrollbar` on overflow-critical tab bars. Use a subtle `scrollbar-thin scrollbar-thumb-slate-300` to guarantee visual affordance and drag capability.
 4. **Non-Compressible Tab Items:** Every tab button must enforce `shrink-0 whitespace-nowrap` so labels and badges never distort when viewport width contracts.
+
+---
+
+## 5. Standard Entity Views Architecture (Categories, Collections, Brands, Settings)
+
+Across all administrative entities, the layout adheres to a unified visual rhythm:
+
+### 5.1 List / Table View (`*Client.tsx`)
+- **Breadcrumbs:** `Dashboard > [Entity Name]`
+- **Header:** `text-2xl font-bold tracking-tight text-[#060d11]`, 1-line muted description, `<Button className="bg-[#076E46] text-white hover:bg-[#055C3A]">` with `<Plus className="w-4 h-4" />`.
+- **Search & Stats Bar:** Left-aligned search input with magnifying glass (`Search className="h-3.5 w-3.5 text-slate-400"`), right-aligned counter (`Showing X items`).
+- **Data Table:** `<TableContainer className="border border-slate-200 shadow-2xs rounded-xl overflow-visible bg-white">`.
+- **Row Columns:** Index number `#`, Name/Title + Image Avatar, Slug, Item/Product count, Active/Featured badges, and a 3-dot popover actions menu (`•••`).
+- **Pagination:** `<TablePagination />` with page size selector (`20`, `50`, `100`).
+- **Deletion Safeguard:** Modal with cascade unlinking summary (recursively cleans child references in `products` / sub-items).
+
+### 5.2 Create & Edit View (`*FormClient.tsx`)
+- **Breadcrumbs:** `Dashboard > [Entity Name] > Create / Edit`
+- **Header:** Title + Cancel (`outline`) and Save Changes (`#076E46`) buttons.
+- **Form Layout:** 12-column grid:
+  - **Left (8 columns):** General Information card (Name, Slug with auto-lock/unlock slugifier, Description, Media upload).
+  - **Right (4 columns):** Publishing & Status card (Active status, Featured placement, Order sorting).
