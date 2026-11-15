@@ -1,6 +1,9 @@
 import React from 'react';
 import { connectDB } from '@/lib/db';
 import StoreConfig from '@/models/StoreConfig';
+import Category from '@/models/Category';
+import Collection from '@/models/Collection';
+import { getDefaultStoreConfig } from '@/services/config.service';
 import SettingsFormClient from '@/components/admin/SettingsFormClient';
 
 export const dynamic = 'force-dynamic';
@@ -14,17 +17,25 @@ export const metadata = {
 export default async function SettingsPage() {
   await connectDB();
 
-  const rawConfig = await StoreConfig.findOne({ isActive: true }).lean();
+  const [rawConfig, rawCategories, rawCollections] = await Promise.all([
+    StoreConfig.findOne({ isActive: true }).lean(),
+    Category.find({}).select('name slug parentId').lean(),
+    Collection.find({}).select('title slug').lean(),
+  ]);
 
-  if (!rawConfig) {
-    return (
-      <div className="p-8 text-center text-zinc-400">
-        No active configuration found in database.
-      </div>
-    );
-  }
+  const fallback = getDefaultStoreConfig();
+  const config = rawConfig
+    ? { ...fallback, ...JSON.parse(JSON.stringify(rawConfig)) }
+    : fallback;
 
-  const config = JSON.parse(JSON.stringify(rawConfig));
+  const categories = JSON.parse(JSON.stringify(rawCategories || []));
+  const collections = JSON.parse(JSON.stringify(rawCollections || []));
 
-  return <SettingsFormClient initialConfig={config} />;
+  return (
+    <SettingsFormClient
+      initialConfig={config}
+      categories={categories}
+      collections={collections}
+    />
+  );
 }

@@ -64,11 +64,26 @@ const StoreConfigSchema = new mongoose.Schema(
       },
     },
     payment: {
-      cashOnDelivery: { enabled: { type: Boolean, default: true } },
+      cod: { enabled: { type: Boolean, default: true }, note: { type: String, default: 'Cash on delivery across Bangladesh' } },
       manualBkash: {
         enabled: { type: Boolean, default: true },
-        walletNumber: { type: String, default: '01700000000' },
-        walletType: { type: String, default: 'MERCHANT' },
+        number: { type: String, default: '01700000000' },
+        accountType: { type: String, default: 'MERCHANT' },
+        instructions: { type: String, default: 'Send money to our bKash wallet and provide TrxID.' },
+      },
+      manualNagad: {
+        enabled: { type: Boolean, default: true },
+        number: { type: String, default: '01700000000' },
+        accountType: { type: String, default: 'PERSONAL' },
+      },
+      manualRocket: {
+        enabled: { type: Boolean, default: false },
+        number: { type: String, default: '01700000000' },
+        accountType: { type: String, default: 'PERSONAL' },
+      },
+      bkashPGW: {
+        enabled: { type: Boolean, default: false },
+        isSandbox: { type: Boolean, default: true },
       },
       sslCommerz: {
         enabled: { type: Boolean, default: false },
@@ -77,13 +92,26 @@ const StoreConfigSchema = new mongoose.Schema(
     },
     courier: {
       provider: { type: String, default: 'STEADFAST' },
+      fraudCheck: {
+        alertThresholdPercent: { type: Number, default: 60 },
+        autoHoldHighRisk: { type: Boolean, default: false },
+      },
+      advancePayment: {
+        enabled: { type: Boolean, default: false },
+        amount: { type: Number, default: 130 },
+        applyOnlyOutsideDhaka: { type: Boolean, default: true },
+      },
     },
     features: {
-      guestCheckoutOnly: { type: Boolean, default: true },
-      enableReviews: { type: Boolean, default: true },
-      enableCoupons: { type: Boolean, default: true },
-      enableStockBadges: { type: Boolean, default: true },
-      maintenanceMode: { type: Boolean, default: false },
+      smartCheckoutEnabled: { type: Boolean, default: true },
+      abandonedCartCapture: { type: Boolean, default: true },
+      fraudCheckEnabled: { type: Boolean, default: false },
+      advanceDeliveryFeeEnabled: { type: Boolean, default: false },
+      couponEnabled: { type: Boolean, default: true },
+      capiEnabled: { type: Boolean, default: false },
+      gtmEnabled: { type: Boolean, default: true },
+      clarityEnabled: { type: Boolean, default: false },
+      courierAutoBooking: { type: Boolean, default: false },
     },
     isActive: { type: Boolean, default: true },
   },

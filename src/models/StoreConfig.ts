@@ -2,7 +2,15 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IHomeSection {
   id: string;
-  type: 'HERO_BANNER' | 'COLLECTION_SECTION' | 'PROMO_CTA_CARD';
+  type:
+    | 'HERO_BANNER'
+    | 'COLLECTION_SECTION'
+    | 'PROMO_CTA_CARD'
+    | 'HERO_CAROUSEL'
+    | 'PROMO_BANNER'
+    | 'CATEGORY_GRID'
+    | 'CATEGORY_SLIDER';
+  layoutWidth?: 'WIDE_FULL' | 'WIDE_BOX';
   title?: string;
   subtitle?: string;
   description?: string;
@@ -14,6 +22,9 @@ export interface IHomeSection {
     url: string;
     key: string;
   };
+  promoHeight?: 'S' | 'M' | 'L';
+  displayStyle?: 'GRID' | 'CAROUSEL';
+  sourceMode?: 'AUTO' | 'MANUAL';
   themeStyle?: 'LIGHT' | 'DARK_BAND';
   order: number;
   isActive: boolean;
@@ -246,8 +257,21 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
         id: { type: String, required: true },
         type: {
           type: String,
-          enum: ['HERO_BANNER', 'COLLECTION_SECTION', 'PROMO_CTA_CARD'],
+          enum: [
+            'HERO_BANNER',
+            'COLLECTION_SECTION',
+            'PROMO_CTA_CARD',
+            'HERO_CAROUSEL',
+            'PROMO_BANNER',
+            'CATEGORY_GRID',
+            'CATEGORY_SLIDER',
+          ],
           default: 'COLLECTION_SECTION',
+        },
+        layoutWidth: {
+          type: String,
+          enum: ['WIDE_FULL', 'WIDE_BOX'],
+          default: 'WIDE_BOX',
         },
         title: { type: String, default: '' },
         subtitle: { type: String, default: '' },
@@ -258,6 +282,21 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
         bannerImage: {
           url: { type: String, default: '' },
           key: { type: String, default: '' },
+        },
+        promoHeight: {
+          type: String,
+          enum: ['S', 'M', 'L'],
+          default: 'M',
+        },
+        displayStyle: {
+          type: String,
+          enum: ['GRID', 'CAROUSEL'],
+          default: 'GRID',
+        },
+        sourceMode: {
+          type: String,
+          enum: ['AUTO', 'MANUAL'],
+          default: 'AUTO',
         },
         themeStyle: {
           type: String,
