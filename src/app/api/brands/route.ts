@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
+import { invalidateBrandCaches } from '@/services/brand.service';
 import { connectDB } from '@/lib/db';
 import Brand from '@/models/Brand';
 import Product from '@/models/Product';
@@ -76,12 +76,7 @@ export async function POST(request: NextRequest) {
       isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
     });
 
-    try {
-      revalidatePath('/', 'page');
-      revalidatePath('/shop', 'page');
-      revalidatePath('/admin/products', 'page');
-      revalidatePath('/admin/brands', 'page');
-    } catch {}
+    invalidateBrandCaches();
 
     return NextResponse.json({ success: true, data: newBrand }, { status: 201 });
   } catch (err: any) {
@@ -128,12 +123,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    try {
-      revalidatePath('/', 'page');
-      revalidatePath('/shop', 'page');
-      revalidatePath('/admin/products', 'page');
-      revalidatePath('/admin/brands', 'page');
-    } catch {}
+    invalidateBrandCaches();
 
     return NextResponse.json({ success: true, data: brand });
   } catch (err: any) {
@@ -169,12 +159,7 @@ export async function DELETE(request: NextRequest) {
 
     await Brand.findByIdAndDelete(id);
 
-    try {
-      revalidatePath('/', 'page');
-      revalidatePath('/shop', 'page');
-      revalidatePath('/admin/products', 'page');
-      revalidatePath('/admin/brands', 'page');
-    } catch {}
+    invalidateBrandCaches();
 
     const detachedMsg =
       updateResult.modifiedCount > 0

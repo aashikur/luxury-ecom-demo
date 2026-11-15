@@ -11,7 +11,6 @@ import {
   Loader2,
   ImagePlus,
   X,
-  Calendar,
 } from 'lucide-react';
 import { optimizeImageRuleBased } from '@/lib/imageCompressor';
 import {
@@ -403,9 +402,8 @@ export default function CollectionFormClient({
               </div>
 
               <div className="pt-2 border-t border-slate-100 space-y-3">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Campaign Dates (Optional)</span>
+                <div className="text-xs font-semibold text-slate-700">
+                  Campaign Dates (Optional)
                 </div>
 
                 <div>

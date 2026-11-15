@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
+import { invalidateCategoryCaches } from '@/services/category.service';
 import { connectDB } from '@/lib/db';
 import Category, { ICategory } from '@/models/Category';
 import Product from '@/models/Product';
@@ -170,11 +170,7 @@ export async function POST(request: NextRequest) {
       isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
     });
 
-    try {
-      revalidatePath('/', 'page');
-      revalidatePath('/shop', 'page');
-      revalidatePath('/admin/products', 'page');
-    } catch {}
+    invalidateCategoryCaches();
 
     return NextResponse.json({ success: true, data: newCategory }, { status: 201 });
   } catch (err: any) {
@@ -237,11 +233,7 @@ export async function PUT(request: NextRequest) {
 
     await category.save();
 
-    try {
-      revalidatePath('/', 'page');
-      revalidatePath('/shop', 'page');
-      revalidatePath('/admin/products', 'page');
-    } catch {}
+    invalidateCategoryCaches();
 
     return NextResponse.json({ success: true, data: category });
   } catch (err: any) {
@@ -306,12 +298,7 @@ export async function DELETE(request: NextRequest) {
     await Category.deleteMany({ _id: { $in: allCategoryIds } });
 
     // 4. Dual cache revalidation
-    try {
-      revalidatePath('/', 'page');
-      revalidatePath('/shop', 'page');
-      revalidatePath('/admin/products', 'page');
-      revalidatePath('/admin/categories', 'page');
-    } catch {}
+    invalidateCategoryCaches();
 
     const subCount = descendants.length;
     const subMsg = subCount > 0 ? ` and ${subCount} subcategory(s)` : '';

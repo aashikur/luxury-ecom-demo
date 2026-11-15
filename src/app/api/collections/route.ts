@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
+import { invalidateCollectionCaches } from '@/services/collection.service';
 import { connectDB } from '@/lib/db';
 import Collection from '@/models/Collection';
 import Product from '@/models/Product';
@@ -78,12 +78,7 @@ export async function POST(request: NextRequest) {
       endDate: body.endDate ? new Date(body.endDate) : undefined,
     });
 
-    try {
-      revalidatePath('/', 'page');
-      revalidatePath('/shop', 'page');
-      revalidatePath('/admin/products', 'page');
-      revalidatePath('/admin/collections', 'page');
-    } catch {}
+    invalidateCollectionCaches();
 
     return NextResponse.json({ success: true, data: newCollection }, { status: 201 });
   } catch (err: any) {
@@ -122,12 +117,7 @@ export async function PUT(request: NextRequest) {
 
     await collection.save();
 
-    try {
-      revalidatePath('/', 'page');
-      revalidatePath('/shop', 'page');
-      revalidatePath('/admin/products', 'page');
-      revalidatePath('/admin/collections', 'page');
-    } catch {}
+    invalidateCollectionCaches();
 
     return NextResponse.json({ success: true, data: collection });
   } catch (err: any) {
@@ -163,12 +153,7 @@ export async function DELETE(request: NextRequest) {
 
     await Collection.findByIdAndDelete(id);
 
-    try {
-      revalidatePath('/', 'page');
-      revalidatePath('/shop', 'page');
-      revalidatePath('/admin/products', 'page');
-      revalidatePath('/admin/collections', 'page');
-    } catch {}
+    invalidateCollectionCaches();
 
     return NextResponse.json({
       success: true,
