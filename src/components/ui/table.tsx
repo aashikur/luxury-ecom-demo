@@ -10,7 +10,7 @@ export function TableContainer({ className, children, ...props }: React.HTMLAttr
       )}
       {...props}
     >
-      <div className="overflow-x-auto min-h-[360px]">{children}</div>
+      <div className="overflow-x-auto min-h-[360px] custom-scrollbar">{children}</div>
     </div>
   );
 }

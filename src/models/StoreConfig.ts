@@ -19,6 +19,16 @@ export interface IHomeSection {
   isActive: boolean;
 }
 
+export interface IHeaderNavLink {
+  id: string;
+  label: string;
+  href: string;
+  categoryId?: string;
+  badgeText?: string;
+  isActive: boolean;
+  order: number;
+}
+
 export interface IStoreConfig extends Document {
   branding: {
     storeName: string;
@@ -50,6 +60,7 @@ export interface IStoreConfig extends Document {
     heroVariant: 'SPLIT' | 'CENTER' | 'FULL_SLIDER';
   };
   homeSections: IHomeSection[];
+  headerNavLinks?: IHeaderNavLink[];
   logistics: {
     supportPhone: string;
     whatsappNumber: string;
@@ -255,6 +266,17 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
         },
         order: { type: Number, default: 1 },
         isActive: { type: Boolean, default: true },
+      },
+    ],
+    headerNavLinks: [
+      {
+        id: { type: String, required: true },
+        label: { type: String, required: true },
+        href: { type: String, required: true },
+        categoryId: { type: String },
+        badgeText: { type: String },
+        isActive: { type: Boolean, default: true },
+        order: { type: Number, default: 0 },
       },
     ],
     logistics: {

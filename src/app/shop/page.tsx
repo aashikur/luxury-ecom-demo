@@ -2,14 +2,16 @@ import React from 'react';
 import Link from 'next/link';
 import { getPublicStoreConfig } from '@/services/config.service';
 import { getProductsList } from '@/services/product.service';
+import { getCategoriesTree } from '@/services/category.service';
+import { getActiveCollections } from '@/services/collection.service';
 import TopBar from '@/components/storefront/TopBar';
 import Navbar from '@/components/storefront/Navbar';
 import ProductCard from '@/components/storefront/ProductCard';
 import CartDrawer from '@/components/storefront/CartDrawer';
 import Footer from '@/components/storefront/Footer';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Incremental Static Regeneration (ISR) - 60s fallback window paired with dual revalidation (Rule #7)
+export const revalidate = 60;
 
 interface ShopPageProps {
   searchParams: Promise<{
@@ -23,7 +25,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const { collection, category, sort } = await searchParams;
 
   // Zero-Waterfall Concurrent Domain Service Queries
-  const [config, productsResult] = await Promise.all([
+  const [config, productsResult, categoryTree, collections] = await Promise.all([
     getPublicStoreConfig(),
     getProductsList({
       collection,
@@ -32,6 +34,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       sort,
       limit: 50,
     }),
+    getCategoriesTree(),
+    getActiveCollections(),
   ]);
 
   const branding = config?.branding || {
@@ -50,17 +54,31 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     outsideDhakaFee: config?.logistics?.outsideDhakaFee ?? 130,
   };
 
+  // Map category tree to Navbar category item structure
+  const navCategories = categoryTree.map((cat) => ({
+    id: cat._id,
+    title: cat.name,
+    slug: cat.slug,
+    subcategories: cat.children?.map((child) => ({
+      title: child.name,
+      slug: child.slug,
+    })) || [],
+  }));
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const products = productsResult.products.map((p: any) => ({
     ...p,
     _id: String(p._id),
   }));
 
+  // Dynamic filter tabs derived from active database collections & categories
   const filterTabs = [
     { label: 'ALL PRODUCTS', href: '/shop', active: !collection && !category },
-    { label: 'HEAVYWEIGHT HOODIES', href: '/shop?collection=hoodies', active: collection === 'hoodies' },
-    { label: 'OVERSIZED TEES', href: '/shop?collection=t-shirts', active: collection === 't-shirts' },
-    { label: 'WINTER DROP 2026', href: '/shop?collection=winter-drop-2026', active: collection === 'winter-drop-2026' },
+    ...collections.map((col) => ({
+      label: col.title.toUpperCase(),
+      href: `/shop?collection=${col.slug}`,
+      active: collection === col.slug,
+    })),
   ];
 
   return (
@@ -72,10 +90,13 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         supportPhone={logistics.supportPhone}
       />
 
-      {/* 2. Navbar */}
+      {/* 2. Dynamic Navbar */}
       <Navbar
         storeName={branding.storeName}
         accentColor={branding.colors?.accent || '#B8860B'}
+        categories={navCategories}
+        collections={collections}
+        navLinks={config?.headerNavLinks}
       />
 
       {/* 3. Catalog Header & Filters */}

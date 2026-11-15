@@ -539,7 +539,7 @@ export async function getOrdersList(params: {
 }) {
   await connectDB();
 
-  const limit = Math.min(Math.max(Number(params.limit) || 20, 1), 50);
+  const limit = Math.min(Math.max(Number(params.limit) || 20, 1), 200);
   const page = Math.max(Number(params.page) || 1, 1);
   const skip = (page - 1) * limit;
 
@@ -648,6 +648,205 @@ export async function updateOrderStatus(
   } catch (revErr) {
     console.warn('Revalidation notice:', revErr);
   }
+
+  return { success: true, data: order, status: 200 };
+}
+
+
+/**
+ * Domain Service: Fetches single order by MongoDB _id or orderNumber with lean projection
+ */
+export async function getOrderByIdOrNumber(idOrNumber: string) {
+  await connectDB();
+
+  const isObjectId = mongoose.Types.ObjectId.isValid(idOrNumber) && idOrNumber.length === 24;
+  const query = isObjectId
+    ? { $or: [{ _id: idOrNumber }, { orderNumber: idOrNumber }] }
+    : { orderNumber: idOrNumber };
+
+  const order = await Order.findOne(query).lean();
+  return order;
+}
+
+/**
+ * Domain Service: Deletes an order and atomically restores inventory if needed
+ */
+export async function deleteOrder(
+  orderIdOrNumber: string,
+  deletedBy: string = 'ADMIN'
+): Promise<OrderServiceResult> {
+  await connectDB();
+
+  const isObjectId = mongoose.Types.ObjectId.isValid(orderIdOrNumber) && orderIdOrNumber.length === 24;
+  const query = isObjectId
+    ? { $or: [{ _id: orderIdOrNumber }, { orderNumber: orderIdOrNumber }] }
+    : { orderNumber: orderIdOrNumber };
+
+  const order = await Order.findOne(query);
+  if (!order) {
+    return { success: false, error: 'Order not found', code: 'NOT_FOUND', status: 404 };
+  }
+
+  // Restore inventory if it was deducted and not yet restored
+  if (order.inventoryState === 'DEDUCTED') {
+    await rollbackDeductions(
+      order.items.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        qty: item.quantity,
+      }))
+    );
+  }
+
+  await Order.deleteOne({ _id: order._id });
+
+  try {
+    revalidatePath('/admin', 'page');
+    revalidatePath('/admin/orders', 'page');
+  } catch {}
+
+  return { success: true, data: { deleted: true, orderId: String(order._id) }, status: 200 };
+}
+
+
+export interface CreateManualOrderInput {
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  productName: string;
+  amount: number;
+  status?: OrderStatus;
+  createdBy?: string;
+}
+
+/**
+ * Domain Service: Creates manual order directly from Admin Dashboard
+ */
+export async function createManualAdminOrder(input: CreateManualOrderInput): Promise<OrderServiceResult> {
+  await connectDB();
+
+  if (!input.customerName?.trim()) {
+    return { success: false, error: 'Customer Name is required.', code: 'VALIDATION_ERROR', status: 400 };
+  }
+  if (!input.productName?.trim()) {
+    return { success: false, error: 'Product Name is required.', code: 'VALIDATION_ERROR', status: 400 };
+  }
+
+  const orderNumber = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+  const phone = input.customerPhone?.trim() || '01700000000';
+  const amount = Math.max(0, Number(input.amount) || 0);
+  const status = (input.status || 'PENDING') as OrderStatus;
+
+  const order = await Order.create({
+    orderNumber,
+    customer: {
+      name: input.customerName.trim(),
+      email: input.customerEmail?.trim() || '',
+      phone: phone,
+      address: input.customerAddress?.trim() || 'Direct Admin Order',
+      deliveryZone: 'INSIDE_DHAKA',
+    },
+    items: [
+      {
+        title: input.productName.trim(),
+        quantity: 1,
+        unitPrice: amount,
+        totalPrice: amount,
+        image: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80',
+      },
+    ],
+    financials: {
+      subtotal: amount,
+      deliveryFee: 0,
+      discount: 0,
+      totalAmount: amount,
+    },
+    totalAmount: amount,
+    subtotal: amount,
+    deliveryFee: 0,
+    discountAmount: 0,
+    payment: {
+      method: 'COD',
+      status: status === 'DELIVERED' ? 'PAID' : 'UNPAID',
+    },
+    orderStatus: status,
+    status: status,
+    inventoryState: 'NONE',
+    createdBy: input.createdBy || 'ADMIN',
+  });
+
+  try {
+    revalidatePath('/admin', 'page');
+    revalidatePath('/admin/orders', 'page');
+  } catch {}
+
+  return { success: true, data: order, status: 201 };
+}
+
+export interface UpdateOrderDetailsInput {
+  orderIdOrNumber: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  productName?: string;
+  amount?: number;
+  status?: OrderStatus;
+  updatedBy?: string;
+}
+
+/**
+ * Domain Service: Updates order fields (customer, product, total, status) from Edit page
+ */
+export async function updateOrderDetails(input: UpdateOrderDetailsInput): Promise<OrderServiceResult> {
+  await connectDB();
+
+  const isObjectId = mongoose.Types.ObjectId.isValid(input.orderIdOrNumber) && input.orderIdOrNumber.length === 24;
+  const query = isObjectId
+    ? { $or: [{ _id: input.orderIdOrNumber }, { orderNumber: input.orderIdOrNumber }] }
+    : { orderNumber: input.orderIdOrNumber };
+
+  const order = await Order.findOne(query);
+  if (!order) {
+    return { success: false, error: 'Order not found', code: 'NOT_FOUND', status: 404 };
+  }
+
+  if (input.customerName) order.customer.name = input.customerName.trim();
+  if (input.customerEmail !== undefined) order.customer.email = input.customerEmail.trim();
+  if (input.customerPhone) order.customer.phone = input.customerPhone.trim();
+  if (input.customerAddress) order.customer.address = input.customerAddress.trim();
+
+  if (input.amount !== undefined && !isNaN(input.amount)) {
+    const val = Number(input.amount);
+    order.totalAmount = val;
+    if (order.financials) {
+      order.financials.totalAmount = val;
+      order.financials.subtotal = val;
+    }
+    if (order.items && order.items.length > 0) {
+      order.items[0].unitPrice = val;
+      order.items[0].totalPrice = val;
+    }
+  }
+
+  if (input.productName && order.items && order.items.length > 0) {
+    order.items[0].title = input.productName.trim();
+  }
+
+  if (input.status) {
+    order.orderStatus = input.status;
+    order.status = input.status;
+  }
+
+  order.updatedBy = input.updatedBy || 'ADMIN';
+  await order.save();
+
+  try {
+    revalidatePath('/admin', 'page');
+    revalidatePath('/admin/orders', 'page');
+    revalidatePath(`/admin/orders/${order.orderNumber}`, 'page');
+  } catch {}
 
   return { success: true, data: order, status: 200 };
 }

@@ -14,115 +14,98 @@ export interface CategoryItem {
   subcategories?: { title: string; slug: string }[];
 }
 
+export interface CollectionNavItem {
+  _id?: string;
+  title: string;
+  slug: string;
+  badgeText?: string;
+}
+
+export interface HeaderNavLinkItem {
+  id: string;
+  label: string;
+  href: string;
+  badgeText?: string;
+  isActive?: boolean;
+  order?: number;
+}
+
 interface NavbarProps {
   storeName: string;
   accentColor: string;
   categories?: CategoryItem[];
+  collections?: CollectionNavItem[];
+  navLinks?: HeaderNavLinkItem[];
 }
 
-const DEFAULT_CATEGORIES: CategoryItem[] = [
-  {
-    id: 'men',
-    title: 'Men',
-    slug: 'men',
-    subcategories: [
-      { title: 'All Men Garments', slug: 'men' },
-      { title: 'Tops & Tees', slug: 'men-tops' },
-      { title: 'Bottoms & Trousers', slug: 'men-bottoms' },
-      { title: 'Hoodies & Fleece', slug: 'hoodies' },
-    ],
-  },
-  {
-    id: 'women',
-    title: 'Women',
-    slug: 'women',
-    subcategories: [
-      { title: 'All Women Collection', slug: 'women' },
-      { title: 'Hijab & Modest Wear', slug: 'hijab' },
-      { title: 'Tops & Co-ords', slug: 'women-tops' },
-      { title: 'Modest Wear', slug: 'women-modest-wear' },
-    ],
-  },
-  {
-    id: 'unisex',
-    title: 'Unisex',
-    slug: 'unisex',
-    subcategories: [
-      { title: 'All Unisex Drops', slug: 'unisex' },
-      { title: 'Oversized Tees', slug: 't-shirts' },
-      { title: 'Heavyweight Fleece', slug: 'hoodies' },
-    ],
-  },
-];
-
-function NavLinks({ accentColor }: { accentColor: string }) {
+function NavLinks({
+  accentColor,
+  navLinks,
+}: {
+  accentColor: string;
+  navLinks?: HeaderNavLinkItem[];
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const collection = searchParams?.get('collection');
 
-  const isHome = pathname === '/';
-  const isHoodies = pathname === '/shop' && collection === 'hoodies';
-  const isTees = pathname === '/shop' && collection === 't-shirts';
-  const isArchive = pathname === '/shop' && !collection && !searchParams?.get('category');
+  // Active link helper
+  const isLinkActive = (href: string) => {
+    if (href === '/') {
+      return pathname === '/';
+    }
+    if (href.startsWith('/shop')) {
+      const hrefUrl = new URL(href, 'http://localhost');
+      const hrefCollection = hrefUrl.searchParams.get('collection');
+      const hrefCategory = hrefUrl.searchParams.get('category');
+      const currentCollection = searchParams?.get('collection');
+      const currentCategory = searchParams?.get('category');
+
+      if (hrefCollection) return currentCollection === hrefCollection;
+      if (hrefCategory) return currentCategory === hrefCategory;
+      if (!hrefCollection && !hrefCategory) return pathname === '/shop' && !currentCollection && !currentCategory;
+    }
+    return pathname.startsWith(href);
+  };
+
+  const linksToRender =
+    navLinks && navLinks.length > 0
+      ? navLinks
+      : [
+          { id: 'nav-home', label: 'HOME', href: '/' },
+          { id: 'nav-shop', label: 'CATALOG', href: '/shop' },
+        ];
 
   return (
     <div className="hidden lg:flex items-center gap-5 text-[11px] uppercase tracking-[0.14em]">
-      <Link
-        href="/"
-        style={{
-          color: isHome ? accentColor : undefined,
-          borderColor: isHome ? accentColor : 'transparent',
-        }}
-        className={`py-1 transition cursor-pointer ${
-          isHome
-            ? 'font-bold border-b-2'
-            : 'font-medium text-zinc-600 hover:text-zinc-950'
-        }`}
-      >
-        HOME
-      </Link>
-      <Link
-        href="/shop?collection=hoodies"
-        style={{
-          color: isHoodies ? accentColor : undefined,
-          borderColor: isHoodies ? accentColor : 'transparent',
-        }}
-        className={`py-1 transition cursor-pointer ${
-          isHoodies
-            ? 'font-bold border-b-2'
-            : 'font-medium text-zinc-600 hover:text-zinc-950'
-        }`}
-      >
-        HOODIES
-      </Link>
-      <Link
-        href="/shop?collection=t-shirts"
-        style={{
-          color: isTees ? accentColor : undefined,
-          borderColor: isTees ? accentColor : 'transparent',
-        }}
-        className={`py-1 transition cursor-pointer ${
-          isTees
-            ? 'font-bold border-b-2'
-            : 'font-medium text-zinc-600 hover:text-zinc-950'
-        }`}
-      >
-        OVERSIZED TEES
-      </Link>
-      <Link
-        href="/shop"
-        style={{
-          color: isArchive ? accentColor : undefined,
-          borderColor: isArchive ? accentColor : 'transparent',
-        }}
-        className={`py-1 transition cursor-pointer ${
-          isArchive
-            ? 'font-bold border-b-2'
-            : 'font-medium text-zinc-600 hover:text-zinc-950'
-        }`}
-      >
-        ARCHIVE
-      </Link>
+      {linksToRender.map((item) => {
+        const active = isLinkActive(item.href);
+
+        return (
+          <Link
+            key={item.id || item.href}
+            href={item.href}
+            style={{
+              color: active ? accentColor : undefined,
+              borderColor: active ? accentColor : 'transparent',
+            }}
+            className={`py-1 transition cursor-pointer flex items-center gap-1.5 ${
+              active
+                ? 'font-bold border-b-2'
+                : 'font-medium text-zinc-600 hover:text-zinc-950'
+            }`}
+          >
+            <span>{item.label}</span>
+            {item.badgeText && (
+              <span
+                style={{ backgroundColor: accentColor }}
+                className="px-1.5 py-0.5 text-[9px] font-bold text-white rounded-full uppercase"
+              >
+                {item.badgeText}
+              </span>
+            )}
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -130,7 +113,9 @@ function NavLinks({ accentColor }: { accentColor: string }) {
 export default function Navbar({
   storeName,
   accentColor,
-  categories = DEFAULT_CATEGORIES,
+  categories = [],
+  collections = [],
+  navLinks = [],
 }: NavbarProps) {
   const { totalItems, setIsCartOpen } = useCart();
   const pathname = usePathname();
@@ -140,9 +125,14 @@ export default function Navbar({
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'CATEGORIES' | 'MENU'>('CATEGORIES');
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-    [categories[0]?.id || 'men']: true,
-  });
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+  // Initialize first category expanded if categories exist
+  useEffect(() => {
+    if (categories.length > 0 && Object.keys(expandedCategories).length === 0) {
+      setExpandedCategories({ [categories[0].id]: true });
+    }
+  }, [categories, expandedCategories]);
 
   // Close drawer on route change
   useEffect(() => {
@@ -198,7 +188,7 @@ export default function Navbar({
             </button>
 
             <Suspense fallback={null}>
-              <NavLinks accentColor={accentColor} />
+              <NavLinks accentColor={accentColor} navLinks={navLinks} />
             </Suspense>
           </div>
 
@@ -260,7 +250,7 @@ export default function Navbar({
         </div>
       </header>
 
-      {/* Shopify-Style Slide-Over Drawer */}
+      {/* Slide-Over Drawer */}
       {isDrawerOpen && (
         <div className="fixed inset-0 z-50 flex">
           {/* Backdrop */}
@@ -313,54 +303,60 @@ export default function Navbar({
                     : 'text-zinc-400 border-transparent hover:text-zinc-700'
                 }`}
               >
-                MENU
+                COLLECTIONS
               </button>
             </div>
 
             {/* Content Area (Scrollable Accordion & Links) */}
             <div className="flex-1 overflow-y-auto px-6 py-6 divide-y divide-zinc-100">
               {activeTab === 'CATEGORIES' ? (
-                /* Categories Accordion */
+                /* Dynamic Categories Accordion */
                 <div className="space-y-4">
-                  {categories.map((cat) => {
-                    const isOpen = !!expandedCategories[cat.id];
-                    const hasSubs = cat.subcategories && cat.subcategories.length > 0;
+                  {categories.length > 0 ? (
+                    categories.map((cat) => {
+                      const isOpen = !!expandedCategories[cat.id];
+                      const hasSubs = cat.subcategories && cat.subcategories.length > 0;
 
-                    return (
-                      <div key={cat.id} className="border-b border-zinc-100 pb-3">
-                        <button
-                          onClick={() => toggleCategory(cat.id)}
-                          className="w-full flex items-center justify-between py-2 text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 transition cursor-pointer"
-                        >
-                          <span>{cat.title}</span>
-                          {hasSubs && (
-                            isOpen ? (
-                              <ChevronDown className="w-4 h-4 text-zinc-400" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4 text-zinc-400" />
-                            )
+                      return (
+                        <div key={cat.id} className="border-b border-zinc-100 pb-3">
+                          <button
+                            onClick={() => toggleCategory(cat.id)}
+                            className="w-full flex items-center justify-between py-2 text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 transition cursor-pointer"
+                          >
+                            <span>{cat.title}</span>
+                            {hasSubs && (
+                              isOpen ? (
+                                <ChevronDown className="w-4 h-4 text-zinc-400" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-zinc-400" />
+                              )
+                            )}
+                          </button>
+
+                          {/* Collapsible Subcategories */}
+                          {hasSubs && isOpen && (
+                            <div className="pl-3 pt-2 pb-1 space-y-2">
+                              {cat.subcategories!.map((sub) => (
+                                <Link
+                                  key={sub.slug}
+                                  href={`/shop?category=${sub.slug}`}
+                                  onClick={() => setIsDrawerOpen(false)}
+                                  className="flex items-center justify-between text-[14px] font-normal text-zinc-600 hover:text-zinc-950 py-1.5 transition cursor-pointer group"
+                                >
+                                  <span>{sub.title}</span>
+                                  <ArrowRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-950 group-hover:translate-x-0.5 transition" />
+                                </Link>
+                              ))}
+                            </div>
                           )}
-                        </button>
-
-                        {/* Collapsible Subcategories */}
-                        {hasSubs && isOpen && (
-                          <div className="pl-3 pt-2 pb-1 space-y-2">
-                            {cat.subcategories!.map((sub) => (
-                              <Link
-                                key={sub.slug}
-                                href={`/shop?category=${sub.slug}`}
-                                onClick={() => setIsDrawerOpen(false)}
-                                className="flex items-center justify-between text-[14px] font-normal text-zinc-600 hover:text-zinc-950 py-1.5 transition cursor-pointer group"
-                              >
-                                <span>{sub.title}</span>
-                                <ArrowRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-950 group-hover:translate-x-0.5 transition" />
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="py-6 text-center text-xs text-zinc-400 uppercase tracking-widest">
+                      Catalog Loading...
+                    </div>
+                  )}
 
                   {/* Quick Shortcut to Full Catalog */}
                   <div className="pt-4">
@@ -369,12 +365,12 @@ export default function Navbar({
                       onClick={() => setIsDrawerOpen(false)}
                       className="inline-flex items-center justify-center w-full py-3 px-4 bg-zinc-950 text-white text-xs font-bold uppercase tracking-[0.16em] hover:bg-zinc-800 transition rounded-sm cursor-pointer"
                     >
-                      BROWSE ALL CATEGORIES
+                      BROWSE ALL PRODUCTS
                     </Link>
                   </div>
                 </div>
               ) : (
-                /* Menu Tab */
+                /* Dynamic Marketing Collections & Main Navigation */
                 <div className="space-y-3 pt-1">
                   <Link
                     href="/"
@@ -383,34 +379,35 @@ export default function Navbar({
                   >
                     HOME
                   </Link>
-                  <Link
-                    href="/shop?collection=winter-drop-2026"
-                    onClick={() => setIsDrawerOpen(false)}
-                    className="block text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 py-2 border-b border-zinc-100 transition"
-                  >
-                    WINTER DROP 2026
-                  </Link>
-                  <Link
-                    href="/shop?collection=hoodies"
-                    onClick={() => setIsDrawerOpen(false)}
-                    className="block text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 py-2 border-b border-zinc-100 transition"
-                  >
-                    HEAVYWEIGHT HOODIES
-                  </Link>
-                  <Link
-                    href="/shop?collection=t-shirts"
-                    onClick={() => setIsDrawerOpen(false)}
-                    className="block text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 py-2 border-b border-zinc-100 transition"
-                  >
-                    OVERSIZED TEES
-                  </Link>
+
                   <Link
                     href="/shop"
                     onClick={() => setIsDrawerOpen(false)}
                     className="block text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 py-2 border-b border-zinc-100 transition"
                   >
-                    ALL PRODUCTS (ARCHIVE)
+                    ALL PRODUCTS (CATALOG)
                   </Link>
+
+                  {/* Dynamic Database Collections */}
+                  {collections.map((col) => (
+                    <Link
+                      key={col.slug}
+                      href={`/shop?collection=${col.slug}`}
+                      onClick={() => setIsDrawerOpen(false)}
+                      className="flex items-center justify-between text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 py-2 border-b border-zinc-100 transition group"
+                    >
+                      <span>{col.title}</span>
+                      {col.badgeText && (
+                        <span
+                          style={{ backgroundColor: accentColor }}
+                          className="px-2 py-0.5 text-[9px] font-bold text-white rounded-full uppercase"
+                        >
+                          {col.badgeText}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+
                   <button
                     type="button"
                     onClick={() => {
@@ -425,6 +422,7 @@ export default function Navbar({
                     </span>
                     <ArrowRight className="w-4 h-4 text-zinc-400" />
                   </button>
+
                   <Link
                     href="/admin"
                     onClick={() => setIsDrawerOpen(false)}

@@ -51,7 +51,8 @@ export function invalidateProductCaches(slug?: string) {
 export async function getProductsList(
   params: GetProductsParams = {}
 ): Promise<ProductsListResult> {
-  const limit = Math.min(Math.max(Number(params.limit) || 20, 1), 50);
+  const maxAllowed = params.all ? 500 : 50;
+  const limit = Math.min(Math.max(Number(params.limit) || 20, 1), maxAllowed);
   const page = Math.max(Number(params.page) || 1, 1);
   const skip = (page - 1) * limit;
 

@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getPublicStoreConfig } from '@/services/config.service';
 import { getProductBySlug, getProductsList } from '@/services/product.service';
+import { getCategoriesTree } from '@/services/category.service';
+import { getActiveCollections } from '@/services/collection.service';
 import TopBar from '@/components/storefront/TopBar';
 import Navbar from '@/components/storefront/Navbar';
 import ProductDetailView from '@/components/storefront/ProductDetailView';
@@ -66,9 +68,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
 
   // Zero-Waterfall Concurrent Domain Service Queries
-  const [config, product] = await Promise.all([
+  const [config, product, categoryTree, collections] = await Promise.all([
     getPublicStoreConfig(),
     getProductBySlug(slug),
+    getCategoriesTree(),
+    getActiveCollections(),
   ]);
 
   if (!product || !product.isActive) {
@@ -100,6 +104,17 @@ export default async function ProductPage({ params }: ProductPageProps) {
     dhakaSuburbsFee: config?.logistics?.suburbsDhakaFee ?? 100,
     outsideDhakaFee: config?.logistics?.outsideDhakaFee ?? 130,
   };
+
+  // Map category tree to Navbar category item structure
+  const navCategories = categoryTree.map((cat) => ({
+    id: cat._id,
+    title: cat.name,
+    slug: cat.slug,
+    subcategories: cat.children?.map((child) => ({
+      title: child.name,
+      slug: child.slug,
+    })) || [],
+  }));
 
   // Structured Data (Schema.org JSON-LD) for Google Merchant & Rich Snippets
   const priceBDT = product.discountPrice ?? product.basePrice;
@@ -141,10 +156,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
         supportPhone={logistics.supportPhone}
       />
 
-      {/* 2. Navbar */}
+      {/* 2. Dynamic Navbar */}
       <Navbar
         storeName={branding.storeName}
         accentColor={branding.colors?.accent || '#B8860B'}
+        categories={navCategories}
+        collections={collections}
+        navLinks={config?.headerNavLinks}
       />
 
       {/* 3. Interactive Detail View */}
@@ -159,7 +177,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         />
       </main>
 
-      {/* 4. Slide-Over 1-Page COD Checkout Drawer */}
+      {/* 4. Slide-Over COD Checkout Drawer */}
       <CartDrawer
         insideDhakaFee={logistics.insideDhakaFee}
         dhakaSuburbsFee={logistics.dhakaSuburbsFee}

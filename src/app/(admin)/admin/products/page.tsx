@@ -12,7 +12,7 @@ export const metadata = {
 
 export default async function AdminProductsPage() {
   // In-memory zero-network call to Domain Service (Rule 2: No internal fetch loopback, Rule 8: Bounded limit)
-  const { products } = await getProductsList({ all: true, limit: 50 });
+  const { products } = await getProductsList({ all: true, limit: 500 });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cleanProducts = products.map((p: any) => ({

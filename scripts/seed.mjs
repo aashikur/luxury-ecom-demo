@@ -47,6 +47,7 @@ const StoreConfigSchema = new mongoose.Schema(
       heroVariant: { type: String, default: 'SPLIT' },
     },
     homeSections: { type: Array, default: [] },
+    headerNavLinks: { type: Array, default: [] },
     logistics: {
       supportPhone: { type: String, default: '01700000000' },
       whatsappNumber: { type: String, default: '01700000000' },
@@ -219,6 +220,25 @@ async function runSeed() {
     console.log('  ✨ Created default StoreConfig with 3-Zone tariffs (৳70/৳100/৳130)');
   } else {
     console.log('  ℹ️ StoreConfig already exists.');
+  }
+
+  // Ensure headerNavLinks exist
+  const existingConfig = await StoreConfig.findOne({ isActive: true });
+  if (existingConfig && (!existingConfig.headerNavLinks || existingConfig.headerNavLinks.length === 0)) {
+    await StoreConfig.updateOne(
+      { _id: existingConfig._id },
+      {
+        $set: {
+          headerNavLinks: [
+            { id: 'nav-home', label: 'HOME', href: '/', isActive: true, order: 1 },
+            { id: 'nav-shop', label: 'CATALOG', href: '/shop', isActive: true, order: 2 },
+            { id: 'nav-winter', label: 'WINTER DROP', href: '/shop?collection=winter-drop-2026', badgeText: '2026', isActive: true, order: 3 },
+            { id: 'nav-hoodies', label: 'HOODIES', href: '/shop?category=hoodies', isActive: true, order: 4 },
+          ],
+        },
+      }
+    );
+    console.log('  ✨ Seeded default headerNavLinks quick category bar.');
   }
 
   // 3. Seed Marketing Collections

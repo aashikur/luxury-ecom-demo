@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -17,6 +18,8 @@ import {
   Columns,
   Layers,
   ChevronDown,
+  ExternalLink,
+  Minus,
 } from 'lucide-react';
 import {
   Button,
@@ -30,6 +33,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  TablePagination,
 } from '@/components/ui';
 
 interface ProductItem {
@@ -57,11 +61,15 @@ export default function ProductsTableClient({
 }: {
   initialProducts: ProductItem[];
 }) {
+  const router = useRouter();
   const [products, setProducts] = useState<ProductItem[]>(initialProducts);
   const [activeTab, setActiveTab] = useState<'ALL' | 'ACTIVE' | 'DRAFT' | 'ARCHIVED'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Sync state if server passes updated initialProducts prop
   useEffect(() => {
@@ -138,6 +146,43 @@ export default function ProductsTableClient({
       return true;
     });
   }, [products, activeTab, selectedCategory, searchQuery]);
+
+  // Reset to page 1 on filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedIds(new Set());
+  }, [activeTab, selectedCategory, searchQuery]);
+
+  // Paginated Products Slice
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, currentPage, pageSize]);
+
+  const isAllCurrentSelected =
+    paginatedProducts.length > 0 &&
+    paginatedProducts.every((p) => selectedIds.has(p._id));
+
+  const handleSelectAllCurrentPage = () => {
+    const next = new Set(selectedIds);
+    if (isAllCurrentSelected) {
+      paginatedProducts.forEach((p) => next.delete(p._id));
+    } else {
+      paginatedProducts.forEach((p) => next.add(p._id));
+    }
+    setSelectedIds(next);
+  };
+
+  const handleToggleSelectRow = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = new Set(selectedIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setSelectedIds(next);
+  };
 
   // Delete handler
   const handleDelete = async (id: string, title: string) => {
@@ -356,11 +401,25 @@ export default function ProductsTableClient({
         <Table>
           <TableHeader>
             <tr>
-              <TableHead className="w-10">
-                <input
-                  type="checkbox"
-                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                />
+              <TableHead className="w-10 pl-4 pr-1">
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={isAllCurrentSelected}
+                  onClick={handleSelectAllCurrentPage}
+                  aria-label="Select all products on this page"
+                  className={`w-4 h-4 rounded-[5px] border transition-all flex items-center justify-center cursor-pointer select-none translate-y-0.5 ${
+                    isAllCurrentSelected || (selectedIds.size > 0 && paginatedProducts.some((p) => selectedIds.has(p._id)))
+                      ? 'bg-[#076E46] border-[#076E46] text-white shadow-2xs'
+                      : 'bg-white border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  {isAllCurrentSelected ? (
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  ) : selectedIds.size > 0 && paginatedProducts.some((p) => selectedIds.has(p._id)) ? (
+                    <Minus className="w-2.5 h-2.5 stroke-[3]" />
+                  ) : null}
+                </button>
               </TableHead>
               <TableHead>Product <span className="text-slate-400 font-normal">↑↓</span></TableHead>
               <TableHead>Category <span className="text-slate-400 font-normal">↑↓</span></TableHead>
@@ -379,7 +438,7 @@ export default function ProductsTableClient({
                 </TableCell>
               </tr>
             ) : (
-              filteredProducts.map((product) => {
+              paginatedProducts.map((product) => {
                 const rowStock = product.totalStock ?? (product.variants?.reduce((s, v) => s + (v.stock || 0), 0) || 0);
                 const thumb =
                   product.media?.[0]?.url ||
@@ -388,15 +447,36 @@ export default function ProductsTableClient({
                 const isMenuOpen = activeMenuId === product._id;
                 const isEditingStock = editingStockId === product._id;
                 const isPublished = product.status === 'PUBLISHED' || (!product.status && product.isActive);
+                const isSelected = selectedIds.has(product._id);
 
                 return (
-                  <TableRow key={product._id}>
+                  <TableRow
+                    key={product._id}
+                    onClick={() => router.push(`/admin/products/${product._id}`)}
+                    className={`cursor-pointer transition-colors duration-150 ${
+                      isSelected
+                        ? 'bg-emerald-50/60 hover:bg-emerald-50/80'
+                        : 'hover:bg-slate-50/80'
+                    }`}
+                  >
                     {/* Checkbox */}
-                    <TableCell>
-                      <input
-                        type="checkbox"
-                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                      />
+                    <TableCell
+                      className="pl-4 pr-1 py-3"
+                      onClick={(e) => handleToggleSelectRow(product._id, e)}
+                    >
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={isSelected}
+                        aria-label={`Select product ${product.title}`}
+                        className={`w-4 h-4 rounded-[5px] border transition-all flex items-center justify-center cursor-pointer select-none translate-y-0.5 ${
+                          isSelected
+                            ? 'bg-[#076E46] border-[#076E46] text-white shadow-2xs'
+                            : 'bg-white border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                      </button>
                     </TableCell>
 
                     {/* Product Thumbnail + Name + Subtitle */}
@@ -452,7 +532,7 @@ export default function ProductsTableClient({
                     </TableCell>
 
                     {/* Stock Column with Inline Stepper Edit */}
-                    <TableCell className="text-center font-mono">
+                    <TableCell className="text-center font-mono" onClick={(e) => e.stopPropagation()}>
                       {isEditingStock ? (
                         <div className="inline-flex items-center gap-1.5 animate-scale-in">
                           <div className="inline-flex items-center rounded-md border-2 border-emerald-600 bg-white px-2 py-0.5 shadow-xs">
@@ -511,7 +591,7 @@ export default function ProductsTableClient({
                     </TableCell>
 
                     {/* Actions Menu */}
-                    <TableCell className="text-center relative">
+                    <TableCell className="text-center relative" onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
                         onClick={() => setActiveMenuId(isMenuOpen ? null : product._id)}
@@ -563,6 +643,16 @@ export default function ProductsTableClient({
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Pagination */}
+      <TablePagination
+        currentPage={currentPage}
+        totalItems={filteredProducts.length}
+        pageSize={pageSize}
+        pageSizeOptions={[10, 20, 50, 100]}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setPageSize}
+      />
     </div>
   );
 }

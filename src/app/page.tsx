@@ -2,6 +2,8 @@ import React from 'react';
 import type { IHomeSection } from '@/models/StoreConfig';
 import { getPublicStoreConfig } from '@/services/config.service';
 import { getProductsList } from '@/services/product.service';
+import { getCategoriesTree } from '@/services/category.service';
+import { getActiveCollections } from '@/services/collection.service';
 import TopBar from '@/components/storefront/TopBar';
 import Navbar from '@/components/storefront/Navbar';
 import HeroBanner from '@/components/storefront/HeroBanner';
@@ -19,14 +21,16 @@ export const revalidate = 60;
  * HIGH-PERFORMANCE STOREFRONT HOMEPAGE (Rule #7, #10 & #21)
  * ============================================================================
  * 
- * 1. Zero-Waterfall: StoreConfig & Product queries run concurrently via Promise.all.
- * 2. 4-Tier Clean Architecture: Domain services (getPublicStoreConfig, getProductsList).
- * 3. Tagged Cache: Next.js unstable_cache tagged ['store-config'] and dual invalidation.
+ * 1. Zero-Waterfall: StoreConfig, Products, CategoryTree & Collections query concurrently via Promise.all.
+ * 2. 4-Tier Clean Architecture: Pure domain services in-memory at 0ms latency.
+ * 3. Tagged Cache: Next.js unstable_cache tagged ['store-config', 'categories', 'collections'].
  */
 export default async function HomePage() {
-  const [config, productsResult] = await Promise.all([
+  const [config, productsResult, categoryTree, collections] = await Promise.all([
     getPublicStoreConfig(),
     getProductsList({ limit: 50 }),
+    getCategoriesTree(),
+    getActiveCollections(),
   ]);
 
   const branding = config?.branding || {
@@ -48,6 +52,17 @@ export default async function HomePage() {
     outsideDhakaFee: config?.logistics?.outsideDhakaFee ?? 130,
   };
 
+  // Map category tree to Navbar category item structure
+  const navCategories = categoryTree.map((cat) => ({
+    id: cat._id,
+    title: cat.name,
+    slug: cat.slug,
+    subcategories: cat.children?.map((child) => ({
+      title: child.name,
+      slug: child.slug,
+    })) || [],
+  }));
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cleanProducts = productsResult.products.map((p: any) => ({
     ...p,
@@ -67,10 +82,13 @@ export default async function HomePage() {
         supportPhone={logistics.supportPhone}
       />
 
-      {/* 2. Luxury Center-Logo Navbar */}
+      {/* 2. Luxury Center-Logo Dynamic Navbar */}
       <Navbar
         storeName={branding.storeName}
         accentColor={branding.colors?.accent || '#B8860B'}
+        categories={navCategories}
+        collections={collections}
+        navLinks={config?.headerNavLinks}
       />
 
       {/* 3. Shopify-Style Dynamic Sections Engine / Single Product Funnel */}

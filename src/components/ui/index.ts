@@ -6,3 +6,4 @@ export * from './textarea';
 export * from './badge';
 export * from './table';
 export * from './breadcrumb';
+export * from './table-pagination';

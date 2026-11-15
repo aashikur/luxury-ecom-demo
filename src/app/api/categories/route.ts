@@ -269,44 +269,61 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
     }
 
-    // 1. Safeguard: Check if it has child subcategories
-    const childCount = await Category.countDocuments({ parentId: id });
-    if (childCount > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Cannot delete "${category.name}". It contains ${childCount} subcategories. Please reassign or delete them first.`,
+    // 1. Recursive Cascade Lookup: Find all descendant categories (children, grandchildren)
+    const descendants = await Category.find({
+      $or: [
+        { parentId: category._id },
+        { ancestors: category.slug },
+      ],
+    }).select('_id slug name').lean();
+
+    const allCategoriesToDelete = [category, ...descendants];
+    const allCategoryIds = allCategoriesToDelete.map((c: any) => c._id);
+    const allCategorySlugs = allCategoriesToDelete.map((c: any) => c.slug);
+
+    // 2. Atomic Product Detachment: Safely set category fields to null / 'Uncategorized'
+    const updateResult = await Product.updateMany(
+      {
+        $or: [
+          { categoryId: { $in: allCategoryIds } },
+          { categorySlug: { $in: allCategorySlugs } },
+          { categoryPath: { $in: allCategorySlugs } },
+        ],
+      },
+      {
+        $set: {
+          categoryId: null,
+          categorySlug: '',
+          categoryName: 'Uncategorized',
         },
-        { status: 400 }
-      );
-    }
-
-    // 2. Safeguard: Check if any active products are assigned to this category
-    const productCount = await Product.countDocuments({
-      $or: [{ categoryId: id }, { categorySlug: category.slug }, { categoryPath: category.slug }],
-    });
-
-    if (productCount > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Cannot delete "${category.name}". ${productCount} active products are currently assigned to it. Please reassign those products first.`,
+        $pull: {
+          categoryPath: { $in: allCategorySlugs },
         },
-        { status: 400 }
-      );
-    }
+      }
+    );
 
-    await Category.findByIdAndDelete(id);
+    // 3. Delete parent category and all its descendants
+    await Category.deleteMany({ _id: { $in: allCategoryIds } });
 
+    // 4. Dual cache revalidation
     try {
       revalidatePath('/', 'page');
       revalidatePath('/shop', 'page');
       revalidatePath('/admin/products', 'page');
+      revalidatePath('/admin/categories', 'page');
     } catch {}
+
+    const subCount = descendants.length;
+    const subMsg = subCount > 0 ? ` and ${subCount} subcategory(s)` : '';
+    const detachedMsg =
+      updateResult.modifiedCount > 0
+        ? ` (${updateResult.modifiedCount} product(s) marked as Uncategorized)`
+        : '';
 
     return NextResponse.json({
       success: true,
-      message: `Category "${category.name}" deleted successfully`,
+      deletedCategoryIds: allCategoryIds.map(String),
+      message: `Category "${category.name}"${subMsg} deleted successfully${detachedMsg}`,
     });
   } catch (err: any) {
     console.error('Error deleting category:', err);

@@ -76,13 +76,13 @@ export default function Footer({
               </Link>
             </li>
             <li>
-              <Link href="/shop?collection=hoodies" className="hover:text-white transition">
-                Heavyweight Hoodies
+              <Link href="/shop" className="hover:text-white transition">
+                All Products Catalog
               </Link>
             </li>
             <li>
-              <Link href="/shop?collection=t-shirts" className="hover:text-white transition">
-                Oversized Tees
+              <Link href="/shop?collection=winter-drop-2026" className="hover:text-white transition">
+                Winter Drop 2026
               </Link>
             </li>
             <li>

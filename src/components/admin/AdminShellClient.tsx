@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   ShoppingBag,
   Package,
+  FolderTree,
   Settings,
   ExternalLink,
   Search,
@@ -84,6 +85,12 @@ export default function AdminShellClient({
           href: '/admin/products',
           label: 'Products',
           icon: Package,
+          exact: false,
+        },
+        {
+          href: '/admin/categories',
+          label: 'Categories',
+          icon: FolderTree,
           exact: false,
         },
       ],
@@ -217,11 +224,11 @@ export default function AdminShellClient({
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex antialiased font-sans">
+    <div className="h-screen overflow-hidden bg-[#F8FAFC] text-slate-900 flex antialiased font-sans">
       {/* 1. Desktop Fixed Enterprise Jet-Black Sidebar */}
-      <aside className="w-64 border-r border-zinc-900 bg-[#09090B] text-zinc-300 flex flex-col justify-between shrink-0 hidden md:flex z-20">
-        <div>
-          {brandHeader(false)}
+      <aside className="w-64 h-full border-r border-zinc-900 bg-[#09090B] text-zinc-300 flex flex-col justify-between shrink-0 hidden lg:flex z-20">
+        {brandHeader(false)}
+        <div className="flex-1 overflow-y-auto min-h-0">
           {renderNav()}
         </div>
         {bottomFooter()}
@@ -229,7 +236,7 @@ export default function AdminShellClient({
 
       {/* 2. Mobile Responsive Slide-Over Drawer & Backdrop */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden">
           {/* Backdrop overlay */}
           <div
             className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity duration-300"
@@ -239,8 +246,8 @@ export default function AdminShellClient({
 
           {/* Slide-over menu panel */}
           <div className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-[#09090B] text-zinc-300 shadow-2xl flex flex-col justify-between z-50 animate-slide-right">
-            <div>
-              {brandHeader(true)}
+            {brandHeader(true)}
+            <div className="flex-1 overflow-y-auto min-h-0">
               {renderNav(() => setIsMobileMenuOpen(false))}
             </div>
             {bottomFooter(() => setIsMobileMenuOpen(false))}
@@ -249,35 +256,35 @@ export default function AdminShellClient({
       )}
 
       {/* 3. Main Workspace Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#F8FAFC]">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#F8FAFC]">
         {/* Top Header Bar */}
         <header className="h-16 border-b border-slate-200 bg-white px-4 sm:px-8 flex items-center justify-between shrink-0 shadow-2xs z-10">
           <div className="flex items-center gap-3">
-            {/* Mobile Hamburger Button (Matching Reference Image 1) */}
+            {/* Mobile Hamburger Button */}
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition md:hidden cursor-pointer"
+              className="p-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition lg:hidden cursor-pointer"
               aria-label="Open navigation menu"
             >
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Desktop Global Search Box (⌘K) */}
-            <div className="hidden sm:flex items-center gap-2 w-72 md:w-80 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-500 focus-within:border-emerald-500 focus-within:bg-white transition">
+            {/* Desktop Global Search Box */}
+            <div className="hidden sm:flex items-center gap-2 w-72 lg:w-80 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-500 focus-within:border-emerald-500 focus-within:bg-white transition">
               <Search className="w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search anything..."
                 className="bg-transparent w-full focus:outline-none text-slate-900 text-xs"
               />
-              <kbd className="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-white border border-slate-200 rounded">
+              <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-white border border-slate-200 rounded">
                 ⌘K
               </kbd>
             </div>
           </div>
 
-          {/* Right Header Action Icons (Matching Reference Image 1) */}
+          {/* Right Header Action Icons */}
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/admin/orders/new"

@@ -61,6 +61,12 @@ export const getPublicStoreConfig = unstable_cache(
           isSandbox: raw.payment?.sslCommerz?.isSandbox ?? true,
         },
       },
+      headerNavLinks: (raw.headerNavLinks && raw.headerNavLinks.length > 0)
+        ? raw.headerNavLinks.filter((l: any) => l.isActive).sort((a: any, b: any) => a.order - b.order)
+        : [
+            { id: 'nav-home', label: 'HOME', href: '/', isActive: true, order: 1 },
+            { id: 'nav-shop', label: 'CATALOG', href: '/shop', isActive: true, order: 2 },
+          ],
     };
 
     return sanitized;
