@@ -50,9 +50,6 @@ interface CategoryFormProps {
   mode: 'create' | 'edit';
   initialData?: CategoryFormData;
   availableParents?: ParentOption[];
-  onSuccess?: () => void;
-  onCancel?: () => void;
-  isModal?: boolean;
 }
 
 function slugify(text: string): string {
@@ -69,9 +66,6 @@ export default function CategoryFormClient({
   mode,
   initialData,
   availableParents = [],
-  onSuccess,
-  onCancel,
-  isModal = false,
 }: CategoryFormProps) {
   const router = useRouter();
   const isEdit = mode === 'edit';
@@ -254,14 +248,10 @@ export default function CategoryFormClient({
 
       setToastMsg(isEdit ? 'Category updated successfully!' : 'Category created successfully!');
 
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        setTimeout(() => {
-          router.push('/admin/categories');
-          router.refresh();
-        }, 800);
-      }
+      setTimeout(() => {
+        router.push('/admin/categories');
+        router.refresh();
+      }, 800);
     } catch (err: any) {
       setErrorMsg(err.message || 'An error occurred while saving.');
     } finally {
@@ -292,8 +282,7 @@ export default function CategoryFormClient({
         </div>
       )}
 
-      {/* Header section (when standalone page, not modal) */}
-      {!isModal && (
+      {/* Header section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
           <div>
             <Breadcrumb items={breadcrumbs} />
@@ -319,12 +308,11 @@ export default function CategoryFormClient({
             </Button>
           </div>
         </div>
-      )}
 
       {/* Clean Minimal Layout */}
-      <div className={`grid grid-cols-1 ${isModal ? 'gap-5' : 'lg:grid-cols-12 gap-6'}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Information & Media (8 cols on desktop) */}
-        <div className={isModal ? 'space-y-5' : 'lg:col-span-8 space-y-5'}>
+        <div className="lg:col-span-8 space-y-5">
           <Card className="border border-slate-200 shadow-2xs bg-white rounded-xl">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold text-[#060d11]">
@@ -452,7 +440,7 @@ export default function CategoryFormClient({
         </div>
 
         {/* Right Column: Parent Category (4 cols on desktop) */}
-        <div className={isModal ? 'space-y-5' : 'lg:col-span-4 space-y-5'}>
+        <div className="lg:col-span-4 space-y-5">
           <Card className="border border-slate-200 shadow-2xs bg-white rounded-xl">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold text-[#060d11]">
@@ -475,28 +463,7 @@ export default function CategoryFormClient({
             </CardContent>
           </Card>
 
-          {/* Modal bottom actions (when embedded in slide-over drawer) */}
-          {isModal && (
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onCancel}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="bg-[#076E46] hover:bg-[#055C3A] text-white shadow-xs"
-                size="sm"
-              >
-                {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                <span>{isEdit ? 'Save Changes' : 'Create Category'}</span>
-              </Button>
-            </div>
-          )}
+
         </div>
       </div>
     </form>

@@ -244,9 +244,9 @@ export default function CategoriesClient({
       {/* 2. Filter Pills Tabs */}
       <div className="flex items-center gap-1 border-b border-slate-200 pb-3">
         {[
-          { id: 'ALL', label: 'All Categories' },
-          { id: 'ROOT', label: 'Root Departments (Level 0)' },
-          { id: 'SUBS', label: 'Sub-categories (Level 1 & 2)' },
+          { id: 'ALL', label: 'All' },
+          { id: 'ROOT', label: 'Departments' },
+          { id: 'SUBS', label: 'Subcategories' },
         ].map((tab) => (
           <button
             key={tab.id}
