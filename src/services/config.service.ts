@@ -8,9 +8,9 @@ import StoreConfig, { IStoreConfig, IHomeSection, IHeaderNavLink } from '@/model
 export function invalidateConfigCaches() {
   try {
     revalidateTag('store-config', 'max');
-    revalidatePath('/');
-    revalidatePath('/shop');
-    revalidatePath('/admin');
+    revalidateTag('categories', 'max');
+    revalidateTag('collections', 'max');
+    revalidatePath('/', 'layout');
     revalidatePath('/admin/settings');
   } catch {
     // Non-request context safeguard

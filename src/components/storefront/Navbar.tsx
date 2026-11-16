@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
@@ -98,16 +98,16 @@ function DesktopMegaMenu({
         ];
 
   return (
-    <nav className="hidden lg:flex items-center gap-7 text-[11px] uppercase tracking-[0.16em] relative">
+    <nav className="hidden lg:flex items-center gap-7 text-[11px] uppercase tracking-[0.16em] h-20">
       {linksToRender.map((item) => {
         const active = isLinkActive(item.href);
-        const hasChildren = item.children && item.children.length > 0;
+        const hasChildren = Boolean(item.children && item.children.length > 0);
         const isDropdownOpen = openDropdownId === item.id;
 
         return (
           <div
             key={item.id || item.href}
-            className="relative"
+            className="relative h-20 flex items-center"
             onMouseEnter={() => hasChildren && handleMouseEnter(item.id)}
             onMouseLeave={() => hasChildren && handleMouseLeave()}
           >
@@ -115,11 +115,11 @@ function DesktopMegaMenu({
               href={item.href}
               style={{
                 color: active ? accentColor : undefined,
-                borderColor: active ? accentColor : 'transparent',
+                borderBottomColor: active ? accentColor : 'transparent',
               }}
-              className={`py-6.5 transition active:scale-[0.98] duration-75 cursor-pointer inline-flex items-center gap-1.5 ${
+              className={`h-full flex items-center gap-1.5 border-b-2 transition active:scale-[0.98] duration-75 cursor-pointer ${
                 active
-                  ? 'font-bold border-b-2 text-zinc-950'
+                  ? 'font-bold text-zinc-950'
                   : 'font-medium text-zinc-600 hover:text-zinc-950'
               }`}
             >
@@ -141,34 +141,44 @@ function DesktopMegaMenu({
               )}
             </Link>
 
-            {/* Mega-Menu Dropdown Panel */}
+            {/* Mega-Menu Dropdown Panel with Hover Bridge */}
             {hasChildren && isDropdownOpen && (
               <div
-                className="absolute top-full left-0 w-64 bg-white/98 backdrop-blur-md border border-zinc-200/90 rounded-lg shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+                className="absolute top-[calc(100%-1px)] left-0 min-w-[280px] bg-white border border-zinc-200 rounded-b-lg shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:w-full before:h-3"
                 onMouseEnter={() => handleMouseEnter(item.id)}
                 onMouseLeave={handleMouseLeave}
               >
-                <div className="px-3 py-1.5 text-[10px] font-bold tracking-widest text-zinc-400 uppercase border-b border-zinc-100 mb-1">
-                  {item.label} Curation
+                <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-zinc-400 uppercase border-b border-zinc-100 flex items-center justify-between">
+                  <span>{item.label} Curation</span>
+                  <span className="text-[9px] font-normal lowercase text-zinc-400">
+                    {item.children!.length} sub-collections
+                  </span>
                 </div>
-                {item.children!.map((sub) => (
-                  <Link
-                    key={sub.id || sub.href}
-                    href={sub.href}
-                    onClick={() => setOpenDropdownId(null)}
-                    className="flex items-center justify-between px-3.5 py-2 text-xs font-medium text-zinc-700 hover:text-zinc-950 hover:bg-zinc-50 transition active:scale-[0.98] duration-75"
-                  >
-                    <span>{sub.label}</span>
-                    {sub.badgeText && (
-                      <span
-                        style={{ backgroundColor: accentColor }}
-                        className="px-1.5 py-0.2 text-[8px] font-bold text-white rounded-full uppercase"
-                      >
-                        {sub.badgeText}
+                <div className="py-1">
+                  {item.children!.map((sub) => (
+                    <Link
+                      key={sub.id || sub.href}
+                      href={sub.href}
+                      onClick={() => setOpenDropdownId(null)}
+                      className="flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-zinc-700 hover:text-zinc-950 hover:bg-zinc-50 transition active:scale-[0.98] duration-75 group"
+                    >
+                      <span className="group-hover:translate-x-0.5 transition-transform duration-150">
+                        {sub.label}
                       </span>
-                    )}
-                  </Link>
-                ))}
+                      <div className="flex items-center gap-1.5">
+                        {sub.badgeText && (
+                          <span
+                            style={{ backgroundColor: accentColor }}
+                            className="px-1.5 py-0.5 text-[8px] font-bold text-white rounded-full uppercase"
+                          >
+                            {sub.badgeText}
+                          </span>
+                        )}
+                        <ArrowRight className="w-3 h-3 text-zinc-300 group-hover:text-zinc-600 transition" />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -276,6 +286,68 @@ export default function Navbar({
     setExpandedNavId((prev) => (prev === id ? null : id));
   };
 
+  // Auto-resolve nested child links from collections or categories if not manually configured
+  const resolvedNavLinks = useMemo(() => {
+    const raw =
+      navLinks && navLinks.length > 0
+        ? navLinks
+        : [
+            { id: 'nav-home', label: 'HOME', href: '/' },
+            { id: 'nav-shop', label: 'CATALOG', href: '/shop' },
+          ];
+
+    return raw.map((item) => {
+      if (item.children && item.children.length > 0) {
+        return item;
+      }
+
+      // Check if href links to a collection with children
+      const colSlug = item.href.includes('/collections/')
+        ? item.href.split('/collections/')[1]?.split('?')[0]?.toLowerCase()
+        : item.href.includes('collection=')
+        ? item.href.split('collection=')[1]?.split('&')[0]?.toLowerCase()
+        : null;
+
+      if (colSlug && collections && collections.length > 0) {
+        const childCols = collections.filter(
+          (c) => c.parentSlug && c.parentSlug.toLowerCase() === colSlug
+        );
+        if (childCols.length > 0) {
+          return {
+            ...item,
+            children: childCols.map((c) => ({
+              id: c._id || `col_${c.slug}`,
+              label: c.title,
+              href: `/collections/${c.slug}`,
+              badgeText: c.badgeText,
+            })),
+          };
+        }
+      }
+
+      // Check if href links to a category with subcategories
+      const catSlug = item.href.includes('category=')
+        ? item.href.split('category=')[1]?.split('&')[0]?.toLowerCase()
+        : null;
+
+      if (catSlug && categories && categories.length > 0) {
+        const cat = categories.find((c) => c.slug.toLowerCase() === catSlug);
+        if (cat?.subcategories && cat.subcategories.length > 0) {
+          return {
+            ...item,
+            children: cat.subcategories.map((sub) => ({
+              id: `cat_${sub.slug}`,
+              label: sub.title,
+              href: `/shop?category=${sub.slug}`,
+            })),
+          };
+        }
+      }
+
+      return item;
+    });
+  }, [navLinks, collections, categories]);
+
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-zinc-200/80 bg-white/95 backdrop-blur-md">
@@ -319,7 +391,7 @@ export default function Navbar({
           {/* 3. Desktop Center: Mega-Menu Navlinks */}
           <div className="hidden lg:flex items-center justify-center flex-1 px-8">
             <Suspense fallback={null}>
-              <DesktopMegaMenu accentColor={accentColor} navLinks={navLinks} />
+              <DesktopMegaMenu accentColor={accentColor} navLinks={resolvedNavLinks} />
             </Suspense>
           </div>
 
@@ -503,7 +575,7 @@ export default function Navbar({
               </Link>
 
               {/* Nested Navlinks */}
-              {navLinks.map((item) => {
+              {resolvedNavLinks.map((item: HeaderNavLinkItem) => {
                 const hasChildren = item.children && item.children.length > 0;
                 const isExpanded = expandedNavId === item.id;
 
@@ -535,25 +607,45 @@ export default function Navbar({
                       onClick={() => toggleAccordion(item.id)}
                       className="w-full flex items-center justify-between py-2.5 text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 transition active:scale-[0.98] duration-75 cursor-pointer"
                     >
-                      <span>{item.label}</span>
+                      <div className="flex items-center gap-2">
+                        <span>{item.label}</span>
+                        {item.badgeText && (
+                          <span
+                            style={{ backgroundColor: accentColor }}
+                            className="px-1.5 py-0.5 text-[8px] font-bold text-white rounded-full uppercase"
+                          >
+                            {item.badgeText}
+                          </span>
+                        )}
+                      </div>
                       <ChevronRight
                         className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${
-                          isExpanded ? 'rotate-90' : ''
+                          isExpanded ? 'rotate-90 text-zinc-950' : ''
                         }`}
                       />
                     </button>
 
                     {isExpanded && (
                       <div className="pl-3 pb-2 space-y-1.5 animate-in fade-in duration-150">
-                        {item.children!.map((sub) => (
+                        {item.children!.map((sub: HeaderNavLinkItem) => (
                           <Link
                             key={sub.id}
                             href={sub.href}
                             onClick={() => setIsDrawerOpen(false)}
-                            className="flex items-center justify-between text-xs font-medium text-zinc-600 hover:text-zinc-950 py-1.5 transition active:scale-[0.98] duration-75"
+                            className="flex items-center justify-between text-xs font-semibold text-zinc-600 hover:text-zinc-950 py-2 transition active:scale-[0.98] duration-75 border-b border-zinc-50"
                           >
                             <span>{sub.label}</span>
-                            <ArrowRight className="w-3.5 h-3.5 text-zinc-300" />
+                            <div className="flex items-center gap-1.5">
+                              {sub.badgeText && (
+                                <span
+                                  style={{ backgroundColor: accentColor }}
+                                  className="px-1.5 py-0.5 text-[8px] font-bold text-white rounded-full uppercase"
+                                >
+                                  {sub.badgeText}
+                                </span>
+                              )}
+                              <ArrowRight className="w-3.5 h-3.5 text-zinc-300" />
+                            </div>
                           </Link>
                         ))}
                       </div>

@@ -48,6 +48,7 @@ interface CollectionOption {
   _id: string;
   title: string;
   slug: string;
+  badgeText?: string;
 }
 
 interface BrandOption {
@@ -110,6 +111,18 @@ export default function SettingsFormClient({
   // Header Nav Link Modal / Drawer state
   const [isAddingNavLink, setIsAddingNavLink] = useState(false);
   const [newNavLink, setNewNavLink] = useState<{
+    label: string;
+    href: string;
+    badgeText: string;
+  }>({
+    label: '',
+    href: '',
+    badgeText: '',
+  });
+
+  // Sub-Link Modal state
+  const [subLinkParentId, setSubLinkParentId] = useState<string | null>(null);
+  const [newSubLink, setNewSubLink] = useState<{
     label: string;
     href: string;
     badgeText: string;
@@ -209,19 +222,26 @@ export default function SettingsFormClient({
     setConfig({ ...config, headerNavLinks: updated });
   };
 
-  const addSubLink = (parentId: string) => {
-    const label = prompt('Enter Sub-Link Label (e.g. Ramadan Edit):');
-    if (!label || !label.trim()) return;
-    const href = prompt('Enter Sub-Link URL (e.g. /collections/ramadan):');
-    if (!href || !href.trim()) return;
+  const openSubLinkModal = (parentId: string) => {
+    setSubLinkParentId(parentId);
+    setNewSubLink({ label: '', href: '', badgeText: '' });
+  };
+
+  const handleCreateSubLink = () => {
+    if (!subLinkParentId) return;
+    if (!newSubLink.label.trim() || !newSubLink.href.trim()) {
+      showToast('Display Label and URL are required', 'error');
+      return;
+    }
 
     const updated = (config.headerNavLinks || []).map((l: IHeaderNavLink) => {
-      if (l.id !== parentId) return l;
+      if (l.id !== subLinkParentId) return l;
       const existingChildren = l.children || [];
       const newChild: IHeaderNavLink = {
         id: `sub_${Date.now()}`,
-        label: label.trim(),
-        href: href.trim(),
+        label: newSubLink.label.trim(),
+        href: newSubLink.href.trim(),
+        badgeText: newSubLink.badgeText.trim() || undefined,
         isActive: true,
         order: existingChildren.length + 1,
       };
@@ -230,8 +250,11 @@ export default function SettingsFormClient({
         children: [...existingChildren, newChild],
       };
     });
+
     setConfig({ ...config, headerNavLinks: updated });
-    showToast('Sub-link added', 'success');
+    setSubLinkParentId(null);
+    setNewSubLink({ label: '', href: '', badgeText: '' });
+    showToast('Sub-link added successfully', 'success');
   };
 
   const deleteSubLink = (parentId: string, subId: string) => {
@@ -244,6 +267,30 @@ export default function SettingsFormClient({
     });
     setConfig({ ...config, headerNavLinks: updated });
     showToast('Sub-link removed', 'success');
+  };
+
+  const moveSubLinkOrder = (parentId: string, subId: string, direction: 'up' | 'down') => {
+    const updated = (config.headerNavLinks || []).map((l: IHeaderNavLink) => {
+      if (l.id !== parentId || !l.children || l.children.length === 0) return l;
+      const children = [...l.children].sort((a, b) => a.order - b.order);
+      const index = children.findIndex((c) => c.id === subId);
+      if (index === -1) return l;
+
+      if (direction === 'up' && index > 0) {
+        const temp = children[index];
+        children[index] = children[index - 1];
+        children[index - 1] = temp;
+      } else if (direction === 'down' && index < children.length - 1) {
+        const temp = children[index];
+        children[index] = children[index + 1];
+        children[index + 1] = temp;
+      }
+
+      const reordered = children.map((c, i) => ({ ...c, order: i + 1 }));
+      return { ...l, children: reordered };
+    });
+
+    setConfig({ ...config, headerNavLinks: updated });
   };
 
   const addNavLink = () => {
@@ -935,7 +982,7 @@ export default function SettingsFormClient({
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => addSubLink(link.id)}
+                            onClick={() => openSubLinkModal(link.id)}
                             className="px-2 py-1 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 transition cursor-pointer"
                           >
                             + Sub-Link
@@ -990,29 +1037,178 @@ export default function SettingsFormClient({
                           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                             Nested Sub-Links ({link.children.length})
                           </span>
-                          {link.children.map((sub: IHeaderNavLink) => (
+                          {link.children.map((sub: IHeaderNavLink, subIdx: number) => (
                             <div
                               key={sub.id}
-                              className="flex items-center justify-between py-1 px-2.5 rounded bg-slate-50 border border-slate-200 text-xs"
+                              className="flex items-center justify-between py-1.5 px-3 rounded bg-slate-50 border border-slate-200 text-xs"
                             >
                               <div className="flex items-center gap-2">
                                 <span className="font-semibold text-slate-800">↳ {sub.label}</span>
+                                {sub.badgeText && (
+                                  <Badge variant="secondary" className="text-[9px] py-0 px-1 uppercase">
+                                    {sub.badgeText}
+                                  </Badge>
+                                )}
                                 <span className="text-slate-400 font-mono text-[11px]">{sub.href}</span>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => deleteSubLink(link.id, sub.id)}
-                                className="text-slate-400 hover:text-rose-600 transition p-0.5 cursor-pointer"
-                                title="Delete sub-link"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => moveSubLinkOrder(link.id, sub.id, 'up')}
+                                  disabled={subIdx === 0}
+                                  className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                                  title="Move Up"
+                                >
+                                  <ChevronUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveSubLinkOrder(link.id, sub.id, 'down')}
+                                  disabled={subIdx === (link.children?.length || 1) - 1}
+                                  className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                                  title="Move Down"
+                                >
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteSubLink(link.id, sub.id)}
+                                  className="text-slate-400 hover:text-rose-600 transition p-1 cursor-pointer"
+                                  title="Delete sub-link"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>
                       )}
                     </div>
                   ))
+              )}
+
+              {/* Sub-Link Creation Modal Dialog */}
+              {subLinkParentId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
+                  <div className="bg-white rounded-lg shadow-2xl border border-slate-200 max-w-md w-full p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="text-sm font-bold text-[#060d11]">Add Sub-Menu Link</h3>
+                        <p className="text-xs text-slate-500">
+                          Parent item:{' '}
+                          <strong className="text-emerald-700">
+                            {(config.headerNavLinks || []).find((l: IHeaderNavLink) => l.id === subLinkParentId)?.label}
+                          </strong>
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSubLinkParentId(null)}
+                        className="text-slate-400 hover:text-slate-600 transition cursor-pointer p-1"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Quick Preset Selector */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-600 block">
+                        Quick Preset (Choose from Collections or Categories)
+                      </label>
+                      <Select
+                        value=""
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (!val) return;
+                          const [type, slug] = val.split(':');
+                          if (type === 'collection') {
+                            const col = collections.find((c) => c.slug === slug);
+                            setNewSubLink({
+                              ...newSubLink,
+                              label: col?.title || '',
+                              href: `/collections/${slug}`,
+                              badgeText: col?.badgeText || '',
+                            });
+                          } else if (type === 'category') {
+                            const cat = categories.find((c) => c.slug === slug);
+                            setNewSubLink({
+                              ...newSubLink,
+                              label: cat?.name || '',
+                              href: `/shop?category=${slug}`,
+                              badgeText: '',
+                            });
+                          }
+                        }}
+                      >
+                        <option value="">-- Choose Collection or Category --</option>
+                        {collections.length > 0 && (
+                          <optgroup label="Collections">
+                            {collections.map((col) => (
+                              <option key={`sub-col-${col._id}`} value={`collection:${col.slug}`}>
+                                {col.title} ({col.slug})
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {categories.length > 0 && (
+                          <optgroup label="Categories">
+                            {categories.map((cat) => (
+                              <option key={`sub-cat-${cat._id}`} value={`category:${cat.slug}`}>
+                                {cat.parentId ? `  ↳ ${cat.name}` : cat.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-600 block">Display Label *</label>
+                      <Input
+                        value={newSubLink.label}
+                        onChange={(e) => setNewSubLink({ ...newSubLink, label: e.target.value })}
+                        placeholder="e.g. Ramadan Edit"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-600 block">Destination URL *</label>
+                      <Input
+                        value={newSubLink.href}
+                        onChange={(e) => setNewSubLink({ ...newSubLink, href: e.target.value })}
+                        placeholder="e.g. /collections/ramadan"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-600 block">Badge Text (Optional)</label>
+                      <Input
+                        value={newSubLink.badgeText}
+                        onChange={(e) => setNewSubLink({ ...newSubLink, badgeText: e.target.value })}
+                        placeholder="e.g. HOLY MONTH, NEW, HOT"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSubLinkParentId(null)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleCreateSubLink}
+                        className="bg-[#076E46] text-white hover:bg-[#055C3A]"
+                      >
+                        Add Sub-Link
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
