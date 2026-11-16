@@ -285,8 +285,8 @@ export default function CheckoutClientView({
             <span className="text-zinc-950 font-bold">Smart Checkout</span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-emerald-800 bg-emerald-50/90 border border-emerald-200/60 px-3 py-1 rounded-full text-[11px] font-semibold">
-            <Lock className="w-3.5 h-3.5 text-emerald-600" />
+          <div className="flex items-center gap-1.5 text-zinc-600 bg-zinc-100 border border-zinc-200 px-3 py-1 rounded-full text-[11px] font-medium">
+            <Lock className="w-3.5 h-3.5 text-zinc-500" />
             <span>256-Bit SSL Encrypted Checkout</span>
           </div>
         </div>
@@ -323,7 +323,7 @@ export default function CheckoutClientView({
                       className="w-full px-3.5 py-2.5 bg-zinc-50/50 border border-zinc-300 rounded text-xs font-mono text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-950 focus:bg-white transition"
                     />
                     <span className="text-[11px] text-zinc-400 mt-1 block">
-                      Steadfast SMS dispatch & tracking updates will be sent here
+                      SMS order confirmation & delivery updates will be sent here
                     </span>
                   </div>
 
@@ -441,7 +441,7 @@ export default function CheckoutClientView({
                       {isFreeShipping ? (
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs line-through text-zinc-400">৳{insideDhakaFee}</span>
-                          <span className="text-xs font-bold text-emerald-700">FREE</span>
+                          <span style={{ color: accentColor }} className="text-xs font-bold">FREE</span>
                         </div>
                       ) : (
                         <span className="text-sm font-bold text-zinc-950">৳{insideDhakaFee}</span>
@@ -477,7 +477,7 @@ export default function CheckoutClientView({
                       {isFreeShipping ? (
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs line-through text-zinc-400">৳{dhakaSuburbsFee}</span>
-                          <span className="text-xs font-bold text-emerald-700">FREE</span>
+                          <span style={{ color: accentColor }} className="text-xs font-bold">FREE</span>
                         </div>
                       ) : (
                         <span className="text-sm font-bold text-zinc-950">৳{dhakaSuburbsFee}</span>
@@ -513,7 +513,7 @@ export default function CheckoutClientView({
                       {isFreeShipping ? (
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs line-through text-zinc-400">৳{outsideDhakaFee}</span>
-                          <span className="text-xs font-bold text-emerald-700">FREE</span>
+                          <span style={{ color: accentColor }} className="text-xs font-bold">FREE</span>
                         </div>
                       ) : (
                         <span className="text-sm font-bold text-zinc-950">৳{outsideDhakaFee}</span>
@@ -554,12 +554,12 @@ export default function CheckoutClientView({
                           Cash on Delivery (COD)
                         </span>
                       </div>
-                      <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                      <span className="text-[11px] font-semibold text-zinc-700 bg-zinc-100 px-2 py-0.5 rounded">
                         Pay upon receipt
                       </span>
                     </div>
                     <p className="text-xs text-zinc-500 mt-2 pl-6">
-                      Pay with cash directly to the Steadfast courier representative upon package arrival at your door.
+                      Pay with cash directly to the courier delivery agent upon package arrival at your door.
                     </p>
                   </label>
 
@@ -608,7 +608,7 @@ export default function CheckoutClientView({
                           >
                             {copiedPhone ? (
                               <>
-                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                <Check style={{ color: accentColor }} className="w-3.5 h-3.5" />
                                 <span>Copied</span>
                               </>
                             ) : (
@@ -667,7 +667,7 @@ export default function CheckoutClientView({
                 </button>
 
                 <p className="text-[11px] text-zinc-400 text-center mt-3 flex items-center justify-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <ShieldCheck style={{ color: accentColor }} className="w-3.5 h-3.5" />
                   <span>By placing your order, you agree to our 3-Day Return & Replacement Policy</span>
                 </p>
               </div>
@@ -748,11 +748,14 @@ export default function CheckoutClientView({
             {/* Discount / Coupon Box */}
             <div className="pt-2 border-t border-zinc-200">
               {appliedCoupon ? (
-                <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs rounded">
+                <div
+                  style={{ backgroundColor: `${accentColor}12`, borderColor: `${accentColor}30` }}
+                  className="flex items-center justify-between p-2.5 border text-xs rounded text-zinc-900"
+                >
                   <div className="flex items-center gap-2">
-                    <Tag className="w-3.5 h-3.5 text-emerald-700" />
+                    <Tag style={{ color: accentColor }} className="w-3.5 h-3.5" />
                     <span className="font-mono font-bold">{appliedCoupon.code}</span>
-                    <span>(-৳{appliedCoupon.discountAmount.toLocaleString()})</span>
+                    <span className="text-zinc-600 font-medium">(-৳{appliedCoupon.discountAmount.toLocaleString()})</span>
                   </div>
                   <button
                     type="button"
@@ -798,7 +801,7 @@ export default function CheckoutClientView({
               </div>
 
               {appliedCoupon && (
-                <div className="flex justify-between text-emerald-700 font-medium">
+                <div className="flex justify-between font-medium" style={{ color: accentColor }}>
                   <span>Discount ({appliedCoupon.code})</span>
                   <span className="font-mono">-৳{appliedCoupon.discountAmount.toLocaleString()}</span>
                 </div>
@@ -808,7 +811,7 @@ export default function CheckoutClientView({
                 <span>Shipping ({deliveryZone === 'INSIDE_DHAKA' ? 'Inside Dhaka' : deliveryZone === 'DHAKA_SUBURBS' ? 'Suburbs' : 'Outside Dhaka'})</span>
                 <span className="font-semibold text-zinc-900 font-mono">
                   {isFreeShipping ? (
-                    <span className="text-emerald-700 font-bold">FREE</span>
+                    <span style={{ color: accentColor }} className="font-bold">FREE</span>
                   ) : (
                     `৳${deliveryFee}`
                   )}
@@ -851,19 +854,8 @@ export default function CheckoutClientView({
               </button>
 
               <p className="text-[11px] text-zinc-400 text-center mt-3 flex items-center justify-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <ShieldCheck style={{ color: accentColor }} className="w-3.5 h-3.5" />
                 <span>By placing your order, you agree to our 3-Day Return & Replacement Policy</span>
-              </p>
-            </div>
-
-            {/* Trust Markers */}
-            <div className="p-4 bg-white border border-zinc-200/80 rounded-lg text-xs space-y-2 text-zinc-600">
-              <div className="flex items-center gap-2 text-zinc-900 font-bold uppercase tracking-wider text-[11px]">
-                <Truck style={{ color: accentColor }} className="w-4 h-4" />
-                <span>Steadfast Express Partner</span>
-              </div>
-              <p className="text-[11px] text-zinc-500 leading-relaxed">
-                Orders are booked directly into Steadfast Express with automated SMS notifications and 1-click live dispatch tracking.
               </p>
             </div>
           </div>

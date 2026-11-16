@@ -479,12 +479,9 @@ export default function Navbar({
                 />
                 {totalItems > 0 && (
                   <span
-                    style={{
-                      backgroundColor: accentColor,
-                      boxShadow: isCartBumping ? `0 0 0 2px ${accentColor}60` : undefined,
-                    }}
-                    className={`absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-bold text-white flex items-center justify-center shadow-xs transition-all duration-300 pointer-events-none leading-none ${
-                      isCartBumping ? 'scale-125 animate-bounce' : 'scale-100'
+                    style={{ backgroundColor: accentColor }}
+                    className={`absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-bold text-white ring-1.5 ring-white flex items-center justify-center shadow-xs transition-transform duration-200 pointer-events-none leading-none ${
+                      isCartBumping ? 'scale-125' : 'scale-100'
                     }`}
                   >
                     {totalItems}
@@ -747,7 +744,7 @@ export default function Navbar({
                 <Link
                   href="/admin"
                   onClick={() => setIsDrawerOpen(false)}
-                  className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50/80 p-3 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition active:scale-[0.98] duration-75"
+                  className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-zinc-900 bg-zinc-100 p-3 rounded-lg border border-zinc-200 hover:bg-zinc-200 transition active:scale-[0.98] duration-75"
                 >
                   <span>ADMIN MANAGEMENT</span>
                   <ArrowRight className="w-4 h-4" />

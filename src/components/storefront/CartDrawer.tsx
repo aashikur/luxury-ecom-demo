@@ -43,7 +43,7 @@ export default function CartDrawer({
   accentColor = '#B8860B',
   smartCheckoutEnabled = true,
 }: CartDrawerProps) {
-  const { cart, isCartOpen, setIsCartOpen, updateQuantity, clearCart, subtotal } =
+  const { cart, isCartOpen, setIsCartOpen, updateQuantity, removeFromCart, clearCart, subtotal } =
     useCart();
 
   const [deliveryZone, setDeliveryZone] = useState<'INSIDE_DHAKA' | 'DHAKA_SUBURBS' | 'OUTSIDE_DHAKA'>(
@@ -292,7 +292,10 @@ export default function CartDrawer({
             {orderSuccess ? (
               /* Success Screen */
               <div className="py-8 text-center space-y-4">
-                <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+                <div
+                  style={{ backgroundColor: `${accentColor}15`, color: accentColor }}
+                  className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
+                >
                   <Check className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-bold uppercase tracking-widest text-zinc-950">
@@ -369,8 +372,8 @@ export default function CartDrawer({
                 {freeShippingThreshold > 0 && (
                   <div className="p-3 bg-zinc-50 border border-zinc-200/90 rounded text-xs">
                     {subtotal >= freeShippingThreshold ? (
-                      <div className="flex items-center gap-2 text-emerald-800 font-semibold">
-                        <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div style={{ color: accentColor }} className="flex items-center gap-2 font-semibold">
+                        <Truck style={{ color: accentColor }} className="w-4 h-4 shrink-0" />
                         <span>You unlocked FREE Express Delivery!</span>
                       </div>
                     ) : (
@@ -426,6 +429,13 @@ export default function CartDrawer({
                           <p className="text-xs font-mono font-bold text-zinc-950 mt-1">
                             {item.price.toLocaleString()}৳
                           </p>
+                          <button
+                            type="button"
+                            onClick={() => removeFromCart(item.productId, item.variantId || item.size || '')}
+                            className="text-[10px] text-zinc-400 hover:text-red-600 underline cursor-pointer mt-1 block transition active:scale-[0.98]"
+                          >
+                            Remove
+                          </button>
                         </div>
                         <div className="flex items-center border border-zinc-200 rounded shrink-0">
                           <button
