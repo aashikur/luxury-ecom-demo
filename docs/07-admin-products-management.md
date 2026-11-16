@@ -25,6 +25,8 @@
 - **Operational Efficiency**: The inline stock edit feature allows merchants to adjust stock in under 2 seconds during showroom inventory counts.
 - **Zero Cache Lag**: Without `force-dynamic` and on-demand `revalidatePath`, Vercel Edge CDN caches product lists as static HTML (`X-Vercel-Cache: HIT`), causing newly created garments and updated images to vanish from the products table while appearing only in single view routes.
 - **Optimistic UI with Fallback SWR**: Table filtering, sorting, popovers, and stock edits use optimistic client states backed by atomic Mongoose updates and background revalidation.
+- **Product Video Engine & Dual Storage Support**: Supports direct Cloudflare R2 MP4 uploads (for muted 5–15s luxury fabric motion loops) and YouTube/Vimeo embed URL fallbacks. Handled via `product.media` with `{ type: 'VIDEO', videoProvider: 'R2' | 'YOUTUBE' }`.
+- **Shopify-Grade Variant Matrix Generator**: Multi-variant matrix generation allowing merchants to define separate Option axes (`Size`, `Color`) with chip inputs and hex swatches, auto-generating an editable variant table (SKU, Price ৳, Stock, Status) saved atomically to `product.variants[]` and `product.variantOptions[]`.
 
 ---
 
@@ -36,6 +38,8 @@
 - [x] Create dedicated Edit Page at `src/app/(admin)/admin/products/[id]/edit/page.tsx`.
 - [x] Enforce dynamic rendering and on-demand cache revalidation across catalog and admin routes.
 - [x] Add client-side live fetch on mount with `cache: 'no-store'` to eliminate router cache desync.
+- [ ] Implement Admin Variant Matrix Generator with Size/Color option axes (`ProductFormClient.tsx`).
+- [ ] Integrate Product Video Uploader (`video/mp4` to Cloudflare R2 & YouTube embed URL).
 
 ---
 
