@@ -53,7 +53,7 @@ export default async function HomePage() {
       id: 'default-hero',
       type: 'HERO_BANNER',
       title: 'Aurem Luxury Modest Drop',
-      subtitle: 'Winter Archive 2026',
+      subtitle: 'Winter Collection 2026',
       buttonText: 'EXPLORE CATALOG',
       buttonLink: '/shop',
       order: 1,
@@ -123,7 +123,7 @@ export default async function HomePage() {
                 key={section.id}
                 storeName={branding.storeName}
                 title={section.title || 'Winter Luxury Drop 2026'}
-                subtitle={`${branding.storeName.toUpperCase()} // ARCHIVE`}
+                subtitle={section.subtitle || branding.storeName.toUpperCase()}
                 description={section.subtitle || section.description || 'Premium Acid-Wash & Heavyweight Fleece'}
                 buttonText={section.buttonText || 'SHOP NOW'}
                 buttonLink={section.buttonLink || section.linkUrl || '/shop'}

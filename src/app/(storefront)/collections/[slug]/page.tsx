@@ -205,19 +205,16 @@ export default async function CollectionPage({
       <header className="max-w-[1360px] mx-auto px-4 sm:px-8 py-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-zinc-200 pb-8">
           <div className="max-w-2xl space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-bold tracking-[0.25em] text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded">
-                {isParent ? 'PARENT ARCHIVE' : 'CURATED COLLECTION'}
-              </span>
-              {collection.badgeText && (
+            {collection.badgeText && (
+              <div className="flex items-center gap-2">
                 <span
                   style={{ backgroundColor: branding.colors?.accent || '#076E46' }}
                   className="text-[10px] uppercase font-bold tracking-wider text-white px-2 py-0.5 rounded"
                 >
                   {collection.badgeText}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-zinc-950">
               {collection.title}
             </h1>

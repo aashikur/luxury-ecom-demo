@@ -27,7 +27,7 @@ export default function HeroBanner({
     imageUrl ||
     'https://images.unsplash.com/photo-1509967419530-da38b4704bc6?auto=format&fit=crop&w=1800&q=85';
 
-  const eyebrowText = subtitle || `${storeName.toUpperCase()} // ARCHIVE`;
+  const eyebrowText = subtitle || storeName.toUpperCase();
 
   return (
     <section className="w-full max-w-full m-0 p-0">
