@@ -59,67 +59,77 @@ export const getActiveCollections = unstable_cache(
 
 /**
  * Fetch a single collection by slug
- * Cached via Next.js unstable_cache with tag ['collections']
+ * Cached per slug via Next.js unstable_cache with tag ['collections']
  */
-export const getCollectionBySlug = unstable_cache(
-  async (slug: string): Promise<ICollectionDetail | null> => {
-    try {
-      await connectDB();
-      const col = await Collection.findOne({ slug: slug.toLowerCase().trim(), isActive: true })
-        .select('_id title slug parentSlug description bannerImage badgeText isFeaturedHome displayOrder')
-        .lean();
+export async function getCollectionBySlug(slug: string): Promise<ICollectionDetail | null> {
+  const normalized = slug.toLowerCase().trim();
+  return unstable_cache(
+    async (): Promise<ICollectionDetail | null> => {
+      try {
+        await connectDB();
+        const col = await Collection.findOne({ slug: normalized, isActive: true })
+          .select('_id title slug parentSlug description bannerImage badgeText isFeaturedHome displayOrder')
+          .lean();
 
-      return col ? JSON.parse(JSON.stringify(col)) : null;
-    } catch (err) {
-      console.warn('Notice: Collection lookup deferred:', err instanceof Error ? err.message : err);
-      return null;
-    }
-  },
-  ['public-collection-by-slug'],
-  { tags: ['collections'], revalidate: 3600 }
-);
+        return col ? JSON.parse(JSON.stringify(col)) : null;
+      } catch (err) {
+        console.warn('Notice: Collection lookup deferred:', err instanceof Error ? err.message : err);
+        return null;
+      }
+    },
+    ['public-collection-by-slug', normalized],
+    { tags: ['collections'], revalidate: 3600 }
+  )();
+}
 
 /**
  * Fetch all active child collections under a given parent slug
- * Cached via Next.js unstable_cache with tag ['collections']
+ * Cached per parentSlug via Next.js unstable_cache with tag ['collections']
  */
-export const getChildCollections = unstable_cache(
-  async (parentSlug: string): Promise<ICollectionNavItem[]> => {
-    try {
-      await connectDB();
-      const children = await Collection.find({ parentSlug: parentSlug.toLowerCase().trim(), isActive: true })
-        .select('_id title slug parentSlug badgeText isFeaturedHome displayOrder')
-        .sort({ displayOrder: 1, createdAt: -1 })
-        .lean();
+export async function getChildCollections(parentSlug: string): Promise<ICollectionNavItem[]> {
+  const normalized = parentSlug.toLowerCase().trim();
+  return unstable_cache(
+    async (): Promise<ICollectionNavItem[]> => {
+      try {
+        await connectDB();
+        const children = await Collection.find({ parentSlug: normalized, isActive: true })
+          .select('_id title slug parentSlug badgeText isFeaturedHome displayOrder')
+          .sort({ displayOrder: 1, createdAt: -1 })
+          .lean();
 
-      return JSON.parse(JSON.stringify(children));
-    } catch (err) {
-      console.warn('Notice: Child collections lookup deferred:', err instanceof Error ? err.message : err);
-      return [];
-    }
-  },
-  ['public-child-collections'],
-  { tags: ['collections'], revalidate: 3600 }
-);
+        return JSON.parse(JSON.stringify(children));
+      } catch (err) {
+        console.warn('Notice: Child collections lookup deferred:', err instanceof Error ? err.message : err);
+        return [];
+      }
+    },
+    ['public-child-collections', normalized],
+    { tags: ['collections'], revalidate: 3600 }
+  )();
+}
 
 /**
  * Fetch all active sibling collections under the same parent
+ * Cached per parentSlug via Next.js unstable_cache with tag ['collections']
  */
-export const getSiblingCollections = unstable_cache(
-  async (parentSlug: string): Promise<ICollectionNavItem[]> => {
-    try {
-      await connectDB();
-      const siblings = await Collection.find({ parentSlug: parentSlug.toLowerCase().trim(), isActive: true })
-        .select('_id title slug parentSlug badgeText isFeaturedHome displayOrder')
-        .sort({ displayOrder: 1, createdAt: -1 })
-        .lean();
+export async function getSiblingCollections(parentSlug: string): Promise<ICollectionNavItem[]> {
+  const normalized = parentSlug.toLowerCase().trim();
+  return unstable_cache(
+    async (): Promise<ICollectionNavItem[]> => {
+      try {
+        await connectDB();
+        const siblings = await Collection.find({ parentSlug: normalized, isActive: true })
+          .select('_id title slug parentSlug badgeText isFeaturedHome displayOrder')
+          .sort({ displayOrder: 1, createdAt: -1 })
+          .lean();
 
-      return JSON.parse(JSON.stringify(siblings));
-    } catch (err) {
-      console.warn('Notice: Sibling collections lookup deferred:', err instanceof Error ? err.message : err);
-      return [];
-    }
-  },
-  ['public-sibling-collections'],
-  { tags: ['collections'], revalidate: 3600 }
-);
+        return JSON.parse(JSON.stringify(siblings));
+      } catch (err) {
+        console.warn('Notice: Sibling collections lookup deferred:', err instanceof Error ? err.message : err);
+        return [];
+      }
+    },
+    ['public-sibling-collections', normalized],
+    { tags: ['collections'], revalidate: 3600 }
+  )();
+}
