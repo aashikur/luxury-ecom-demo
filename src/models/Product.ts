@@ -92,7 +92,9 @@ export interface IProduct extends Document {
   categorySlug?: string;
   categoryPath?: string[];
   categoryName: string;
+  brandId?: mongoose.Types.ObjectId | null;
   brandName?: string;
+  brandSlug?: string;
   collections: string[];
   tags?: string[];
 
@@ -145,7 +147,9 @@ const ProductSchema = new Schema<IProduct>(
     categorySlug: { type: String, default: '', index: true },
     categoryPath: [{ type: String, index: true }],
     categoryName: { type: String, required: true, trim: true, index: true },
+    brandId: { type: Schema.Types.ObjectId, ref: 'Brand', default: null, index: true },
     brandName: { type: String, default: '', index: true },
+    brandSlug: { type: String, default: '', index: true },
     collections: [{ type: String, index: true }],
     tags: [{ type: String, index: true }],
 
