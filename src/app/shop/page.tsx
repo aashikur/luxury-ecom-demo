@@ -17,12 +17,13 @@ interface ShopPageProps {
   searchParams: Promise<{
     collection?: string;
     category?: string;
+    brand?: string;
     sort?: string;
   }>;
 }
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
-  const { collection, category, sort } = await searchParams;
+  const { collection, category, brand, sort } = await searchParams;
 
   // Zero-Waterfall Concurrent Domain Service Queries
   const [config, productsResult, categoryTree, collections] = await Promise.all([
@@ -31,6 +32,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       collection,
       category,
       categorySlug: category,
+      brand,
       sort,
       limit: 50,
     }),
@@ -73,13 +75,22 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   // Dynamic filter tabs derived from active database collections & categories
   const filterTabs = [
-    { label: 'ALL PRODUCTS', href: '/shop', active: !collection && !category },
+    { label: 'ALL PRODUCTS', href: '/shop', active: !collection && !category && !brand },
     ...collections.map((col) => ({
       label: col.title.toUpperCase(),
       href: `/shop?collection=${col.slug}`,
       active: collection === col.slug,
     })),
   ];
+
+  const getSortUrl = (sortType: string) => {
+    const params = new URLSearchParams();
+    if (collection) params.set('collection', collection);
+    if (category) params.set('category', category);
+    if (brand) params.set('brand', brand);
+    params.set('sort', sortType);
+    return `/shop?${params.toString()}`;
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-zinc-900">
@@ -105,7 +116,13 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         <div className="flex flex-col sm:flex-row items-baseline justify-between gap-4 pb-6 border-b border-zinc-200">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-zinc-950">
-              {collection ? collection.replace(/-/g, ' ') : category ? category.replace(/-/g, ' ') : 'STORE ARCHIVE'}
+              {collection
+                ? collection.replace(/-/g, ' ')
+                : category
+                ? category.replace(/-/g, ' ')
+                : brand
+                ? brand.replace(/-/g, ' ')
+                : 'STORE ARCHIVE'}
             </h1>
             <p className="text-xs text-zinc-500 mt-1 tracking-wider uppercase">
               Showing {products.length} engineered garments
@@ -116,7 +133,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <div className="flex items-center gap-3 text-xs">
             <span className="text-zinc-400 font-medium uppercase tracking-wider">Sort:</span>
             <Link
-              href={`/shop?${collection ? `collection=${collection}&` : ''}${category ? `category=${category}&` : ''}sort=price-asc`}
+              href={getSortUrl('price-asc')}
               className={`hover:text-zinc-950 transition ${
                 sort === 'price-asc' ? 'font-bold text-zinc-950 underline underline-offset-4' : 'text-zinc-500'
               }`}
@@ -125,7 +142,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             </Link>
             <span>•</span>
             <Link
-              href={`/shop?${collection ? `collection=${collection}&` : ''}${category ? `category=${category}&` : ''}sort=price-desc`}
+              href={getSortUrl('price-desc')}
               className={`hover:text-zinc-950 transition ${
                 sort === 'price-desc' ? 'font-bold text-zinc-950 underline underline-offset-4' : 'text-zinc-500'
               }`}

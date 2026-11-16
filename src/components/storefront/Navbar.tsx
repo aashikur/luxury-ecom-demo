@@ -57,12 +57,15 @@ function NavLinks({
       const hrefUrl = new URL(href, 'http://localhost');
       const hrefCollection = hrefUrl.searchParams.get('collection');
       const hrefCategory = hrefUrl.searchParams.get('category');
+      const hrefBrand = hrefUrl.searchParams.get('brand');
       const currentCollection = searchParams?.get('collection');
       const currentCategory = searchParams?.get('category');
+      const currentBrand = searchParams?.get('brand');
 
       if (hrefCollection) return currentCollection === hrefCollection;
       if (hrefCategory) return currentCategory === hrefCategory;
-      if (!hrefCollection && !hrefCategory) return pathname === '/shop' && !currentCollection && !currentCategory;
+      if (hrefBrand) return currentBrand === hrefBrand;
+      if (!hrefCollection && !hrefCategory && !hrefBrand) return pathname === '/shop' && !currentCollection && !currentCategory && !currentBrand;
     }
     return pathname.startsWith(href);
   };

@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db';
 import StoreConfig from '@/models/StoreConfig';
 import Category from '@/models/Category';
 import Collection from '@/models/Collection';
+import Brand from '@/models/Brand';
 import { getDefaultStoreConfig } from '@/services/config.service';
 import SettingsFormClient from '@/components/admin/SettingsFormClient';
 
@@ -17,10 +18,11 @@ export const metadata = {
 export default async function SettingsPage() {
   await connectDB();
 
-  const [rawConfig, rawCategories, rawCollections] = await Promise.all([
+  const [rawConfig, rawCategories, rawCollections, rawBrands] = await Promise.all([
     StoreConfig.findOne({ isActive: true }).lean(),
     Category.find({}).select('name slug parentId').lean(),
     Collection.find({}).select('title slug').lean(),
+    Brand.find({}).select('name slug').lean(),
   ]);
 
   const fallback = getDefaultStoreConfig();
@@ -30,12 +32,14 @@ export default async function SettingsPage() {
 
   const categories = JSON.parse(JSON.stringify(rawCategories || []));
   const collections = JSON.parse(JSON.stringify(rawCollections || []));
+  const brands = JSON.parse(JSON.stringify(rawBrands || []));
 
   return (
     <SettingsFormClient
       initialConfig={config}
       categories={categories}
       collections={collections}
+      brands={brands}
     />
   );
 }

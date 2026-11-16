@@ -50,17 +50,25 @@ interface CollectionOption {
   slug: string;
 }
 
+interface BrandOption {
+  _id: string;
+  name: string;
+  slug: string;
+}
+
 interface SettingsFormClientProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initialConfig: any;
   categories?: CategoryOption[];
   collections?: CollectionOption[];
+  brands?: BrandOption[];
 }
 
 export default function SettingsFormClient({
   initialConfig,
   categories = [],
   collections = [],
+  brands = [],
 }: SettingsFormClientProps) {
   const router = useRouter();
   const [config, setConfig] = useState(initialConfig);
@@ -708,7 +716,7 @@ export default function SettingsFormClient({
               <div>
                 <CardTitle>Header Quick Links</CardTitle>
                 <CardDescription>
-                  Pinned categories displayed in the storefront navigation bar next to Menu.
+                  Pinned categories, collections, or brands displayed in the storefront navigation bar next to Menu.
                 </CardDescription>
               </div>
               <Button
@@ -742,26 +750,65 @@ export default function SettingsFormClient({
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="space-y-1">
                       <label className="text-[11px] font-semibold text-slate-600 block">
-                        Quick-Select Category
+                        Quick-Select Item
                       </label>
                       <Select
                         onChange={(e) => {
-                          const slug = e.target.value;
-                          if (!slug) return;
-                          const found = categories.find((c) => c.slug === slug);
-                          setNewNavLink({
-                            ...newNavLink,
-                            label: found?.name || newNavLink.label,
-                            href: `/category/${slug}`,
-                          });
+                          const val = e.target.value;
+                          if (!val) return;
+                          const [type, slug] = val.split(':');
+                          if (type === 'category') {
+                            const found = categories.find((c) => c.slug === slug);
+                            setNewNavLink({
+                              ...newNavLink,
+                              label: found?.name || newNavLink.label,
+                              href: `/shop?category=${slug}`,
+                            });
+                          } else if (type === 'collection') {
+                            const found = collections.find((c) => c.slug === slug);
+                            setNewNavLink({
+                              ...newNavLink,
+                              label: found?.title || newNavLink.label,
+                              href: `/shop?collection=${slug}`,
+                            });
+                          } else if (type === 'brand') {
+                            const found = brands.find((b) => b.slug === slug);
+                            setNewNavLink({
+                              ...newNavLink,
+                              label: found?.name || newNavLink.label,
+                              href: `/shop?brand=${slug}`,
+                            });
+                          }
                         }}
                       >
-                        <option value="">-- Choose Category --</option>
-                        {categories.map((cat) => (
-                          <option key={cat._id} value={cat.slug}>
-                            {cat.parentId ? `  ↳ ${cat.name}` : cat.name}
-                          </option>
-                        ))}
+                        <option value="">-- Choose Category, Collection, or Brand --</option>
+                        {categories.length > 0 && (
+                          <optgroup label="Categories">
+                            {categories.map((cat) => (
+                              <option key={`cat-${cat._id}`} value={`category:${cat.slug}`}>
+                                {cat.parentId ? `  ↳ ${cat.name}` : cat.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {collections.length > 0 && (
+                          <optgroup label="Collections">
+                            {collections.map((col) => (
+                              <option key={`col-${col._id}`} value={`collection:${col.slug}`}>
+                                {col.title}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {brands.length > 0 && (
+                          <optgroup label="Brands">
+                            {brands.map((b) => (
+                              <option key={`brand-${b._id}`} value={`brand:${b.slug}`}>
+                                {b.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
                       </Select>
                     </div>
 
@@ -779,7 +826,7 @@ export default function SettingsFormClient({
                       <Input
                         value={newNavLink.href}
                         onChange={(e) => setNewNavLink({ ...newNavLink, href: e.target.value })}
-                        placeholder="/category/hoodies or /shop"
+                        placeholder="/shop?category=hoodies or /shop"
                       />
                     </div>
 
@@ -820,7 +867,7 @@ export default function SettingsFormClient({
               {/* Quick Links List */}
               {(!config.headerNavLinks || config.headerNavLinks.length === 0) ? (
                 <div className="text-center py-6 text-sm text-slate-400">
-                  No quick links added yet. Click &quot;Add Quick Link&quot; to feature top categories.
+                  No quick links added yet. Click &quot;Add Quick Link&quot; to feature top categories, collections, or brands.
                 </div>
               ) : (
                 config.headerNavLinks
@@ -2617,6 +2664,15 @@ export default function SettingsFormClient({
                               </option>
                             ))}
                           </optgroup>
+                          {brands.length > 0 && (
+                            <optgroup label="Brands">
+                              {brands.map((b) => (
+                                <option key={b._id} value={b.slug}>
+                                  {b.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
                         </Select>
                       </div>
                     ) : (
