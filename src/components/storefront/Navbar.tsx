@@ -662,28 +662,28 @@ export default function Navbar({
                           </span>
                         )}
                       </div>
-                      <ChevronRight
+                      <ChevronDown
                         className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${
-                          isExpanded ? 'rotate-90 text-zinc-950' : ''
+                          isExpanded ? 'rotate-180 text-zinc-950' : ''
                         }`}
                       />
                     </button>
 
                     {isExpanded && (
-                      <div className="pl-3 pb-2 space-y-1.5 animate-in fade-in duration-150">
+                      <div className="pl-3 pb-3 pt-1 space-y-1 animate-in fade-in duration-150">
                         {item.children!.map((sub: HeaderNavLinkItem) => (
                           sub.children && sub.children.length > 0 ? (
-                            <div key={sub.id} className="pt-2 pb-1 border-t border-zinc-100 first:border-0 first:pt-0">
-                              <span className="block text-[11px] font-bold uppercase tracking-wider text-zinc-900 mb-1.5">
+                            <div key={sub.id} className="pt-2 pb-1 first:pt-0">
+                              <span className="block text-xs font-semibold text-zinc-800 mb-1">
                                 {sub.label}
                               </span>
-                              <div className="pl-2 space-y-1">
+                              <div className="pl-3 space-y-1 border-l border-zinc-100">
                                 {sub.children.map((leaf) => (
                                   <Link
                                     key={leaf.id}
                                     href={leaf.href}
                                     onClick={() => setIsDrawerOpen(false)}
-                                    className="flex items-center justify-between text-xs text-zinc-600 hover:text-zinc-950 py-1 transition"
+                                    className="flex items-center justify-between text-sm font-normal text-zinc-600 hover:text-zinc-950 py-1.5 transition"
                                   >
                                     <span>{leaf.label}</span>
                                     {leaf.badgeText && (
@@ -703,23 +703,33 @@ export default function Navbar({
                               key={sub.id}
                               href={sub.href}
                               onClick={() => setIsDrawerOpen(false)}
-                              className="flex items-center justify-between text-xs font-semibold text-zinc-600 hover:text-zinc-950 py-2 transition active:scale-[0.98] duration-75 border-b border-zinc-50"
+                              className="flex items-center justify-between text-sm font-normal text-zinc-600 hover:text-zinc-950 py-1.5 transition active:scale-[0.98] duration-75"
                             >
                               <span>{sub.label}</span>
-                              <div className="flex items-center gap-1.5">
-                                {sub.badgeText && (
-                                  <span
-                                    style={{ backgroundColor: accentColor }}
-                                    className="px-1.5 py-0.5 text-[8px] font-bold text-white rounded-full uppercase"
-                                  >
-                                    {sub.badgeText}
-                                  </span>
-                                )}
-                                <ArrowRight className="w-3.5 h-3.5 text-zinc-300" />
-                              </div>
+                              {sub.badgeText && (
+                                <span
+                                  style={{ backgroundColor: accentColor }}
+                                  className="px-1.5 py-0.5 text-[8px] font-bold text-white rounded-full uppercase tracking-wider"
+                                >
+                                  {sub.badgeText}
+                                </span>
+                              )}
                             </Link>
                           )
                         ))}
+
+                        {/* View all Collection / Category CTA Button */}
+                        <div className="pt-2.5">
+                          <Link
+                            href={item.href}
+                            onClick={() => setIsDrawerOpen(false)}
+                            style={{ backgroundColor: accentColor }}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-white text-xs font-semibold shadow-xs hover:opacity-95 transition active:scale-[0.98] duration-75"
+                          >
+                            <span>View all {item.label}</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
                       </div>
                     )}
                   </div>
