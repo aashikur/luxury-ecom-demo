@@ -4,11 +4,11 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
-import { StockStatus } from '@/models/Product';
+import { StockStatus, IVariant } from '@/models/Product';
 
 export interface ProductCardProps {
   product: {
-    _id: string;
+    _id: string | any;
     title: string;
     slug: string;
     basePrice: number;
@@ -21,18 +21,7 @@ export interface ProductCardProps {
     totalStock?: number;
     media?: { url: string; key?: string; type?: string }[];
     images?: { url: string; key?: string }[];
-    variants?: {
-      _id?: string;
-      size?: string;
-      stock: number;
-      sku?: string;
-      label?: string;
-      price?: number;
-      discountPrice?: number;
-      stockStatus?: StockStatus;
-      isDefault?: boolean;
-      isActive?: boolean;
-    }[];
+    variants?: (IVariant | any)[];
   };
   accentColor?: string;
   darkSurface?: boolean;

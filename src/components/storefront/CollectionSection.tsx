@@ -3,7 +3,7 @@ import Link from 'next/link';
 import ProductCard from './ProductCard';
 
 interface ProductItem {
-  _id: string;
+  _id: string | any;
   title: string;
   slug: string;
   basePrice: number;

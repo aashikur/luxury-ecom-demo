@@ -209,6 +209,43 @@ export default function SettingsFormClient({
     setConfig({ ...config, headerNavLinks: updated });
   };
 
+  const addSubLink = (parentId: string) => {
+    const label = prompt('Enter Sub-Link Label (e.g. Ramadan Edit):');
+    if (!label || !label.trim()) return;
+    const href = prompt('Enter Sub-Link URL (e.g. /collections/ramadan):');
+    if (!href || !href.trim()) return;
+
+    const updated = (config.headerNavLinks || []).map((l: IHeaderNavLink) => {
+      if (l.id !== parentId) return l;
+      const existingChildren = l.children || [];
+      const newChild: IHeaderNavLink = {
+        id: `sub_${Date.now()}`,
+        label: label.trim(),
+        href: href.trim(),
+        isActive: true,
+        order: existingChildren.length + 1,
+      };
+      return {
+        ...l,
+        children: [...existingChildren, newChild],
+      };
+    });
+    setConfig({ ...config, headerNavLinks: updated });
+    showToast('Sub-link added', 'success');
+  };
+
+  const deleteSubLink = (parentId: string, subId: string) => {
+    const updated = (config.headerNavLinks || []).map((l: IHeaderNavLink) => {
+      if (l.id !== parentId) return l;
+      return {
+        ...l,
+        children: (l.children || []).filter((sub: IHeaderNavLink) => sub.id !== subId),
+      };
+    });
+    setConfig({ ...config, headerNavLinks: updated });
+    showToast('Sub-link removed', 'success');
+  };
+
   const addNavLink = () => {
     if (!newNavLink.label.trim() || !newNavLink.href.trim()) {
       showToast('Please provide both label and URL for the link', 'error');
@@ -875,67 +912,105 @@ export default function SettingsFormClient({
                   .map((link: IHeaderNavLink, idx: number) => (
                     <div
                       key={link.id}
-                      className="p-3 rounded-md border border-slate-200 bg-white flex items-center justify-between gap-4"
+                      className="p-3 rounded-md border border-slate-200 bg-white space-y-2.5"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 rounded bg-slate-100 border border-slate-200 text-[#060d11] text-xs font-bold flex items-center justify-center shrink-0">
-                          {link.order || idx + 1}
-                        </span>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-[#060d11]">{link.label}</span>
-                            {link.badgeText && (
-                              <Badge variant="secondary" className="text-[10px] py-0 px-1.5 uppercase">
-                                {link.badgeText}
-                              </Badge>
-                            )}
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <span className="w-6 h-6 rounded bg-slate-100 border border-slate-200 text-[#060d11] text-xs font-bold flex items-center justify-center shrink-0">
+                            {link.order || idx + 1}
+                          </span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-[#060d11]">{link.label}</span>
+                              {link.badgeText && (
+                                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 uppercase">
+                                  {link.badgeText}
+                                </Badge>
+                              )}
+                            </div>
+                            <span className="text-xs font-mono text-slate-500">{link.href}</span>
                           </div>
-                          <span className="text-xs font-mono text-slate-500">{link.href}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => addSubLink(link.id)}
+                            className="px-2 py-1 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 transition cursor-pointer"
+                          >
+                            + Sub-Link
+                          </button>
+
+                          <div className="flex items-center border border-slate-200 rounded">
+                            <button
+                              type="button"
+                              onClick={() => moveNavLinkOrder(link.id, 'up')}
+                              disabled={idx === 0}
+                              className="p-1.5 text-slate-500 hover:text-[#060d11] disabled:opacity-30 cursor-pointer"
+                            >
+                              <ChevronUp className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveNavLinkOrder(link.id, 'down')}
+                              disabled={idx === config.headerNavLinks.length - 1}
+                              className="p-1.5 text-slate-500 hover:text-[#060d11] disabled:opacity-30 cursor-pointer border-l border-slate-200"
+                            >
+                              <ChevronDown className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleNavLink(link.id)}
+                            className="text-xs h-8 px-2"
+                          >
+                            {link.isActive ? (
+                              <Eye className="w-3.5 h-3.5 text-[#076E46]" />
+                            ) : (
+                              <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                            )}
+                          </Button>
+
+                          <button
+                            type="button"
+                            onClick={() => deleteNavLink(link.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center border border-slate-200 rounded">
-                          <button
-                            type="button"
-                            onClick={() => moveNavLinkOrder(link.id, 'up')}
-                            disabled={idx === 0}
-                            className="p-1.5 text-slate-500 hover:text-[#060d11] disabled:opacity-30 cursor-pointer"
-                          >
-                            <ChevronUp className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => moveNavLinkOrder(link.id, 'down')}
-                            disabled={idx === config.headerNavLinks.length - 1}
-                            className="p-1.5 text-slate-500 hover:text-[#060d11] disabled:opacity-30 cursor-pointer border-l border-slate-200"
-                          >
-                            <ChevronDown className="w-4 h-4" />
-                          </button>
+                      {/* Nested Sub-Links */}
+                      {link.children && link.children.length > 0 && (
+                        <div className="pl-9 pt-2 space-y-1.5 border-t border-slate-100">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Nested Sub-Links ({link.children.length})
+                          </span>
+                          {link.children.map((sub: IHeaderNavLink) => (
+                            <div
+                              key={sub.id}
+                              className="flex items-center justify-between py-1 px-2.5 rounded bg-slate-50 border border-slate-200 text-xs"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-slate-800">↳ {sub.label}</span>
+                                <span className="text-slate-400 font-mono text-[11px]">{sub.href}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => deleteSubLink(link.id, sub.id)}
+                                className="text-slate-400 hover:text-rose-600 transition p-0.5 cursor-pointer"
+                                title="Delete sub-link"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
                         </div>
-
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => toggleNavLink(link.id)}
-                          className="text-xs h-8 px-2"
-                        >
-                          {link.isActive ? (
-                            <Eye className="w-3.5 h-3.5 text-[#076E46]" />
-                          ) : (
-                            <EyeOff className="w-3.5 h-3.5 text-slate-400" />
-                          )}
-                        </Button>
-
-                        <button
-                          type="button"
-                          onClick={() => deleteNavLink(link.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 transition cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      )}
                     </div>
                   ))
               )}

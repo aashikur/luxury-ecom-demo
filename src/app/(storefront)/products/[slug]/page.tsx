@@ -3,13 +3,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getPublicStoreConfig } from '@/services/config.service';
 import { getProductBySlug, getProductsList } from '@/services/product.service';
-import { getCategoriesTree } from '@/services/category.service';
-import { getActiveCollections } from '@/services/collection.service';
-import TopBar from '@/components/storefront/TopBar';
-import Navbar from '@/components/storefront/Navbar';
 import ProductDetailView from '@/components/storefront/ProductDetailView';
-import CartDrawer from '@/components/storefront/CartDrawer';
-import Footer from '@/components/storefront/Footer';
 
 // Incremental Static Regeneration (ISR) - 60s fallback window paired with dual cache invalidation (Rule #7 & #21)
 export const revalidate = 60;
@@ -68,11 +62,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
 
   // Zero-Waterfall Concurrent Domain Service Queries
-  const [config, product, categoryTree, collections] = await Promise.all([
+  const [config, product] = await Promise.all([
     getPublicStoreConfig(),
     getProductBySlug(slug),
-    getCategoriesTree(),
-    getActiveCollections(),
   ]);
 
   if (!product || !product.isActive) {
@@ -105,17 +97,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
     outsideDhakaFee: config?.logistics?.outsideDhakaFee ?? 130,
   };
 
-  // Map category tree to Navbar category item structure
-  const navCategories = categoryTree.map((cat) => ({
-    id: cat._id,
-    title: cat.name,
-    slug: cat.slug,
-    subcategories: cat.children?.map((child) => ({
-      title: child.name,
-      slug: child.slug,
-    })) || [],
-  }));
-
   // Structured Data (Schema.org JSON-LD) for Google Merchant & Rich Snippets
   const priceBDT = product.discountPrice ?? product.basePrice;
   const primaryImage = product.media?.[0]?.url || '';
@@ -142,60 +123,22 @@ export default async function ProductPage({ params }: ProductPageProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-zinc-900">
+    <main>
       {/* Schema.org Structured Data */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* 1. Top Bar */}
-      <TopBar
-        tagline={branding.tagline}
-        freeShippingThreshold={logistics.freeShippingThreshold}
-        supportPhone={logistics.supportPhone}
-      />
-
-      {/* 2. Dynamic Navbar */}
-      <Navbar
-        storeName={branding.storeName}
+      {/* Interactive Detail View */}
+      <ProductDetailView
+        product={product}
+        relatedProducts={relatedProducts}
         accentColor={branding.colors?.accent || '#B8860B'}
-        categories={navCategories}
-        collections={collections}
-        navLinks={config?.headerNavLinks}
-      />
-
-      {/* 3. Interactive Detail View */}
-      <main className="flex-1">
-        <ProductDetailView
-          product={product}
-          relatedProducts={relatedProducts}
-          accentColor={branding.colors?.accent || '#B8860B'}
-          insideDhakaFee={logistics.insideDhakaFee}
-          outsideDhakaFee={logistics.outsideDhakaFee}
-          showroomAddress={logistics.showroomAddress}
-        />
-      </main>
-
-      {/* 4. Slide-Over COD Checkout Drawer */}
-      <CartDrawer
         insideDhakaFee={logistics.insideDhakaFee}
-        dhakaSuburbsFee={logistics.dhakaSuburbsFee}
         outsideDhakaFee={logistics.outsideDhakaFee}
-        freeShippingThreshold={logistics.freeShippingThreshold}
-        manualBkashNumber={config?.payment?.manualBkash?.walletNumber || logistics.supportPhone}
-        accentColor={branding.colors?.accent}
-      />
-
-      {/* 5. Luxury Footer */}
-      <Footer
-        storeName={branding.storeName}
-        tagline={branding.tagline}
         showroomAddress={logistics.showroomAddress}
-        supportPhone={logistics.supportPhone}
-        whatsappNumber={logistics.whatsappNumber}
-        accentColor={branding.colors?.accent}
       />
-    </div>
+    </main>
   );
 }

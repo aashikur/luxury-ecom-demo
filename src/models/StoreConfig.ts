@@ -38,6 +38,7 @@ export interface IHeaderNavLink {
   badgeText?: string;
   isActive: boolean;
   order: number;
+  children?: IHeaderNavLink[];
 }
 
 export interface IStoreConfig extends Document {
@@ -316,6 +317,16 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
         badgeText: { type: String },
         isActive: { type: Boolean, default: true },
         order: { type: Number, default: 0 },
+        children: [
+          {
+            id: { type: String, required: true },
+            label: { type: String, required: true },
+            href: { type: String, required: true },
+            badgeText: { type: String },
+            isActive: { type: Boolean, default: true },
+            order: { type: Number, default: 0 },
+          },
+        ],
       },
     ],
     logistics: {
