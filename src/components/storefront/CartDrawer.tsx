@@ -1,7 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Minus, Plus, ShoppingBag, Check, Copy, Tag, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import {
+  X,
+  Minus,
+  Plus,
+  ShoppingBag,
+  Check,
+  Copy,
+  Tag,
+  AlertCircle,
+  ArrowRight,
+  Truck,
+  ShieldCheck,
+} from 'lucide-react';
 import { useCart, getCartItemKey } from '@/context/CartContext';
 
 interface CartDrawerProps {
@@ -11,6 +24,7 @@ interface CartDrawerProps {
   freeShippingThreshold?: number;
   manualBkashNumber?: string;
   accentColor?: string;
+  smartCheckoutEnabled?: boolean;
 }
 
 interface AppliedCoupon {
@@ -27,6 +41,7 @@ export default function CartDrawer({
   freeShippingThreshold = 2500,
   manualBkashNumber = '01700000000',
   accentColor = '#B8860B',
+  smartCheckoutEnabled = true,
 }: CartDrawerProps) {
   const { cart, isCartOpen, setIsCartOpen, updateQuantity, clearCart, subtotal } =
     useCart();
@@ -46,7 +61,7 @@ export default function CartDrawer({
 
   const [copiedPhone, setCopiedPhone] = useState(false);
 
-  // Recipient form state
+  // Recipient form state (used for smartCheckoutEnabled = true mode)
   const [customerForm, setCustomerForm] = useState({
     name: '',
     phone: '',
@@ -123,14 +138,13 @@ export default function CartDrawer({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: cleanCode,
-          subtotal,
-          customerPhone: customerForm.phone.trim(),
+          cartTotal: subtotal,
         }),
       });
 
       const data = await res.json();
 
-      if (data.success && data.data) {
+      if (data.success && data.data?.valid) {
         setAppliedCoupon({
           code: data.data.code,
           discountAmount: data.data.discountAmount,
@@ -139,10 +153,10 @@ export default function CartDrawer({
         });
         setCouponCodeInput('');
       } else {
-        setCouponError(data.error || 'Invalid or expired promo code.');
+        setCouponError(data.error || data.data?.message || 'Invalid or expired promo code');
       }
     } catch {
-      setCouponError('Failed to validate promo code. Please try again.');
+      setCouponError('Network error validating coupon');
     } finally {
       setIsApplyingCoupon(false);
     }
@@ -153,7 +167,7 @@ export default function CartDrawer({
     setCouponError(null);
   };
 
-  // Place order
+  // In-Drawer Place order (for smartCheckoutEnabled = true mode)
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -223,19 +237,18 @@ export default function CartDrawer({
 
         setOrderSuccess({
           orderId: data.data.orderNumber,
-          consignmentId: data.data.courier?.consignmentId || 'SF-PENDING',
-          total: data.data.financials?.totalAmount ?? grandTotal,
+          consignmentId: data.data.consignmentId || 'Generated on Pickup',
+          total: data.data.totalAmount,
           zone: zoneLabel,
           eta,
         });
+
         clearCart();
-        setAppliedCoupon(null);
       } else {
-        alert(data.error || 'Failed to place order.');
+        alert(data.error || 'Failed to place order. Please try again.');
       }
-    } catch (err) {
-      console.error(err);
-      alert('Network error while placing order. Please try again.');
+    } catch {
+      alert('An error occurred. Please check your network and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -244,386 +257,482 @@ export default function CartDrawer({
   if (!isCartOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-xs">
-      <div className="w-full max-w-md bg-white text-zinc-900 h-full flex flex-col justify-between shadow-2xl">
-        {/* Drawer Header */}
-        <div className="p-5 border-b border-zinc-200 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-bold uppercase tracking-widest text-zinc-950">
-              Shopping Bag & Checkout
-            </h2>
-            <p className="text-[11px] text-zinc-500 mt-0.5">
-              Free Shipping over ৳{freeShippingThreshold.toLocaleString()}
-            </p>
+    <div className="fixed inset-0 z-50 overflow-hidden">
+      {/* Backdrop */}
+      <div
+        onClick={() => setIsCartOpen(false)}
+        className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+      />
+
+      {/* Slide-Over Panel */}
+      <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
+        <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between">
+          {/* Header */}
+          <div className="p-5 border-b border-zinc-200 flex items-center justify-between bg-zinc-50">
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="w-5 h-5 text-zinc-900" />
+              <h2 className="text-sm font-bold uppercase tracking-widest text-zinc-950">
+                Your Shopping Bag
+              </h2>
+              <span className="text-xs text-zinc-500 font-semibold">
+                ({cart.reduce((sum, item) => sum + item.quantity, 0)})
+              </span>
+            </div>
+            <button
+              onClick={() => setIsCartOpen(false)}
+              className="p-1.5 text-zinc-400 hover:text-zinc-950 transition cursor-pointer"
+              aria-label="Close Shopping Bag"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={() => {
-              setIsCartOpen(false);
-              setOrderSuccess(null);
-            }}
-            className="p-2 text-zinc-400 hover:text-zinc-900 cursor-pointer transition"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
 
-        {/* Drawer Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-6">
-          {orderSuccess ? (
-            /* Order Confirmed View */
-            <div className="p-6 border border-zinc-200 bg-zinc-50 text-center space-y-4">
-              <div
-                style={{ backgroundColor: accentColor }}
-                className="w-10 h-10 rounded-full text-white flex items-center justify-center mx-auto"
-              >
-                <Check className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-bold uppercase text-zinc-950">Order Confirmed</h3>
-              <div className="text-xs space-y-2 text-left bg-white p-4 border border-zinc-200">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Order ID:</span>
-                  <span className="font-bold text-zinc-900 font-mono">{orderSuccess.orderId}</span>
+          {/* Drawer Body */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            {orderSuccess ? (
+              /* Success Screen */
+              <div className="py-8 text-center space-y-4">
+                <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+                  <Check className="w-6 h-6" />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Steadfast ID:</span>
-                  <span className="font-mono text-zinc-800">{orderSuccess.consignmentId}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Delivery Zone:</span>
-                  <span className="text-zinc-800">
-                    {orderSuccess.zone} ({orderSuccess.eta})
-                  </span>
-                </div>
-                <div className="flex justify-between pt-2 border-t border-zinc-100">
-                  <span className="text-zinc-500">Total Payable:</span>
-                  <span className="font-bold text-zinc-950">
-                    ৳{orderSuccess.total.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setOrderSuccess(null);
-                  setIsCartOpen(false);
-                }}
-                className="w-full py-3 bg-zinc-950 text-white text-xs font-bold uppercase tracking-widest cursor-pointer hover:bg-zinc-800 transition"
-              >
-                Continue Shopping
-              </button>
-            </div>
-          ) : cart.length === 0 ? (
-            /* Empty Bag */
-            <div className="py-20 text-center space-y-3">
-              <ShoppingBag className="w-8 h-8 text-zinc-300 mx-auto" />
-              <p className="text-xs text-zinc-400">Your shopping bag is currently empty.</p>
-              <button
-                onClick={() => setIsCartOpen(false)}
-                style={{ backgroundColor: accentColor }}
-                className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-white mt-2 cursor-pointer hover:opacity-90 transition"
-              >
-                Discover Collection
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Line Items */}
-              <div className="divide-y divide-zinc-200">
-                {cart.map((item) => {
-                  const itemKey = getCartItemKey(item);
-                  return (
-                    <div
-                      key={itemKey}
-                      className="py-3.5 flex items-center gap-3.5"
-                    >
-                      <img
-                        src={item.image || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80'}
-                        alt={item.title}
-                        className="w-16 h-20 object-cover bg-zinc-100 shrink-0 border border-zinc-100"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-xs font-bold text-zinc-900 truncate">
-                          {item.title}
-                        </h4>
-                        {(item.variantLabel || item.size) && (
-                          <p className="text-[11px] text-zinc-500 mt-0.5">
-                            {item.variantLabel || `Size: ${item.size}`}
-                          </p>
-                        )}
-                        {item.modifiers && item.modifiers.length > 0 && (
-                          <p className="text-[10px] text-zinc-400 mt-0.5 italic">
-                            + {item.modifiers.map((m) => m.label).join(', ')}
-                          </p>
-                        )}
-                        <p
-                          style={{ color: accentColor }}
-                          className="text-xs font-bold mt-1"
-                        >
-                          {(item.price * item.quantity).toLocaleString()}৳
-                        </p>
-                      </div>
-                      {/* Quantity Stepper */}
-                      <div className="flex items-center border border-zinc-200 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.productId, itemKey, -1)}
-                          className="p-1.5 text-zinc-500 hover:text-zinc-950 cursor-pointer"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="w-6 text-center text-xs font-semibold">
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.productId, itemKey, 1)}
-                          className="p-1.5 text-zinc-500 hover:text-zinc-950 cursor-pointer"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                <h3 className="text-base font-bold uppercase tracking-widest text-zinc-950">
+                  Consignment Booked!
+                </h3>
+                <p className="text-xs text-zinc-500 max-w-xs mx-auto">
+                  Thank you! Your order has been placed into our vault for verification and courier dispatch.
+                </p>
 
-              {/* 3-Zone Delivery Area Selector */}
-              <div className="space-y-2">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-                  Select Delivery Zone
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDeliveryZone('INSIDE_DHAKA')}
-                    className={`p-2.5 border text-left text-xs cursor-pointer transition ${
-                      deliveryZone === 'INSIDE_DHAKA'
-                        ? 'border-zinc-950 bg-zinc-50 font-bold'
-                        : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
-                    }`}
-                  >
-                    <span className="block font-semibold">Inside Dhaka</span>
-                    <span className="block text-[11px] font-bold text-zinc-900 mt-0.5">৳{insideDhakaFee}</span>
-                    <span className="block text-[9px] text-zinc-400 font-normal">24-48 Hours</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setDeliveryZone('DHAKA_SUBURBS')}
-                    className={`p-2.5 border text-left text-xs cursor-pointer transition ${
-                      deliveryZone === 'DHAKA_SUBURBS'
-                        ? 'border-zinc-950 bg-zinc-50 font-bold'
-                        : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
-                    }`}
-                  >
-                    <span className="block font-semibold">Suburbs</span>
-                    <span className="block text-[11px] font-bold text-zinc-900 mt-0.5">৳{dhakaSuburbsFee}</span>
-                    <span className="block text-[9px] text-zinc-400 font-normal">2-3 Days</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setDeliveryZone('OUTSIDE_DHAKA')}
-                    className={`p-2.5 border text-left text-xs cursor-pointer transition ${
-                      deliveryZone === 'OUTSIDE_DHAKA'
-                        ? 'border-zinc-950 bg-zinc-50 font-bold'
-                        : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
-                    }`}
-                  >
-                    <span className="block font-semibold">Outside Dhaka</span>
-                    <span className="block text-[11px] font-bold text-zinc-900 mt-0.5">৳{outsideDhakaFee}</span>
-                    <span className="block text-[9px] text-zinc-400 font-normal">3-5 Days</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Coupon / Promo Code Box */}
-              <div className="space-y-2 pt-1 border-t border-zinc-100">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-                  Promo / Coupon Code
-                </label>
-                {appliedCoupon ? (
-                  <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs">
-                    <div className="flex items-center gap-2">
-                      <Tag className="w-3.5 h-3.5 text-emerald-700" />
-                      <span className="font-mono font-bold">{appliedCoupon.code}</span>
-                      <span>(-৳{appliedCoupon.discountAmount.toLocaleString()})</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleRemoveCoupon}
-                      className="text-xs text-red-600 font-bold hover:underline cursor-pointer"
-                    >
-                      Remove
-                    </button>
+                <div className="p-4 bg-zinc-50 border border-zinc-200 text-left text-xs space-y-2 font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Order ID:</span>
+                    <span className="font-bold text-zinc-950">{orderSuccess.orderId}</span>
                   </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Enter promo code"
-                      value={couponCodeInput}
-                      onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
-                      className="flex-1 px-3 py-2 border border-zinc-300 font-mono text-xs uppercase focus:outline-none focus:border-zinc-950"
-                    />
-                    <button
-                      type="button"
-                      disabled={isApplyingCoupon || !couponCodeInput.trim()}
-                      onClick={handleApplyCoupon}
-                      className="px-4 py-2 bg-zinc-950 text-white text-xs font-bold uppercase tracking-wider hover:bg-zinc-800 transition disabled:opacity-50 cursor-pointer"
-                    >
-                      {isApplyingCoupon ? 'Verifying...' : 'Apply'}
-                    </button>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Consignment:</span>
+                    <span className="text-zinc-900">{orderSuccess.consignmentId}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Delivery Zone:</span>
+                    <span className="text-zinc-900">{orderSuccess.zone}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Estimated Delivery:</span>
+                    <span className="text-zinc-900 font-sans">{orderSuccess.eta}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-zinc-200 pt-2 font-bold text-zinc-950">
+                    <span>Payable (COD):</span>
+                    <span>৳{orderSuccess.total.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 space-y-2">
+                  <Link
+                    href={`/track-order?orderNumber=${encodeURIComponent(orderSuccess.orderId)}`}
+                    onClick={() => {
+                      setIsCartOpen(false);
+                      setOrderSuccess(null);
+                    }}
+                    style={{ backgroundColor: accentColor }}
+                    className="w-full py-3 text-white text-xs font-bold uppercase tracking-widest cursor-pointer hover:opacity-95 transition flex items-center justify-center gap-1.5"
+                  >
+                    <span>Track Live Dispatch</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+
+                  <button
+                    onClick={() => {
+                      setIsCartOpen(false);
+                      setOrderSuccess(null);
+                    }}
+                    className="w-full py-2.5 bg-zinc-100 text-zinc-800 text-xs font-bold uppercase tracking-widest cursor-pointer hover:bg-zinc-200 transition"
+                  >
+                    Continue Browsing
+                  </button>
+                </div>
+              </div>
+            ) : cart.length === 0 ? (
+              /* Empty Bag */
+              <div className="py-20 text-center space-y-3">
+                <ShoppingBag className="w-8 h-8 text-zinc-300 mx-auto" />
+                <p className="text-xs text-zinc-400">Your shopping bag is currently empty.</p>
+                <button
+                  onClick={() => setIsCartOpen(false)}
+                  style={{ backgroundColor: accentColor }}
+                  className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-white mt-2 cursor-pointer hover:opacity-90 transition active:scale-[0.98] duration-75"
+                >
+                  Discover Collection
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Free Shipping Progress Meter (Image 1 Style) */}
+                {freeShippingThreshold > 0 && (
+                  <div className="p-3 bg-zinc-50 border border-zinc-200/90 rounded text-xs">
+                    {subtotal >= freeShippingThreshold ? (
+                      <div className="flex items-center gap-2 text-emerald-800 font-semibold">
+                        <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>You unlocked FREE Express Delivery!</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-zinc-700">
+                          <span className="flex items-center gap-1.5 font-medium">
+                            <Truck className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                            <span>
+                              Add <strong className="text-zinc-950 font-bold">৳{(freeShippingThreshold - subtotal).toLocaleString()}</strong> for Free Delivery
+                            </span>
+                          </span>
+                          <span className="text-[10px] text-zinc-400 font-mono">
+                            {Math.round((subtotal / freeShippingThreshold) * 100)}%
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-zinc-200 rounded-full overflow-hidden">
+                          <div
+                            style={{
+                              backgroundColor: accentColor,
+                              width: `${Math.min(100, (subtotal / freeShippingThreshold) * 100)}%`,
+                            }}
+                            className="h-full transition-all duration-300"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
-                {couponError && (
-                  <p className="text-[11px] text-red-600 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    <span>{couponError}</span>
-                  </p>
-                )}
-              </div>
 
-              {/* 3-Field Guest Recipient Details */}
-              <form id="checkout-form" onSubmit={handlePlaceOrder} className="space-y-2.5 pt-1 border-t border-zinc-100">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-                  Recipient Details (3-Field Guest Checkout)
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Full Name"
-                  value={customerForm.name}
-                  onChange={(e) =>
-                    setCustomerForm((p) => ({ ...p, name: e.target.value }))
-                  }
-                  className="w-full px-3.5 py-2.5 border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 bg-white"
-                />
-                <input
-                  type="tel"
-                  required
-                  placeholder="11-Digit Mobile (017XXXXXXXX)"
-                  value={customerForm.phone}
-                  onBlur={handlePhoneBlur}
-                  onChange={(e) =>
-                    setCustomerForm((p) => ({ ...p, phone: e.target.value }))
-                  }
-                  className="w-full px-3.5 py-2.5 border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 bg-white"
-                />
-                <textarea
-                  rows={2}
-                  required
-                  placeholder="Delivery Address (House, Road, Area, City)"
-                  value={customerForm.address}
-                  onChange={(e) =>
-                    setCustomerForm((p) => ({ ...p, address: e.target.value }))
-                  }
-                  className="w-full px-3.5 py-2.5 border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 bg-white"
-                />
-
-                {/* Payment Method Selector */}
-                <div className="space-y-2 pt-1">
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-                    Payment Method
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('COD')}
-                      className={`py-2.5 px-2 border text-[11px] font-bold cursor-pointer transition ${
-                        paymentMethod === 'COD'
-                          ? 'border-zinc-950 bg-zinc-950 text-white'
-                          : 'border-zinc-200 text-zinc-700 hover:border-zinc-400'
-                      }`}
-                    >
-                      Cash on Delivery
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('MANUAL_BKASH')}
-                      className={`py-2.5 px-2 border text-[11px] font-bold cursor-pointer transition ${
-                        paymentMethod === 'MANUAL_BKASH'
-                          ? 'border-pink-600 bg-pink-600 text-white'
-                          : 'border-zinc-200 text-zinc-700 hover:border-zinc-400'
-                      }`}
-                    >
-                      bKash Send Money
-                    </button>
-                  </div>
-
-                  {paymentMethod === 'MANUAL_BKASH' && (
-                    <div className="p-3 bg-zinc-50 border border-zinc-200 space-y-2 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-zinc-500">bKash Personal/Merchant:</span>
-                        <button
-                          type="button"
-                          onClick={copyBkashNumber}
-                          className="inline-flex items-center gap-1 font-mono font-bold text-zinc-900 cursor-pointer"
-                        >
-                          <span>{manualBkashNumber}</span>
-                          {copiedPhone ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-600" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                {/* Line Items List */}
+                <div className="divide-y divide-zinc-200">
+                  {cart.map((item) => {
+                    const itemKey = getCartItemKey(item);
+                    return (
+                      <div
+                        key={itemKey}
+                        className="py-3.5 flex items-center gap-3.5"
+                      >
+                        <img
+                          src={item.image || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80'}
+                          alt={item.title}
+                          className="w-16 h-20 object-cover bg-zinc-100 shrink-0 border border-zinc-100 rounded"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-xs font-bold text-zinc-900 truncate">
+                            {item.title}
+                          </h4>
+                          {(item.variantLabel || item.size) && (
+                            <p className="text-[11px] text-zinc-500 mt-0.5 truncate">
+                              {item.variantLabel || `Size: ${item.size}`}
+                            </p>
                           )}
+                          <p className="text-xs font-mono font-bold text-zinc-950 mt-1">
+                            {item.price.toLocaleString()}৳
+                          </p>
+                        </div>
+                        <div className="flex items-center border border-zinc-200 rounded shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.productId, item.variantId || item.size || '', -1)}
+                            className="p-1.5 text-zinc-500 hover:text-zinc-950 transition cursor-pointer"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="w-7 text-center text-xs font-bold font-mono">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.productId, item.variantId || item.size || '', 1)}
+                            className="p-1.5 text-zinc-500 hover:text-zinc-950 transition cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* In-Drawer Quick Checkout Form (ONLY rendered when smartCheckoutEnabled === true) */}
+                {smartCheckoutEnabled && (
+                  <div className="space-y-4 pt-2 border-t border-zinc-200">
+                    {/* 3-Zone Delivery Area Selector */}
+                    <div className="space-y-2">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                        Select Delivery Zone
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryZone('INSIDE_DHAKA')}
+                          className={`p-2.5 border text-left text-xs cursor-pointer transition ${
+                            deliveryZone === 'INSIDE_DHAKA'
+                              ? 'border-zinc-950 bg-zinc-50 font-bold'
+                              : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
+                          }`}
+                        >
+                          <span className="block font-semibold">Inside Dhaka</span>
+                          <span className="block text-[11px] font-bold text-zinc-900 mt-0.5">৳{insideDhakaFee}</span>
+                          <span className="block text-[9px] text-zinc-400 font-normal">24-48 Hours</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryZone('DHAKA_SUBURBS')}
+                          className={`p-2.5 border text-left text-xs cursor-pointer transition ${
+                            deliveryZone === 'DHAKA_SUBURBS'
+                              ? 'border-zinc-950 bg-zinc-50 font-bold'
+                              : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
+                          }`}
+                        >
+                          <span className="block font-semibold">Suburbs</span>
+                          <span className="block text-[11px] font-bold text-zinc-900 mt-0.5">৳{dhakaSuburbsFee}</span>
+                          <span className="block text-[9px] text-zinc-400 font-normal">2-3 Days</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryZone('OUTSIDE_DHAKA')}
+                          className={`p-2.5 border text-left text-xs cursor-pointer transition ${
+                            deliveryZone === 'OUTSIDE_DHAKA'
+                              ? 'border-zinc-950 bg-zinc-50 font-bold'
+                              : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
+                          }`}
+                        >
+                          <span className="block font-semibold">Outside Dhaka</span>
+                          <span className="block text-[11px] font-bold text-zinc-900 mt-0.5">৳{outsideDhakaFee}</span>
+                          <span className="block text-[9px] text-zinc-400 font-normal">3-5 Days</span>
                         </button>
                       </div>
+                    </div>
+
+                    {/* Coupon / Promo Code Box */}
+                    <div className="space-y-2 pt-1 border-t border-zinc-100">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                        Promo / Coupon Code
+                      </label>
+                      {appliedCoupon ? (
+                        <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs">
+                          <div className="flex items-center gap-2">
+                            <Tag className="w-3.5 h-3.5 text-emerald-700" />
+                            <span className="font-mono font-bold">{appliedCoupon.code}</span>
+                            <span>(-৳{appliedCoupon.discountAmount.toLocaleString()})</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleRemoveCoupon}
+                            className="text-xs text-red-600 font-bold hover:underline cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Enter promo code"
+                            value={couponCodeInput}
+                            onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                            className="flex-1 px-3 py-2 border border-zinc-300 font-mono text-xs uppercase focus:outline-none focus:border-zinc-950"
+                          />
+                          <button
+                            type="button"
+                            disabled={isApplyingCoupon || !couponCodeInput.trim()}
+                            onClick={handleApplyCoupon}
+                            className="px-4 py-2 bg-zinc-950 text-white text-xs font-bold uppercase tracking-wider hover:bg-zinc-800 transition disabled:opacity-50 cursor-pointer"
+                          >
+                            {isApplyingCoupon ? 'Verifying...' : 'Apply'}
+                          </button>
+                        </div>
+                      )}
+                      {couponError && (
+                        <p className="text-[11px] text-red-600 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>{couponError}</span>
+                        </p>
+                      )}
+                    </div>
+
+                    {/* 3-Field Guest Recipient Details */}
+                    <form id="checkout-form" onSubmit={handlePlaceOrder} className="space-y-2.5 pt-1 border-t border-zinc-100">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                        Recipient Details (3-Field Guest Checkout)
+                      </label>
                       <input
                         type="text"
                         required
-                        placeholder="Enter 10-character TrxID (e.g. BL9A7X92Q)"
-                        value={customerForm.trxId}
+                        placeholder="Full Name"
+                        value={customerForm.name}
                         onChange={(e) =>
-                          setCustomerForm((p) => ({
-                            ...p,
-                            trxId: e.target.value.toUpperCase(),
-                          }))
+                          setCustomerForm((p) => ({ ...p, name: e.target.value }))
                         }
-                        className="w-full px-3 py-2 bg-white border border-zinc-300 font-mono text-xs uppercase focus:outline-none focus:border-zinc-900"
+                        className="w-full px-3.5 py-2.5 border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 bg-white"
                       />
+                      <input
+                        type="tel"
+                        required
+                        placeholder="11-Digit Mobile (017XXXXXXXX)"
+                        value={customerForm.phone}
+                        onBlur={handlePhoneBlur}
+                        onChange={(e) =>
+                          setCustomerForm((p) => ({ ...p, phone: e.target.value }))
+                        }
+                        className="w-full px-3.5 py-2.5 border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 bg-white"
+                      />
+                      <textarea
+                        rows={2}
+                        required
+                        placeholder="Delivery Address (House, Road, Area, City)"
+                        value={customerForm.address}
+                        onChange={(e) =>
+                          setCustomerForm((p) => ({ ...p, address: e.target.value }))
+                        }
+                        className="w-full px-3.5 py-2.5 border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 bg-white"
+                      />
+
+                      {/* Payment Method Selector */}
+                      <div className="space-y-2 pt-1">
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                          Payment Method
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMethod('COD')}
+                            className={`py-2.5 px-2 border text-[11px] font-bold cursor-pointer transition ${
+                              paymentMethod === 'COD'
+                                ? 'border-zinc-950 bg-zinc-950 text-white'
+                                : 'border-zinc-200 text-zinc-700 hover:border-zinc-400'
+                            }`}
+                          >
+                            Cash on Delivery
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMethod('MANUAL_BKASH')}
+                            className={`py-2.5 px-2 border text-[11px] font-bold cursor-pointer transition ${
+                              paymentMethod === 'MANUAL_BKASH'
+                                ? 'border-pink-600 bg-pink-600 text-white'
+                                : 'border-zinc-200 text-zinc-700 hover:border-zinc-400'
+                            }`}
+                          >
+                            bKash Send Money
+                          </button>
+                        </div>
+
+                        {paymentMethod === 'MANUAL_BKASH' && (
+                          <div className="p-3 bg-zinc-50 border border-zinc-200 space-y-2 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="text-zinc-500">bKash Personal/Merchant:</span>
+                              <button
+                                type="button"
+                                onClick={copyBkashNumber}
+                                className="inline-flex items-center gap-1 font-mono font-bold text-zinc-900 cursor-pointer"
+                              >
+                                <span>{manualBkashNumber}</span>
+                                {copiedPhone ? (
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                                )}
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              required
+                              placeholder="Enter 10-character TrxID (e.g. BL9A7X92Q)"
+                              value={customerForm.trxId}
+                              onChange={(e) =>
+                                setCustomerForm((p) => ({
+                                  ...p,
+                                  trxId: e.target.value.toUpperCase(),
+                                }))
+                              }
+                              className="w-full px-3 py-2 bg-white border border-zinc-300 font-mono text-xs uppercase focus:outline-none focus:border-zinc-900"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </form>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Footer Actions */}
+          {!orderSuccess && cart.length > 0 && (
+            <div className="p-5 border-t border-zinc-200 bg-zinc-50 space-y-3">
+              {smartCheckoutEnabled ? (
+                /* Mode 1: Fast In-Drawer Checkout Footer */
+                <>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between text-zinc-500">
+                      <span>Subtotal</span>
+                      <span>{subtotal.toLocaleString()}৳</span>
                     </div>
-                  )}
-                </div>
-              </form>
-            </>
+                    {appliedCoupon && (
+                      <div className="flex justify-between text-emerald-600 font-medium">
+                        <span>Discount ({appliedCoupon.code})</span>
+                        <span>-৳{appliedCoupon.discountAmount.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-zinc-500">
+                      <span>Delivery ({deliveryZone === 'INSIDE_DHAKA' ? 'Inside' : deliveryZone === 'DHAKA_SUBURBS' ? 'Suburbs' : 'Outside'})</span>
+                      <span>{isFreeShipping ? 'FREE' : `${deliveryFee}৳`}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-bold text-zinc-900 pt-2 border-t border-zinc-200">
+                      <span>Total Payable</span>
+                      <span>{grandTotal.toLocaleString()}৳</span>
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    form="checkout-form"
+                    disabled={isSubmitting}
+                    style={{ backgroundColor: accentColor }}
+                    className="w-full py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white cursor-pointer hover:opacity-95 transition disabled:opacity-50"
+                  >
+                    {isSubmitting
+                      ? 'PLACING ORDER...'
+                      : `CONFIRM ORDER • ${grandTotal.toLocaleString()}৳`}
+                  </button>
+                </>
+              ) : (
+                /* Mode 2: Dedicated /checkout Page Gateway (Image 1 & 2 Style) */
+                <>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between text-zinc-700 font-medium">
+                      <span>Subtotal</span>
+                      <span className="font-bold text-zinc-950 font-mono text-sm">
+                        ৳{subtotal.toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400">
+                      Delivery fees and promo discounts calculated at checkout
+                    </p>
+                  </div>
+
+                  <Link
+                    href="/checkout"
+                    onClick={() => setIsCartOpen(false)}
+                    style={{ backgroundColor: accentColor }}
+                    className="w-full py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white cursor-pointer hover:opacity-95 transition flex items-center justify-center gap-2 shadow-xs active:scale-[0.98] duration-75 text-center"
+                  >
+                    <span>CONTINUE TO CHECKOUT</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCartOpen(false)}
+                    className="w-full text-center text-xs font-semibold text-zinc-500 hover:text-zinc-900 transition py-1 cursor-pointer uppercase tracking-wider"
+                  >
+                    Continue Shopping
+                  </button>
+                </>
+              )}
+            </div>
           )}
         </div>
-
-        {/* Footer Totals & Action */}
-        {!orderSuccess && cart.length > 0 && (
-          <div className="p-5 border-t border-zinc-200 bg-zinc-50 space-y-3">
-            <div className="space-y-1 text-xs">
-              <div className="flex justify-between text-zinc-500">
-                <span>Subtotal</span>
-                <span>{subtotal.toLocaleString()}৳</span>
-              </div>
-              {appliedCoupon && (
-                <div className="flex justify-between text-emerald-600 font-medium">
-                  <span>Discount ({appliedCoupon.code})</span>
-                  <span>-৳{appliedCoupon.discountAmount.toLocaleString()}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-zinc-500">
-                <span>Delivery ({deliveryZone === 'INSIDE_DHAKA' ? 'Inside' : deliveryZone === 'DHAKA_SUBURBS' ? 'Suburbs' : 'Outside'})</span>
-                <span>{isFreeShipping ? 'FREE' : `${deliveryFee}৳`}</span>
-              </div>
-              <div className="flex justify-between text-sm font-bold text-zinc-900 pt-2 border-t border-zinc-200">
-                <span>Total Payable</span>
-                <span>{grandTotal.toLocaleString()}৳</span>
-              </div>
-            </div>
-            <button
-              type="submit"
-              form="checkout-form"
-              disabled={isSubmitting}
-              style={{ backgroundColor: accentColor }}
-              className="w-full py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white cursor-pointer hover:opacity-95 transition disabled:opacity-50"
-            >
-              {isSubmitting
-                ? 'PLACING ORDER...'
-                : `CONFIRM ORDER • ${grandTotal.toLocaleString()}৳`}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

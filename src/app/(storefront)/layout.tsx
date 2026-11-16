@@ -83,6 +83,7 @@ export default async function StorefrontLayout({
         freeShippingThreshold={logistics.freeShippingThreshold}
         manualBkashNumber={config?.payment?.manualBkash?.walletNumber || logistics.supportPhone}
         accentColor={branding.colors?.accent}
+        smartCheckoutEnabled={config?.features?.smartCheckoutEnabled ?? true}
       />
 
       {/* 5. Luxury High-Contrast Black Footer */}

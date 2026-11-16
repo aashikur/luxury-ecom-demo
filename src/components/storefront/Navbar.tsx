@@ -472,17 +472,19 @@ export default function Navbar({
             >
               <div className="relative">
                 <ShoppingBag
+                  style={isCartBumping ? { color: accentColor } : undefined}
                   className={`w-5 h-5 text-zinc-900 transition-transform duration-300 ${
-                    isCartBumping ? 'scale-125 -rotate-12 text-[#076E46]' : 'scale-100 rotate-0'
+                    isCartBumping ? 'scale-125 -rotate-12' : 'scale-100 rotate-0'
                   }`}
                 />
                 {totalItems > 0 && (
                   <span
-                    style={{ backgroundColor: accentColor }}
+                    style={{
+                      backgroundColor: accentColor,
+                      boxShadow: isCartBumping ? `0 0 0 2px ${accentColor}60` : undefined,
+                    }}
                     className={`absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-bold text-white flex items-center justify-center shadow-xs transition-all duration-300 pointer-events-none leading-none ${
-                      isCartBumping
-                        ? 'scale-125 ring-2 ring-emerald-400 animate-bounce'
-                        : 'scale-100'
+                      isCartBumping ? 'scale-125 animate-bounce' : 'scale-100'
                     }`}
                   >
                     {totalItems}
