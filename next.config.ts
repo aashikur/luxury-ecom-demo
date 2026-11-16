@@ -36,6 +36,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/collections/all',
+        destination: '/shop',
+      },
+    ];
+  },
   turbopack: {
     rules: {
       "*.css": {
