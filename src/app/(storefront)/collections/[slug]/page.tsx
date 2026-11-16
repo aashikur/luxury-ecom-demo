@@ -13,7 +13,9 @@ import {
 import { getProductsList } from '@/services/product.service';
 import ProductCard from '@/components/storefront/ProductCard';
 import CollectionSiblingPills from '@/components/storefront/CollectionSiblingPills';
-import CollectionFilterDrawer from '@/components/storefront/CollectionFilterDrawer';
+import CatalogFilter from '@/components/storefront/catalog/CatalogFilter';
+import { getCatalogFacets } from '@/services/product.service';
+import { getCategoriesTree } from '@/services/category.service';
 
 export const revalidate = 60;
 
@@ -22,8 +24,11 @@ interface CollectionPageProps {
   searchParams: Promise<{
     sort?: string;
     inStock?: string;
+    stockStatus?: string;
     minPrice?: string;
     maxPrice?: string;
+    size?: string;
+    category?: string;
     page?: string;
   }>;
 }
@@ -84,12 +89,14 @@ export default async function CollectionPage({
   searchParams,
 }: CollectionPageProps) {
   const { slug } = await params;
-  const { sort, inStock, minPrice, maxPrice } = await searchParams;
+  const { sort, inStock, stockStatus, minPrice, maxPrice, size, category } = await searchParams;
 
-  // Zero-waterfall: Fetch config and target collection in parallel
-  const [config, collection] = await Promise.all([
+  // Zero-waterfall: Fetch config, target collection, facets, and category tree in parallel
+  const [config, collection, facets, categoryTree] = await Promise.all([
     getPublicStoreConfig(),
     getCollectionBySlug(slug),
+    getCatalogFacets(),
+    getCategoriesTree(),
   ]);
 
   if (!collection) {
@@ -108,6 +115,7 @@ export default async function CollectionPage({
   let pillsData: { title: string; slug: string; badgeText?: string }[] = [];
   let childShowcases: {
     collection: { title: string; slug: string; badgeText?: string; description?: string };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     products: any[];
   }[] = [];
 
@@ -150,11 +158,14 @@ export default async function CollectionPage({
     }));
   }
 
-  // Fetch main products grid for current collection
+  // Fetch main products grid for current collection (with Solution A Parent Aggregation + Facet filters)
   const productsResult = await getProductsList({
     collection: collection.slug,
+    category,
+    sizes: size,
     sort,
     inStock: inStock === 'true' ? true : undefined,
+    stockStatus: stockStatus || undefined,
     minPrice: minPrice ? parseFloat(minPrice) : undefined,
     maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
     limit: 60,
@@ -288,48 +299,51 @@ export default async function CollectionPage({
         </section>
       )}
 
-      {/* 5. Main Catalog Grid with Faceted Filter Drawer & 9-Tier Sort */}
-      <main className="max-w-[1360px] mx-auto px-4 sm:px-8 pb-20">
+      {/* 5. Main Catalog Grid with Universal CatalogFilter */}
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-20">
         {isParent && childShowcases.length > 0 && (
-          <div className="pt-4 pb-2">
+          <div className="pt-4 pb-4">
             <h3 className="text-lg font-bold uppercase tracking-wider text-zinc-900">
               All {collection.title} Garments
             </h3>
           </div>
         )}
 
-        <CollectionFilterDrawer
-          totalCount={productsResult.pagination.total}
+        <CatalogFilter
+          categories={categoryTree}
+          facets={facets}
+          totalResults={productsResult.pagination.total}
+          lockedDimension="collection"
           accentColor={branding.colors?.accent}
-        />
-
-        {products.length === 0 ? (
-          <div className="text-center py-20 border border-dashed border-zinc-300 rounded-lg p-8 my-6">
-            <Sparkles className="w-8 h-8 text-zinc-400 mx-auto mb-3" />
-            <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-900">
-              No garments found
-            </h3>
-            <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
-              No garments currently match your selected filters. Try resetting price range or check back soon for incoming drops.
-            </p>
-            <Link
-              href={`/collections/${collection.slug}`}
-              className="inline-block mt-4 px-5 py-2.5 bg-zinc-950 text-white rounded text-xs font-bold uppercase tracking-wider hover:bg-zinc-800 transition active:scale-[0.98] duration-75"
-            >
-              Reset Filters
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {products.map((product) => (
-              <ProductCard
-                key={String(product._id)}
-                product={product}
-                accentColor={branding.colors?.accent}
-              />
-            ))}
-          </div>
-        )}
+        >
+          {products.length === 0 ? (
+            <div className="text-center py-20 border border-dashed border-zinc-300 rounded-lg p-8 my-6">
+              <Sparkles className="w-8 h-8 text-zinc-400 mx-auto mb-3" />
+              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-900">
+                No garments found
+              </h3>
+              <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
+                No garments currently match your selected filters. Try resetting price range or clearing sizes.
+              </p>
+              <Link
+                href={`/collections/${collection.slug}`}
+                className="inline-block mt-4 px-5 py-2.5 bg-zinc-950 text-white rounded text-xs font-bold uppercase tracking-wider hover:bg-zinc-800 transition active:scale-[0.98] duration-75"
+              >
+                Reset Filters
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6">
+              {products.map((product) => (
+                <ProductCard
+                  key={String(product._id)}
+                  product={product}
+                  accentColor={branding.colors?.accent}
+                />
+              ))}
+            </div>
+          )}
+        </CatalogFilter>
       </main>
     </div>
   );

@@ -1,15 +1,16 @@
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 import { connectDB } from '@/lib/db';
 import Product, { IProduct } from '@/models/Product';
 import { deleteFromR2 } from '@/lib/storage';
 import { ProductStatus } from '@/types/domain';
 import { ApiPaginationMeta } from '@/types/api';
+import { getChildCollections } from './collection.service';
 
 export interface GetProductsParams {
   page?: number;
   limit?: number;
-  collection?: string;
-  category?: string;
+  collection?: string | string[];
+  category?: string | string[];
   categorySlug?: string;
   brand?: string;
   status?: ProductStatus;
@@ -18,6 +19,8 @@ export interface GetProductsParams {
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
+  stockStatus?: string;
+  sizes?: string | string[];
   sort?: string;
   all?: boolean; // Admin bypass for drafts
 }
@@ -25,6 +28,14 @@ export interface GetProductsParams {
 export interface ProductsListResult {
   products: IProduct[];
   pagination: ApiPaginationMeta;
+}
+
+export interface CatalogFilterFacets {
+  minCatalogPrice: number;
+  maxCatalogPrice: number;
+  availableSizes: string[];
+  categoryCounts: Record<string, number>;
+  collectionCounts: Record<string, number>;
 }
 
 /**
@@ -84,19 +95,62 @@ export async function getProductsList(
     query.status = 'PUBLISHED';
   }
 
-  // Merchandising Collections filter
+  // Merchandising Collections filter (Solution A: Automatic Parent Collection Aggregation)
   if (params.collection) {
-    query.collections = params.collection;
+    if (Array.isArray(params.collection)) {
+      query.collections = { $in: params.collection };
+    } else {
+      const colSlug = params.collection.toLowerCase().trim();
+      const childCols = await getChildCollections(colSlug);
+      if (childCols && childCols.length > 0) {
+        query.collections = { $in: [colSlug, ...childCols.map((c) => c.slug)] };
+      } else {
+        query.collections = colSlug;
+      }
+    }
   }
 
-  // Category filter: checks categorySlug, ancestors path, or categoryName
+  // Category filter: checks categorySlug, ancestors path, or categoryName (supports multi-select)
   const catParam = params.categorySlug || params.category;
   if (catParam) {
-    query.$or = [
-      { categorySlug: catParam },
-      { categoryPath: catParam },
-      { categoryName: new RegExp(`^${catParam}$`, 'i') },
-    ];
+    const catList = Array.isArray(catParam)
+      ? catParam
+      : catParam.includes(',')
+      ? catParam.split(',').map((s) => s.trim().toLowerCase())
+      : [catParam.trim().toLowerCase()];
+
+    if (catList.length === 1) {
+      query.$or = [
+        { categorySlug: catList[0] },
+        { categoryPath: catList[0] },
+        { categoryName: new RegExp(`^${catList[0]}$`, 'i') },
+      ];
+    } else {
+      query.$or = [
+        { categorySlug: { $in: catList } },
+        { categoryPath: { $in: catList } },
+        { categoryName: { $in: catList.map((c) => new RegExp(`^${c}$`, 'i')) } },
+      ];
+    }
+  }
+
+  // Sizes filter: checks variant option matching e.g. ['S', 'M', 'L']
+  if (params.sizes) {
+    const sizeList = Array.isArray(params.sizes)
+      ? params.sizes
+      : params.sizes.includes(',')
+      ? params.sizes.split(',').map((s) => s.trim())
+      : [params.sizes.trim()];
+
+    if (sizeList.length > 0) {
+      query.variants = {
+        $elemMatch: {
+          'selectedOptions.name': new RegExp('^size$', 'i'),
+          'selectedOptions.value': { $in: sizeList },
+          stock: { $gt: 0 },
+        },
+      };
+    }
   }
 
   // Brand filter
@@ -112,9 +166,12 @@ export async function getProductsList(
     query.isPinned = params.isPinned;
   }
 
-  // Stock filter
+  // Stock & Availability filter
   if (params.inStock !== undefined) {
     query.inStock = params.inStock;
+  }
+  if (params.stockStatus) {
+    query.stockStatus = params.stockStatus;
   }
 
   // Price Range filter
@@ -365,3 +422,94 @@ export async function adjustProductStock(
 
   return false;
 }
+
+/**
+ * Pre-computes and caches filter facets (Price boundaries, sizes, category & collection counts)
+ * Cached with Next.js unstable_cache with tags ['products', 'categories', 'collections']
+ */
+export const getCatalogFacets = unstable_cache(
+  async (): Promise<CatalogFilterFacets> => {
+    try {
+      await connectDB();
+      const activeProducts = await Product.find({ isActive: true, status: 'PUBLISHED' })
+        .select('basePrice maxPrice categorySlug categoryName collections variantOptions.name variantOptions.values.label')
+        .lean();
+
+      if (!activeProducts || activeProducts.length === 0) {
+        return {
+          minCatalogPrice: 0,
+          maxCatalogPrice: 20000,
+          availableSizes: ['S', 'M', 'L', 'XL', 'XXL', 'Free Size'],
+          categoryCounts: {},
+          collectionCounts: {},
+        };
+      }
+
+      let minPrice = Infinity;
+      let maxPrice = 0;
+      const sizeSet = new Set<string>();
+      const categoryCounts: Record<string, number> = {};
+      const collectionCounts: Record<string, number> = {};
+
+      activeProducts.forEach((p) => {
+        const bp = p.basePrice || 0;
+        const mp = p.maxPrice || bp;
+        if (bp < minPrice) minPrice = bp;
+        if (mp > maxPrice) maxPrice = mp;
+
+        // Count categories
+        if (p.categorySlug) {
+          categoryCounts[p.categorySlug] = (categoryCounts[p.categorySlug] || 0) + 1;
+        }
+
+        // Count collections
+        if (p.collections && Array.isArray(p.collections)) {
+          p.collections.forEach((c: string) => {
+            collectionCounts[c] = (collectionCounts[c] || 0) + 1;
+          });
+        }
+
+        // Extract sizes
+        if (p.variantOptions && Array.isArray(p.variantOptions)) {
+          p.variantOptions.forEach((grp: any) => {
+            if (/^size$/i.test(grp.name) && Array.isArray(grp.values)) {
+              grp.values.forEach((v: any) => {
+                if (v.label) sizeSet.add(v.label);
+              });
+            }
+          });
+        }
+      });
+
+      // Standardize size order
+      const standardOrder = ['XS', 'S', 'M', 'L', 'XL', '2XL', 'XXL', '3XL', 'Free Size', 'Custom'];
+      const sortedSizes = Array.from(sizeSet).sort((a, b) => {
+        const idxA = standardOrder.indexOf(a);
+        const idxB = standardOrder.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.localeCompare(b);
+      });
+
+      return {
+        minCatalogPrice: minPrice === Infinity ? 0 : Math.floor(minPrice),
+        maxCatalogPrice: maxPrice === 0 ? 20000 : Math.ceil(maxPrice),
+        availableSizes: sortedSizes.length > 0 ? sortedSizes : ['S', 'M', 'L', 'XL', 'XXL', 'Free Size'],
+        categoryCounts,
+        collectionCounts,
+      };
+    } catch (err) {
+      console.warn('Notice: Catalog facets deferred:', err instanceof Error ? err.message : err);
+      return {
+        minCatalogPrice: 0,
+        maxCatalogPrice: 20000,
+        availableSizes: ['S', 'M', 'L', 'XL', 'XXL', 'Free Size'],
+        categoryCounts: {},
+        collectionCounts: {},
+      };
+    }
+  },
+  ['public-catalog-facets'],
+  { tags: ['products', 'categories', 'collections'], revalidate: 3600 }
+);
