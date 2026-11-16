@@ -3,10 +3,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Minus, Plus, Ruler, X } from 'lucide-react';
+import { Minus, Plus, Ruler, X, Play, Volume2, VolumeX } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import ProductCard from './ProductCard';
 import type { StockStatus } from '@/models/Product';
+
+function extractYouTubeId(url: string): string | null {
+  const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/;
+  const match = url?.match(regExp);
+  return match ? match[1] : null;
+}
 
 interface VariantSelectedOption {
   name: string;
@@ -288,6 +294,7 @@ export default function ProductDetailView({
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'DESCRIPTION' | 'ADDITIONAL' | 'POLICY'>('DESCRIPTION');
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
 
   // Images resolution (supports variant specific image override)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -296,8 +303,10 @@ export default function ProductDetailView({
   ];
 
   // Resolve active gallery display with user override precedence
+  const currentMedia = images[activeGalleryIdx] || images[0];
+  const isCurrentVideo = currentMedia?.type === 'VIDEO';
   const currentImage =
-    images[activeGalleryIdx]?.url || selectedVariant?.image?.url || images[0]?.url;
+    currentMedia?.url || selectedVariant?.image?.url || images[0]?.url;
 
   // Handle option select with auto image sync
   const handleOptionSelect = (groupName: string, value: string) => {
@@ -506,14 +515,45 @@ export default function ProductDetailView({
         {/* Left Column: Large Portrait Gallery */}
         <div className="lg:col-span-6 space-y-4">
           <div className="relative aspect-[4/5] w-full bg-zinc-100 overflow-hidden border border-zinc-200/80">
-            <Image
-              src={currentImage}
-              alt={product.title}
-              fill
-              priority
-              className="object-cover object-center"
-            />
-            <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
+            {isCurrentVideo ? (
+              currentMedia.videoProvider === 'YOUTUBE' ? (
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${extractYouTubeId(currentMedia.url)}?autoplay=1&mute=1&loop=1&playsinline=1`}
+                  title={product.title}
+                  className="w-full h-full border-0 object-cover"
+                  allow="autoplay; encrypted-media"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="relative w-full h-full bg-black">
+                  <video
+                    src={currentMedia.url}
+                    autoPlay
+                    loop
+                    muted={isMuted}
+                    playsInline
+                    className="w-full h-full object-cover object-center"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsMuted(!isMuted)}
+                    className="absolute bottom-4 right-4 p-2 rounded-full bg-black/60 text-white backdrop-blur-xs hover:bg-black/80 transition active:scale-[0.98] duration-75 cursor-pointer z-20"
+                    title={isMuted ? 'Unmute' : 'Mute'}
+                  >
+                    {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  </button>
+                </div>
+              )
+            ) : (
+              <Image
+                src={currentImage}
+                alt={product.title}
+                fill
+                priority
+                className="object-cover object-center"
+              />
+            )}
+            <div className="absolute top-4 right-4 flex flex-col gap-2 z-10 pointer-events-none">
               {discountPct > 0 && !isOutOfStock && (
                 <span
                   style={{ backgroundColor: accentColor }}
@@ -538,17 +578,29 @@ export default function ProductDetailView({
           {/* Thumbnail Strip */}
           {images.length > 1 && (
             <div className="flex gap-3 overflow-x-auto pb-1">
-              {images.map((img: { url: string }, i: number) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveGalleryIdx(i)}
-                  className={`relative w-20 aspect-[3/4] border overflow-hidden cursor-pointer shrink-0 transition active:scale-[0.98] duration-75 ${
-                    activeGalleryIdx === i ? 'border-zinc-900 ring-1 ring-zinc-900' : 'border-zinc-200 opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <Image src={img.url} alt="" fill className="object-cover" />
-                </button>
-              ))}
+              {images.map((img: any, i: number) => {
+                const isVid = img.type === 'VIDEO';
+                const thumbSrc = img.thumbnailUrl || (isVid ? '/placeholder.webp' : img.url);
+
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setActiveGalleryIdx(i)}
+                    className={`relative w-20 aspect-[3/4] border overflow-hidden cursor-pointer shrink-0 transition active:scale-[0.98] duration-75 ${
+                      activeGalleryIdx === i ? 'border-zinc-900 ring-1 ring-zinc-900' : 'border-zinc-200 opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <Image src={thumbSrc} alt="" fill className="object-cover" />
+                    {isVid && (
+                      <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
+                        <span className="w-6 h-6 rounded-full bg-white/90 text-zinc-900 flex items-center justify-center shadow-xs">
+                          <Play className="w-3 h-3 fill-zinc-900 ml-0.5" />
+                        </span>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

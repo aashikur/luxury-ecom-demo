@@ -8,12 +8,19 @@ import {
   Star,
   Loader2,
   ImagePlus,
+  Play,
+  Video,
+  Link2,
 } from 'lucide-react';
 import { optimizeImageRuleBased, CompressionResult } from '@/lib/imageCompressor';
 
 export interface MediaItem {
   url: string;
   key: string;
+  thumbnailUrl?: string;
+  type?: 'IMAGE' | 'VIDEO';
+  videoProvider?: 'YOUTUBE' | 'VIMEO' | 'R2' | 'BUNNY_STREAM';
+  altText?: string;
 }
 
 export type AspectRatioType = '3:4' | '1:1' | '16:9' | '4:5' | 'free';
@@ -30,6 +37,12 @@ interface MediaUploaderProps {
   disabled?: boolean;
 }
 
+function extractYouTubeId(url: string): string | null {
+  const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/;
+  const match = url.match(regExp);
+  return match ? match[1] : null;
+}
+
 export default function MediaUploader({
   value = [],
   onChange,
@@ -37,13 +50,15 @@ export default function MediaUploader({
   maxFiles = 8,
   aspectRatio = '3:4',
   label = 'Product Media & Gallery',
-  description = 'Add high-resolution photos of your garment. The first photo will be used as the primary cover.',
+  description = 'Add high-resolution photos and video clips of your garment. The first asset serves as primary cover.',
   folder = 'products',
   disabled = false,
 }: MediaUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [optimizationFeedbacks, setOptimizationFeedbacks] = useState<string[]>([]);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [videoUrlInput, setVideoUrlInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Map aspect ratio string to CSS tailwind class
@@ -70,7 +85,7 @@ export default function MediaUploader({
     // Check max file limit
     const availableSlots = multiple ? maxFiles - value.length : 1;
     if (availableSlots <= 0) {
-      alert(`You can upload a maximum of ${maxFiles} images.`);
+      alert(`You can upload a maximum of ${maxFiles} media items.`);
       return;
     }
 
@@ -82,21 +97,29 @@ export default function MediaUploader({
     const newFeedbacks: string[] = [];
 
     for (const rawFile of filesToUpload) {
-      if (!rawFile.type.startsWith('image/')) {
-        alert(`File "${rawFile.name}" is not a valid image format.`);
+      const isVideo = rawFile.type.startsWith('video/');
+      const isImage = rawFile.type.startsWith('image/');
+
+      if (!isImage && !isVideo) {
+        alert(`File "${rawFile.name}" is not a supported format.`);
         continue;
       }
 
       try {
-        // 1. Client-Side Rule-Based Optimization Engine (HTML5 Canvas)
-        // Max dimension cap 1200px, Target under 200KB, WebP format
-        const compression: CompressionResult = await optimizeImageRuleBased(rawFile, 1200);
+        let fileToSend: File | Blob = rawFile;
 
-        newFeedbacks.push(compression.feedback);
+        if (isImage) {
+          // Client-Side Canvas Optimization (WebP, max dimension cap 1200px)
+          const compression: CompressionResult = await optimizeImageRuleBased(rawFile, 1200);
+          fileToSend = compression.file;
+          newFeedbacks.push(compression.feedback);
+        } else {
+          newFeedbacks.push(`Video "${rawFile.name}" prepared for Cloudflare R2 streaming`);
+        }
 
-        // 2. Upload Optimized WebP File to Cloudflare R2 API
+        // Upload to Cloudflare R2 API
         const formData = new FormData();
-        formData.append('file', compression.file);
+        formData.append('file', fileToSend, rawFile.name);
         if (folder) {
           formData.append('folder', folder);
         }
@@ -111,12 +134,15 @@ export default function MediaUploader({
           uploadedItems.push({
             url: data.url,
             key: data.key || `${folder}-${Date.now()}`,
+            type: isVideo ? 'VIDEO' : 'IMAGE',
+            videoProvider: isVideo ? 'R2' : undefined,
+            altText: rawFile.name,
           });
         } else {
           alert(data.error || `Failed to upload "${rawFile.name}"`);
         }
       } catch (err) {
-        console.error('Optimization/Upload error:', err);
+        console.error('Upload error:', err);
         alert(`Upload error for "${rawFile.name}"`);
       }
     }
@@ -139,21 +165,60 @@ export default function MediaUploader({
     }
   };
 
+  const handleAddVideoUrl = () => {
+    const url = videoUrlInput.trim();
+    if (!url) return;
+
+    const ytId = extractYouTubeId(url);
+    if (ytId) {
+      const newItem: MediaItem = {
+        url: `https://www.youtube.com/watch?v=${ytId}`,
+        key: `yt-${ytId}-${Date.now()}`,
+        thumbnailUrl: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
+        type: 'VIDEO',
+        videoProvider: 'YOUTUBE',
+        altText: 'YouTube Product Video',
+      };
+      onChange([...value, newItem]);
+      setVideoUrlInput('');
+      setShowVideoModal(false);
+      return;
+    }
+
+    // Direct MP4 / WebM URL
+    if (url.endsWith('.mp4') || url.endsWith('.webm') || url.includes('vimeo.com')) {
+      const isVimeo = url.includes('vimeo.com');
+      const newItem: MediaItem = {
+        url,
+        key: `video-link-${Date.now()}`,
+        type: 'VIDEO',
+        videoProvider: isVimeo ? 'VIMEO' : 'R2',
+        altText: 'Product Video Showcase',
+      };
+      onChange([...value, newItem]);
+      setVideoUrlInput('');
+      setShowVideoModal(false);
+      return;
+    }
+
+    alert('Please enter a valid YouTube link (e.g. https://www.youtube.com/watch?v=...) or direct MP4 URL.');
+  };
+
   const handleRemove = async (indexToRemove: number) => {
     if (disabled) return;
     const itemToRemove = value[indexToRemove];
 
-    // 1. Optimistic UI update: remove from display immediately
+    // Optimistic UI update
     onChange(value.filter((_, idx) => idx !== indexToRemove));
 
-    // 2. Asynchronously cleanup storage in Cloudflare R2 (skip seed assets)
-    if (itemToRemove?.key && !itemToRemove.key.startsWith('seed/')) {
+    // Cleanup storage in Cloudflare R2
+    if (itemToRemove?.key && !itemToRemove.key.startsWith('seed/') && !itemToRemove.key.startsWith('yt-')) {
       try {
         await fetch(`/api/upload?key=${encodeURIComponent(itemToRemove.key)}`, {
           method: 'DELETE',
         });
       } catch (err) {
-        console.error('Failed to cleanup R2 asset on remove:', err);
+        console.error('Failed to cleanup asset on remove:', err);
       }
     }
   };
@@ -169,17 +234,28 @@ export default function MediaUploader({
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-2xs">
       {/* Header */}
-      <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+      <div className="border-b border-slate-100 pb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-bold text-slate-900">{label}</h2>
           <p className="text-xs text-slate-400 mt-0.5">{description}</p>
         </div>
 
-        {multiple && value.length > 0 && (
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 text-slate-600">
-            {value.length}/{maxFiles}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowVideoModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
+          >
+            <Video className="w-3.5 h-3.5 text-slate-600" />
+            <span>+ Video Link</span>
+          </button>
+
+          {multiple && value.length > 0 && (
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 text-slate-600">
+              {value.length}/{maxFiles}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Hidden native file input */}
@@ -187,7 +263,7 @@ export default function MediaUploader({
         ref={fileInputRef}
         type="file"
         multiple={multiple}
-        accept="image/png,image/jpeg,image/webp,image/jpg"
+        accept="image/png,image/jpeg,image/webp,image/jpg,video/mp4,video/webm,video/quicktime"
         onChange={(e) => e.target.files && handleProcessAndUpload(e.target.files)}
         disabled={disabled || isUploading}
         className="hidden"
@@ -226,15 +302,15 @@ export default function MediaUploader({
 
           <p className="text-xs font-semibold text-slate-800">
             {isUploading ? (
-              'Uploading...'
+              'Processing & Uploading to R2...'
             ) : (
               <>
-                <span className="text-slate-900 underline font-semibold">Click to upload</span> or drag and drop photos
+                <span className="text-slate-900 underline font-semibold">Click to upload</span> or drag and drop photos & videos
               </>
             )}
           </p>
           <p className="text-[11px] text-slate-400 mt-1">
-            Accepted ratio {aspectRatio} · Max size 500 KB · WebP, PNG, JPG
+            WebP, PNG, JPG or MP4/WebM videos · Auto-optimized for Cloudflare R2 CDN
           </p>
         </div>
       )}
@@ -266,30 +342,49 @@ export default function MediaUploader({
           >
             {value.map((item, idx) => {
               const isCover = idx === 0 && multiple;
+              const isVideo = item.type === 'VIDEO';
+              const displayImgUrl = item.thumbnailUrl || (isVideo ? '/placeholder.webp' : item.url);
 
               return (
                 <div
                   key={`${item.url}-${idx}`}
-                  className={`group relative rounded-lg border overflow-hidden bg-slate-100 transition ${containerRatioClass} ${
+                  className={`group relative rounded-lg border overflow-hidden bg-slate-900 transition ${containerRatioClass} ${
                     isCover
                       ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
                       : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  {/* Thumbnail Image */}
-                  <Image
-                    src={item.url}
-                    alt={`Uploaded photo ${idx + 1}`}
-                    fill
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                    className="object-cover"
-                  />
+                  {/* Thumbnail / Video Preview */}
+                  {isVideo && item.videoProvider !== 'YOUTUBE' ? (
+                    <video
+                      src={item.url}
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover pointer-events-none"
+                    />
+                  ) : (
+                    <Image
+                      src={displayImgUrl}
+                      alt={item.altText || `Uploaded asset ${idx + 1}`}
+                      fill
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      className="object-cover"
+                    />
+                  )}
 
                   {/* Primary Cover Badge */}
                   {isCover && (
                     <div className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-bold shadow-xs">
                       <Star className="w-2.5 h-2.5 fill-white" />
                       <span>Cover</span>
+                    </div>
+                  )}
+
+                  {/* Video Badge */}
+                  {isVideo && (
+                    <div className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-black/80 text-white text-[10px] font-semibold backdrop-blur-xs">
+                      <Play className="w-2.5 h-2.5 fill-white" />
+                      <span>{item.videoProvider === 'YOUTUBE' ? 'YouTube' : 'Video'}</span>
                     </div>
                   )}
 
@@ -304,7 +399,7 @@ export default function MediaUploader({
                         }}
                         disabled={disabled}
                         className="p-1 rounded bg-red-600 text-white hover:bg-red-700 transition cursor-pointer shadow-xs"
-                        title="Remove photo"
+                        title="Remove asset"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -340,6 +435,66 @@ export default function MediaUploader({
                 <span className="text-[11px] font-semibold">Add more</span>
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Video URL Modal */}
+      {showVideoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white rounded-xl border border-slate-200 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Video className="w-4 h-4 text-emerald-700" />
+                <h3 className="text-sm font-bold text-slate-900">Add Product Video</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowVideoModal(false)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-700">Video Link</label>
+              <div className="relative">
+                <input
+                  type="url"
+                  placeholder="https://www.youtube.com/watch?v=... or direct .mp4 URL"
+                  value={videoUrlInput}
+                  onChange={(e) => setVideoUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddVideoUrl();
+                    }
+                  }}
+                  className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-800 focus:outline-emerald-600"
+                />
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Supports YouTube watch links, shorts, and direct streaming MP4 URLs.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowVideoModal(false)}
+                className="px-3 py-1.5 rounded-md border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAddVideoUrl}
+                className="px-4 py-1.5 rounded-md bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800 transition cursor-pointer"
+              >
+                Attach Video
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Security check: validate MIME type (allow images and webp/mp4)
+    // Security check: validate MIME type (allow images and webp/mp4/webm)
     const allowedMimeTypes = [
       'image/jpeg',
       'image/png',
@@ -37,6 +37,8 @@ export async function POST(request: NextRequest) {
       'image/svg+xml',
       'image/gif',
       'video/mp4',
+      'video/webm',
+      'video/quicktime',
     ];
 
     if (!allowedMimeTypes.includes(file.type)) {
