@@ -199,6 +199,19 @@ export default function Navbar({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Cart Bump Animation State
+  const [isCartBumping, setIsCartBumping] = useState(false);
+  const prevItemsRef = useRef(totalItems);
+
+  useEffect(() => {
+    if (totalItems > prevItemsRef.current) {
+      setIsCartBumping(true);
+      const timer = setTimeout(() => setIsCartBumping(false), 800);
+      return () => clearTimeout(timer);
+    }
+    prevItemsRef.current = totalItems;
+  }, [totalItems]);
+
   // Mobile Accordion state for Drawer
   const [expandedNavId, setExpandedNavId] = useState<string | null>(null);
 
@@ -345,20 +358,30 @@ export default function Navbar({
               <User className="w-5 h-5" />
             </Link>
 
-            {/* Shopping Bag Button */}
+            {/* Shopping Bag Button with Top-Right Badge & Tactile Bump Animation */}
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="inline-flex items-center gap-2 p-2 hover:opacity-75 transition active:scale-[0.98] duration-75 cursor-pointer"
+              className="relative p-2 text-zinc-900 hover:text-zinc-600 transition active:scale-[0.98] duration-75 cursor-pointer"
               aria-label="Open Shopping Bag"
             >
-              <ShoppingBag className="w-5 h-5 text-zinc-900" />
-              <span
-                style={{ backgroundColor: accentColor }}
-                className="w-5 h-5 rounded-full text-[11px] font-bold text-white flex items-center justify-center shadow-2xs"
-              >
-                {totalItems}
-              </span>
+              <ShoppingBag
+                className={`w-5 h-5 text-zinc-900 transition-transform duration-300 ${
+                  isCartBumping ? 'scale-125 -rotate-12 text-[#076E46]' : 'scale-100 rotate-0'
+                }`}
+              />
+              {totalItems > 0 && (
+                <span
+                  style={{ backgroundColor: accentColor }}
+                  className={`absolute -top-0.5 -right-0.5 min-w-[19px] h-[19px] px-1 rounded-full text-[10px] font-bold text-white flex items-center justify-center shadow-xs transition-all duration-300 pointer-events-none ${
+                    isCartBumping
+                      ? 'scale-125 ring-2 ring-emerald-400 animate-bounce'
+                      : 'scale-100'
+                  }`}
+                >
+                  {totalItems}
+                </span>
+              )}
             </button>
           </div>
         </div>

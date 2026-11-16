@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Check } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { StockStatus, IVariant } from '@/models/Product';
 
@@ -66,11 +67,16 @@ export default function ProductCard({
     ) ||
     activeVariants[0];
 
+  const [isJustAdded, setIsJustAdded] = useState(false);
+
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!isAvailable) return;
+
+    setIsJustAdded(true);
+    setTimeout(() => setIsJustAdded(false), 1200);
 
     if (product.hasVariants !== false && defaultVariant) {
       const effectivePrice =
@@ -187,27 +193,42 @@ export default function ProductCard({
         </div>
       </div>
 
-      {/* Full-Width Action Button */}
+      {/* Full-Width Action Button with Tactile Feedback */}
       <button
         onClick={handleQuickAdd}
         disabled={!isAvailable}
         style={{
-          backgroundColor: !isAvailable
+          backgroundColor: isJustAdded
+            ? '#076E46'
+            : !isAvailable
             ? '#A1A1AA'
             : darkSurface
             ? '#FFFFFF'
             : accentColor,
-          color: !isAvailable ? '#FFFFFF' : darkSurface ? '#09090B' : '#FFFFFF',
+          color: isJustAdded
+            ? '#FFFFFF'
+            : !isAvailable
+            ? '#FFFFFF'
+            : darkSurface
+            ? '#09090B'
+            : '#FFFFFF',
         }}
-        className={`w-full py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] transition ${
+        className={`w-full py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] transition active:scale-[0.98] duration-75 flex items-center justify-center gap-1.5 ${
           isAvailable ? 'hover:opacity-90 cursor-pointer' : 'cursor-not-allowed opacity-60'
         }`}
       >
-        {!isAvailable
-          ? 'SOLD OUT'
-          : isPreOrder
-          ? 'PRE-ORDER'
-          : 'ADD TO CART'}
+        {isJustAdded ? (
+          <>
+            <Check className="w-3.5 h-3.5 animate-in zoom-in duration-150" />
+            <span>ADDED TO CART</span>
+          </>
+        ) : !isAvailable ? (
+          'SOLD OUT'
+        ) : isPreOrder ? (
+          'PRE-ORDER'
+        ) : (
+          'ADD TO CART'
+        )}
       </button>
     </div>
   );

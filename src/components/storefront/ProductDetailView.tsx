@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Minus, Plus, Ruler, X, Play, Volume2, VolumeX } from 'lucide-react';
+import { Minus, Plus, Ruler, X, Play, Volume2, VolumeX, Check } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import ProductCard from './ProductCard';
 import type { StockStatus } from '@/models/Product';
@@ -136,6 +136,7 @@ export default function ProductDetailView({
   showroomAddress = 'Banani 11, Dhaka',
 }: ProductDetailProps) {
   const { addToCart } = useCart();
+  const [isJustAdded, setIsJustAdded] = useState(false);
 
   const hasVariants = product.hasVariants !== false && (product.variants?.length || 0) > 0;
   const activeVariants: Variant[] = useMemo(() => {
@@ -461,6 +462,9 @@ export default function ProductDetailView({
 
   const handleAdd = (openDrawer: boolean) => {
     if (isOutOfStock) return;
+
+    setIsJustAdded(true);
+    setTimeout(() => setIsJustAdded(false), 1200);
 
     // Check required modifiers
     for (const group of modifierGroups) {
@@ -843,9 +847,24 @@ export default function ProductDetailView({
             <button
               onClick={() => handleAdd(false)}
               disabled={isOutOfStock}
-              className="flex-1 py-3.5 px-6 bg-stone-100 hover:bg-stone-200 text-zinc-900 text-xs font-bold uppercase tracking-[0.18em] transition active:scale-[0.98] duration-75 cursor-pointer disabled:opacity-40"
+              className={`flex-1 py-3.5 px-6 text-xs font-bold uppercase tracking-[0.18em] transition active:scale-[0.98] duration-75 cursor-pointer disabled:opacity-40 flex items-center justify-center gap-2 ${
+                isJustAdded
+                  ? 'bg-emerald-700 text-white'
+                  : 'bg-stone-100 hover:bg-stone-200 text-zinc-900'
+              }`}
             >
-              {isOutOfStock ? 'SOLD OUT' : isPreOrder ? 'PRE-ORDER TO CART' : 'ADD TO CART'}
+              {isJustAdded ? (
+                <>
+                  <Check className="w-4 h-4 animate-in zoom-in duration-150" />
+                  <span>ADDED TO BAG!</span>
+                </>
+              ) : isOutOfStock ? (
+                'SOLD OUT'
+              ) : isPreOrder ? (
+                'PRE-ORDER TO CART'
+              ) : (
+                'ADD TO CART'
+              )}
             </button>
           </div>
 
