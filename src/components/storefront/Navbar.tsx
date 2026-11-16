@@ -195,8 +195,8 @@ function DesktopMegaMenu({
                 /* Sleek Single / Double Column Dropdown */
                 <div
                   className={`absolute top-[calc(100%-1px)] left-0 ${
-                    item.children!.length > 6 ? 'min-w-[420px] grid grid-cols-2 gap-x-1 p-2' : 'min-w-[240px] py-2'
-                  } bg-white border border-zinc-200 rounded-b-lg shadow-xl z-50 animate-in fade-in slide-in-from-top-1 duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:w-full before:h-3`}
+                    item.children!.length > 6 ? 'min-w-[420px] grid grid-cols-2 gap-x-1 p-2' : 'min-w-[240px] py-1.5'
+                  } bg-white border border-zinc-200/90 rounded-b-lg shadow-xl z-50 animate-in fade-in slide-in-from-top-1 duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:w-full before:h-3`}
                   onMouseEnter={() => handleMouseEnter(item.id)}
                   onMouseLeave={handleMouseLeave}
                 >
@@ -205,22 +205,19 @@ function DesktopMegaMenu({
                       key={sub.id || sub.href}
                       href={sub.href}
                       onClick={() => setOpenDropdownId(null)}
-                      className="flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-zinc-700 hover:text-zinc-950 hover:bg-zinc-50 transition active:scale-[0.98] duration-75 group rounded"
+                      className="flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-zinc-700 hover:text-zinc-950 hover:bg-zinc-50 transition active:scale-[0.98] duration-75 group"
                     >
                       <span className="group-hover:translate-x-0.5 transition-transform duration-150">
                         {sub.label}
                       </span>
-                      <div className="flex items-center gap-1.5">
-                        {sub.badgeText && (
-                          <span
-                            style={{ backgroundColor: accentColor }}
-                            className="px-1.5 py-0.5 text-[8px] font-bold text-white rounded-full uppercase"
-                          >
-                            {sub.badgeText}
-                          </span>
-                        )}
-                        <ArrowRight className="w-3 h-3 text-zinc-300 group-hover:text-zinc-600 transition" />
-                      </div>
+                      {sub.badgeText && (
+                        <span
+                          style={{ backgroundColor: accentColor }}
+                          className="px-1.5 py-0.5 text-[8px] font-bold text-white rounded-full uppercase tracking-wider"
+                        >
+                          {sub.badgeText}
+                        </span>
+                      )}
                     </Link>
                   ))}
                 </div>
