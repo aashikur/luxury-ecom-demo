@@ -90,6 +90,11 @@ export default function Footer({
                 Full Collection
               </Link>
             </li>
+            <li>
+              <Link href="/track-order" className="hover:text-white transition">
+                Track Order
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

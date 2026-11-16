@@ -17,7 +17,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import TrackOrderModal from './TrackOrderModal';
 
 export interface CategoryItem {
   id: string;
@@ -244,7 +243,6 @@ export default function Navbar({
 
   // Navigation states
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -291,7 +289,6 @@ export default function Navbar({
       if (e.key === 'Escape') {
         setIsDrawerOpen(false);
         setIsSearchOpen(false);
-        setIsTrackModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -447,15 +444,14 @@ export default function Navbar({
             </button>
 
             {/* 1-Click Track Order Action (Icon Only) */}
-            <button
-              type="button"
-              onClick={() => setIsTrackModalOpen(true)}
+            <Link
+              href="/track-order"
               className="p-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded-full transition active:scale-[0.98] duration-75 cursor-pointer"
               title="Track Order Status"
               aria-label="Track Order Status"
             >
               <Truck className="w-5 h-5 text-zinc-700" />
-            </button>
+            </Link>
 
             {/* Profile / Admin Icon */}
             <Link
@@ -732,12 +728,9 @@ export default function Navbar({
               })}
 
               {/* 1-Click Track Order */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsDrawerOpen(false);
-                  setIsTrackModalOpen(true);
-                }}
+              <Link
+                href="/track-order"
+                onClick={() => setIsDrawerOpen(false)}
                 className="w-full flex items-center justify-between text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 py-3 border-b border-zinc-100 transition active:scale-[0.98] duration-75 text-left cursor-pointer"
               >
                 <span className="flex items-center gap-2">
@@ -745,7 +738,7 @@ export default function Navbar({
                   TRACK ORDER
                 </span>
                 <ArrowRight className="w-4 h-4 text-zinc-400" />
-              </button>
+              </Link>
 
               {/* Admin Portal Shortcut */}
               <div className="pt-3">
@@ -771,13 +764,6 @@ export default function Navbar({
           </div>
         </div>
       )}
-
-      {/* Track Order Modal */}
-      <TrackOrderModal
-        isOpen={isTrackModalOpen}
-        onClose={() => setIsTrackModalOpen(false)}
-        accentColor={accentColor}
-      />
     </>
   );
 }

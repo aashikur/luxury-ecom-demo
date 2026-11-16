@@ -5,23 +5,33 @@ import { trackOrder } from '@/services/order.service';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/orders/track?orderNumber=AUR-XXXXX&phoneLast4=1234
+ * GET /api/orders/track?orderNumber=AUR-XXXXX&phone=017XXXXXXXX (or phoneLast4=1234)
  * IDOR-safe public guest order tracking
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const orderNumber = searchParams.get('orderNumber');
-    const phoneLast4 = searchParams.get('phoneLast4');
+    const orderNumber = searchParams.get('orderNumber')?.trim();
+    const rawPhone = searchParams.get('phone')?.trim() || searchParams.get('phoneLast4')?.trim();
 
-    if (!orderNumber || !phoneLast4) {
+    if (!orderNumber || !rawPhone) {
       return apiError(
-        'orderNumber and phoneLast4 query parameters are required',
+        'orderNumber and phone (or last 4 digits) query parameters are required',
         'VALIDATION_ERROR',
         400
       );
     }
 
+    const digitsOnly = rawPhone.replace(/\D/g, '');
+    if (digitsOnly.length < 4) {
+      return apiError(
+        'Please provide a valid phone number or the last 4 digits for verification',
+        'VALIDATION_ERROR',
+        400
+      );
+    }
+
+    const phoneLast4 = digitsOnly.slice(-4);
     const result = await trackOrder(orderNumber, phoneLast4);
 
     if (!result.success) {
