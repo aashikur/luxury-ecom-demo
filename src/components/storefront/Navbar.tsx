@@ -415,17 +415,13 @@ export default function Navbar({
           <div className="flex items-center shrink-0">
             <Link
               href="/"
-              className="inline-flex items-center gap-2.5 group transition active:scale-[0.98] duration-75"
+              className="inline-flex items-center group transition active:scale-[0.98] duration-75"
             >
               <span
                 style={{ color: accentColor }}
                 className="text-xl sm:text-2xl font-serif font-bold tracking-[0.22em] uppercase"
               >
                 {brandNameFirst}
-              </span>
-              <span className="h-5 w-px bg-zinc-300 hidden sm:inline-block" />
-              <span className="hidden sm:inline-block text-[10px] tracking-[0.3em] uppercase text-zinc-500 font-medium">
-                LUXURY
               </span>
             </Link>
           </div>
@@ -450,16 +446,15 @@ export default function Navbar({
               <Search className="w-5 h-5" />
             </button>
 
-            {/* Desktop 1-Click Track Order Action */}
+            {/* 1-Click Track Order Action (Icon Only) */}
             <button
               type="button"
               onClick={() => setIsTrackModalOpen(true)}
-              className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded text-xs font-semibold uppercase tracking-wider transition active:scale-[0.98] duration-75 cursor-pointer"
+              className="p-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded-full transition active:scale-[0.98] duration-75 cursor-pointer"
               title="Track Order Status"
               aria-label="Track Order Status"
             >
-              <Truck className="w-4 h-4 text-zinc-600" />
-              <span>Track Order</span>
+              <Truck className="w-5 h-5 text-zinc-700" />
             </button>
 
             {/* Profile / Admin Icon */}
