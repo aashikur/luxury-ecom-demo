@@ -14,7 +14,6 @@ import {
   ArrowLeft,
   ChevronRight,
   ShoppingBag,
-  ExternalLink,
   Sparkles,
   Lock,
 } from 'lucide-react';
@@ -37,17 +36,15 @@ interface AppliedCoupon {
 }
 
 export default function CheckoutClientView({
-  storeName = 'Aurem Luxury',
   accentColor = '#B8860B',
   insideDhakaFee = 70,
   dhakaSuburbsFee = 100,
   outsideDhakaFee = 130,
   freeShippingThreshold = 2500,
   manualBkashNumber = '01700000000',
-  supportPhone = '+880 1823-392110',
 }: CheckoutClientViewProps) {
   const router = useRouter();
-  const { cart, subtotal, clearCart } = useCart();
+  const { cart, subtotal, clearCart, setIsCartOpen } = useCart();
 
   const [deliveryZone, setDeliveryZone] = useState<'INSIDE_DHAKA' | 'DHAKA_SUBURBS' | 'OUTSIDE_DHAKA'>(
     'INSIDE_DHAKA'
@@ -268,53 +265,45 @@ export default function CheckoutClientView({
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 pb-16">
-      {/* 1. Distraction-Free Luxury Checkout Header */}
-      <header className="border-b border-zinc-200/80 bg-white sticky top-0 z-20">
-        <div className="max-w-[1360px] mx-auto px-4 sm:px-8 h-16 sm:h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <span
-              style={{ color: accentColor }}
-              className="text-xl sm:text-2xl font-serif font-bold tracking-[0.22em] uppercase"
+      <main className="max-w-[1360px] mx-auto px-4 sm:px-8 py-6 sm:py-10">
+        {/* Breadcrumb Navigator & Security Badge (No Duplicate Header) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400 font-medium mb-8 pb-4 border-b border-zinc-200/80">
+          <div className="flex items-center gap-2">
+            <Link href="/shop" className="hover:text-zinc-900 transition flex items-center gap-1">
+              <ArrowLeft className="w-3 h-3" />
+              <span>Catalog</span>
+            </Link>
+            <ChevronRight className="w-3 h-3 text-zinc-300" />
+            <button
+              type="button"
+              onClick={() => setIsCartOpen(true)}
+              className="hover:text-zinc-900 transition cursor-pointer"
             >
-              {storeName.split(' ')[0] || 'Aurem'}
-            </span>
-          </Link>
+              Shopping Bag
+            </button>
+            <ChevronRight className="w-3 h-3 text-zinc-300" />
+            <span className="text-zinc-950 font-bold">Smart Checkout</span>
+          </div>
 
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
+          <div className="flex items-center gap-1.5 text-emerald-800 bg-emerald-50/90 border border-emerald-200/60 px-3 py-1 rounded-full text-[11px] font-semibold">
             <Lock className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="font-semibold text-zinc-800 hidden sm:inline">256-Bit SSL Encrypted Checkout</span>
-            <span className="font-semibold text-zinc-800 sm:hidden">Secure Checkout</span>
+            <span>256-Bit SSL Encrypted Checkout</span>
           </div>
         </div>
-      </header>
 
-      {/* 2. Main 2-Column Checkout Grid (Shopify-Grade Layout matching Image 2) */}
-      <main className="max-w-[1360px] mx-auto px-4 sm:px-8 py-8 sm:py-12">
+        {/* 2-Column Split Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* =========================================================
               LEFT COLUMN: Contact, Shipping & Payment (7 Columns)
              ========================================================= */}
           <div className="lg:col-span-7 space-y-8">
-            {/* Step Breadcrumb indicator */}
-            <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium">
-              <Link href="/shop" className="hover:text-zinc-900 transition flex items-center gap-1">
-                <ArrowLeft className="w-3 h-3" />
-                <span>Catalog</span>
-              </Link>
-              <ChevronRight className="w-3 h-3 text-zinc-300" />
-              <span className="text-zinc-950 font-bold">Smart Checkout</span>
-              <ChevronRight className="w-3 h-3 text-zinc-300" />
-              <span className="text-zinc-400">Order Dispatch</span>
-            </div>
-
             <form id="main-checkout-form" onSubmit={handlePlaceOrder} className="space-y-8">
               {/* SECTION 1: Contact Information */}
               <div className="space-y-4">
-                <div className="flex items-baseline justify-between border-b border-zinc-200/80 pb-2">
-                  <h2 className="text-base font-bold uppercase tracking-wider text-zinc-950">
+                <div className="border-b border-zinc-200/80 pb-2">
+                  <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-zinc-950">
                     1. Contact Information
                   </h2>
-                  <span className="text-[11px] text-zinc-400">Bangladeshi 3-Field Guest Checkout</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -358,11 +347,10 @@ export default function CheckoutClientView({
 
               {/* SECTION 2: Delivery Address */}
               <div className="space-y-4">
-                <div className="flex items-baseline justify-between border-b border-zinc-200/80 pb-2">
-                  <h2 className="text-base font-bold uppercase tracking-wider text-zinc-950">
+                <div className="border-b border-zinc-200/80 pb-2">
+                  <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-zinc-950">
                     2. Delivery Address
                   </h2>
-                  <span className="text-[11px] text-zinc-400">Nationwide Express Dispatch</span>
                 </div>
 
                 <div className="space-y-4">
@@ -418,11 +406,10 @@ export default function CheckoutClientView({
 
               {/* SECTION 3: 3-Zone Delivery Logistics */}
               <div className="space-y-4">
-                <div className="flex items-baseline justify-between border-b border-zinc-200/80 pb-2">
-                  <h2 className="text-base font-bold uppercase tracking-wider text-zinc-950">
+                <div className="border-b border-zinc-200/80 pb-2">
+                  <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-zinc-950">
                     3. Shipping Method
                   </h2>
-                  <span className="text-[11px] text-zinc-400">Steadfast Guaranteed Transit</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -538,11 +525,10 @@ export default function CheckoutClientView({
 
               {/* SECTION 4: Payment Method */}
               <div className="space-y-4">
-                <div className="flex items-baseline justify-between border-b border-zinc-200/80 pb-2">
-                  <h2 className="text-base font-bold uppercase tracking-wider text-zinc-950">
+                <div className="border-b border-zinc-200/80 pb-2">
+                  <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-zinc-950">
                     4. Payment Method
                   </h2>
-                  <span className="text-[11px] text-zinc-400">Verified & Encrypted</span>
                 </div>
 
                 <div className="space-y-3">
@@ -658,8 +644,8 @@ export default function CheckoutClientView({
                 </div>
               </div>
 
-              {/* Complete Order CTA (Desktop & Mobile) */}
-              <div className="pt-4">
+              {/* Complete Order CTA (DESKTOP ONLY: Shown below payment on large screens) */}
+              <div className="hidden lg:block pt-4">
                 <button
                   type="submit"
                   form="main-checkout-form"
@@ -689,16 +675,21 @@ export default function CheckoutClientView({
           </div>
 
           {/* =========================================================
-              RIGHT COLUMN: Sticky Order Summary (5 Columns, Image 2)
+              RIGHT COLUMN: Sticky Order Summary (5 Columns)
              ========================================================= */}
-          <div className="lg:col-span-5 bg-zinc-50/80 p-6 sm:p-8 rounded-xl border border-zinc-200/90 space-y-6 lg:sticky lg:top-24">
+          <div className="lg:col-span-5 bg-zinc-50/80 p-5 sm:p-8 rounded-xl border border-zinc-200/90 space-y-6 lg:sticky lg:top-24">
             <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
               <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950">
                 Order Summary ({cart.reduce((sum, item) => sum + item.quantity, 0)} {cart.length === 1 ? 'Item' : 'Items'})
               </h3>
-              <Link href="/shop" className="text-xs text-zinc-500 hover:text-zinc-900 font-medium">
+              {/* 1-Click Access to Bag / Cart Drawer */}
+              <button
+                type="button"
+                onClick={() => setIsCartOpen(true)}
+                className="text-xs text-zinc-600 hover:text-zinc-950 font-semibold underline underline-offset-4 cursor-pointer transition active:scale-[0.98] duration-75"
+              >
                 Edit Bag
-              </Link>
+              </button>
             </div>
 
             {/* Line Items List with Image 2 Thumbnail Bubble Badge */}
@@ -835,6 +826,34 @@ export default function CheckoutClientView({
                   </span>
                 </div>
               </div>
+            </div>
+
+            {/* Complete Order CTA (MOBILE ONLY: Placed EKDOM LAST E after order summary and totals) */}
+            <div className="lg:hidden block pt-3 border-t border-zinc-200">
+              <button
+                type="submit"
+                form="main-checkout-form"
+                disabled={isSubmitting}
+                style={{ backgroundColor: accentColor }}
+                className="w-full py-4 px-6 text-white text-xs font-bold uppercase tracking-[0.2em] rounded transition hover:opacity-95 active:scale-[0.98] duration-75 disabled:opacity-50 cursor-pointer shadow-md flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    <span>Confirming Consignment...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>COMPLETE ORDER • ৳{grandTotal.toLocaleString()}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+
+              <p className="text-[11px] text-zinc-400 text-center mt-3 flex items-center justify-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>By placing your order, you agree to our 3-Day Return & Replacement Policy</span>
+              </p>
             </div>
 
             {/* Trust Markers */}

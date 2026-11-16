@@ -1,7 +1,7 @@
 # 00. Documentation Protocol & Note-Taking Standard
 
 > **Directive for All AI Assistants & Engineers Working on this Codebase:**  
-> Maintain documentation in this `docs/` directory strictly following this protocol. Do not write massive 1,000-line unorganized text blocks. Keep every lesson split, modular, and instantly scannable for tutorial,  quick revision and interview prep.
+> Maintain documentation in this `docs/` directory strictly following this protocol. Do not write massive 1,000-line unorganized text blocks. Keep every lesson split, modular, and instantly scannable for tutorial, quick revision and interview prep.
 ---
 
 ## 1. Documentation Separation of Concerns (SoC) & Master Index
@@ -18,6 +18,7 @@ To prevent confusion between **CR-Locked Production Rules**, **Domain Specificat
 * `docs/10-store-settings-and-configuration-scope.md` — 7-module `StoreConfig` specification & 3-Layer Secret Shield.
 * `docs/11-nextjs-caching-ssg-dynamic-rendering-and-revalidation.md` — Next.js 16 Split Cache, `getPublicStoreConfig()`, `bf-cache`, & `revalidateTag`.
 * `docs/12-seo-metadata-and-crawler-architecture.md` — Technical SEO, `robots.ts`, dynamic `sitemap.ts`, `generateMetadata`, JSON-LD schema & admin shielding.
+* `.gemini/rules/storefront-animation-and-interaction-rules.md` & `docs/14-storefront-micro-animations-and-perceived-performance.md` — Locked storefront micro-animation, tactile touch feedback, and perceived performance rules.
 * `docs/PROMPT_LIBRARY.md` — Ready-to-use AI/developer engineering prompts.
 
 ### Tier 3: Live API Contract
@@ -26,7 +27,7 @@ To prevent confusion between **CR-Locked Production Rules**, **Domain Specificat
 ### Tier 4: Historical MVP Study Notes (`01`–`07` & Reference Guides)
 * `docs/00-how-to-notes.md` (This protocol)
 * `docs/01-database-mongodb.md` (DB singleton & health probe)
-* `docs/02-storage-cloudinary-vs-r2.md` (Media storage & Cloudflare R2 `$0` egress)
+* `docs/02-storage-cloudinary-vs-r2.md` (Media storage & Cloudflare R2 $0 egress)
 * `docs/03-schemas-and-models.md` (Early v1 3-model study note)
 * `docs/04-api-and-uploads.md` (Early v1 upload & config study note)
 * `docs/05-ui-audit-and-typography-refinement.md` (Early v1 storefront typography & theme note)
@@ -49,7 +50,7 @@ Every new note file must strictly follow this exact 4-part structure:
 * Concrete list of functions, components, or endpoints added.
 
 ### `## 2. Why We Built It (Senior Engineering / Interview Concept)`
-* The architectural reason why this exists (e.g. Serverless connection pooling, \$0 egress fees).
+* The architectural reason why this exists (e.g. Serverless connection pooling, $0 egress fees).
 * The bug or disaster that happens if you don't do it this way.
 * Ready-to-use answer for technical job interviews.
 
@@ -86,4 +87,3 @@ Every new note file must strictly follow this exact 4-part structure:
 * **Dashboard UI Inspiration:** [Apex Shadcn Dashboard](https://apex-shadcn.dashboardpack.com/products/prod-1)
 * **Tone & Styling Standard:** Ultra-clean, minimalistic senior-engineer UI. No decorative notice fluff, emojis, sparkles, or excessive AI badges.
 * **Prompt Library:** Master AI & engineering prompt templates are stored in `docs/PROMPT_LIBRARY.md`.
-

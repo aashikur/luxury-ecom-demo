@@ -53,10 +53,11 @@ All checkout, payment, order state, and courier integrations must follow `.gemin
 - **Anti-Over-Engineering Data Boundaries:** Variants are embedded in `Product.variants[]`. Banners are embedded in `StoreConfig.homeSections[]`. Carts live client-side in Zustand. No separate DB collections for Variants, Banners, or Carts.
 
 ## Storefront Animation & Tactile Interaction Rules
-All storefront components must adhere strictly to `.gemini/rules/storefront-animation-and-interaction-rules.md`:
-- **Hero Slider:** Subtle image scale-down (`scale-105` to `scale-100` over 900ms) within static `overflow-hidden` frame; text micro fade-in (`translate-y-2` to `0`).
-- **3:4 Image Reveal:** Solid neutral curtain unmasking (`#f8fafc`) upon R2 image load with zero Cumulative Layout Shift (CLS = 0).
-- **Tactile Touch Feedback:** Immediate active press micro-scale (`active:scale-[0.98] duration-75`) and `-webkit-tap-highlight-color: transparent` across all clickable buttons, pills, cards, and links.
+All storefront components must adhere strictly to `.gemini/rules/storefront-animation-and-interaction-rules.md` and `docs/14-storefront-micro-animations-and-perceived-performance.md`:
+- **Hero Banner Micro-Motion:** Subtle image scale-down ONLY on the image element (`scale-105` to `scale-100` over `1000ms` / 1s) within a static `overflow-hidden` frame. Staggered text micro fade-in (`opacity-0 translate-y-2` -> `opacity-100 translate-y-0`). NEVER animate the whole section or entire card wrapper at once.
+- **Clever Image Reveal (CLS = 0):** Locked aspect ratio (`3:4` portrait) with solid neutral curtain base (`#f8fafc`). Micro-dissolve unmasking on load (`opacity-0 scale-[1.02]` -> `opacity-100 scale-100` over 300ms ease-out) creating an optical focus illusion during network latency.
+- **Universal Tactile Touch Feedback:** Android and iOS instant feedback across all clickable buttons, links, pills, cards, and inputs: `active:scale-[0.98] transition-transform duration-75 ease-out`, `[-webkit-tap-highlight-color:transparent]`, and `touch-manipulation` (no 300ms click delay).
+- **Zero AI Generic Clutter:** Strictly prohibited: sweeping left/right entrance fly-ins (`x: -100px`), whole-card drops, bouncing accordions, rotating buttons, or full-page entrance fade walls.
 - **Header Symmetry:** Desktop `[Logo ─── Navlinks ─── Search · Track · Profile · Cart]`; Mobile `[Menu ─── Logo ─── Search · Profile · Cart]`.
 
 

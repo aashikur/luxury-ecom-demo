@@ -223,3 +223,12 @@
   3. **Frontend Defensive Image Resiliency:** Updated `ProductCard`, `ProductDetailView`, `ProductsTableClient`, `ProductDetailClient`, and `CartDrawer` with resilient image resolution cascades (`media[0]?.url` $\rightarrow$ `images[0]?.url` $\rightarrow$ Unsplash placeholder) ensuring zero broken images across storefront and admin views.
   4. **Clean Product Payload:** Removed legacy `images: formattedMedia` property from `ProductFormClient` submission payload.
   5. **Production Verification:** Passed full Next.js App Router production build (`npm run build`) and TypeScript typecheck (`tsc --noEmit`) with 0 errors.
+
+### Task #27: Storefront Micro-Animation, Tactile Touch & Optical Image Focus Specification
+* **Files Modified/Created:** `.gemini/rules/storefront-animation-and-interaction-rules.md`, `AGENTS.md`, `docs/14-storefront-micro-animations-and-perceived-performance.md`, `docs/00-how-to-notes.md`, `src/app/globals.css`, `src/components/storefront/HeroBanner.tsx`, `src/components/storefront/ProductCard.tsx`, `docs/pipeline/scope.md`.
+* **Changes:**
+  1. **Locked Authoritative Animation Rulebook:** Codified strict micro-interaction and perceived performance rules banning AI generic fly-ins, card bouncing, full-section entrance slides, and sluggish loading walls.
+  2. **Universal Android/iOS Tactile Touch:** Standardized `active:scale-[0.98] duration-75 ease-out`, `[-webkit-tap-highlight-color:transparent]`, `touch-manipulation` (zero 300ms mobile tap delay), and `select-none` on all clickable controls.
+  3. **Hero Banner Image Breather:** Locked outer hero frame to a stationary zero-motion shell; applied scale-down strictly to the image element (`scale-105` to `scale-100` over `1000ms cubic-bezier(0.16,1,0.3,1)`); micro-staggered typography entrance capped at `8px` (`translate-y-2` to `0`).
+  4. **Clever Image Reveal (Optical Focus Illusion):** Sized catalog card image wrappers to `aspect-[3/4]` with solid neutral curtain (`#f8fafc`), transitioning from `opacity-0 scale-[1.02]` to `opacity-100 scale-100` over `300ms` on load to transform network latency into an intentional camera lens focus effect with zero layout shift (CLS = 0).
+  5. **Clean Verification:** Passed TypeScript typecheck (`tsc --noEmit` -> 0 errors).

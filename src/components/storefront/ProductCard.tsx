@@ -68,6 +68,7 @@ export default function ProductCard({
     activeVariants[0];
 
   const [isJustAdded, setIsJustAdded] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -126,17 +127,20 @@ export default function ProductCard({
       }`}
     >
       <div>
-        {/* Clean 3:4 Portrait Image Container */}
+        {/* Clean 3:4 Portrait Image Container - Solid Neutral Curtain with Optical Focus Reveal */}
         <Link
           href={`/products/${product.slug}`}
-          className="relative aspect-[3/4] w-full block overflow-hidden bg-zinc-100 mb-4"
+          className="relative aspect-[3/4] w-full block overflow-hidden bg-zinc-100 mb-4 select-none touch-manipulation [-webkit-tap-highlight-color:transparent]"
         >
           <Image
             src={defaultImage}
             alt={product.title}
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+            sizes="(max-width: 640px) 50vw, 25vw"
+            onLoad={() => setIsImageLoaded(true)}
+            className={`object-cover object-center group-hover:scale-105 transition-all duration-500 ease-out ${
+              isImageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.02]'
+            }`}
           />
 
           {/* Badges (Top Left) */}
@@ -213,7 +217,7 @@ export default function ProductCard({
             ? '#09090B'
             : '#FFFFFF',
         }}
-        className={`w-full py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] transition active:scale-[0.98] duration-75 flex items-center justify-center gap-1.5 ${
+        className={`w-full py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] transition active:scale-[0.98] duration-75 flex items-center justify-center gap-1.5 touch-manipulation [-webkit-tap-highlight-color:transparent] select-none ${
           isAvailable ? 'hover:opacity-90 cursor-pointer' : 'cursor-not-allowed opacity-60'
         }`}
       >

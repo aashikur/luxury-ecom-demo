@@ -104,3 +104,68 @@ html {
 .animate-slide-right {
   animation: slideInLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   LOCKED STOREFRONT MICRO-ANIMATIONS & TACTILE TOUCH ARCHITECTURE
+   Enforces: .gemini/rules/storefront-animation-and-interaction-rules.md
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* 1. Hero Banner Image Scale-Down (105% to 100% over 1000ms) */
+@keyframes heroScaleDown {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.animate-hero-scale-down {
+  animation: heroScaleDown 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform;
+}
+
+/* 2. Micro Fade-In Up (Capped at 8px displacement for instant luxury feel) */
+@keyframes microFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-micro-fade-in {
+  animation: microFadeInUp 0.4s ease-out forwards;
+  will-change: opacity, transform;
+}
+
+/* 3. Clever Image Reveal (Optical Focus Illusion: scale 1.02 -> 1.00 & opacity 0 -> 1) */
+@keyframes imageOpticalFocus {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-image-reveal {
+  animation: imageOpticalFocus 0.3s ease-out forwards;
+  will-change: opacity, transform;
+}
+
+/* 4. Universal Tactile Press & Touch Optimization */
+.tactile-press {
+  transition: transform 75ms ease-out, opacity 75ms ease-out;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.tactile-press:active {
+  transform: scale(0.98);
+}
