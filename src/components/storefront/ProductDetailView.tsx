@@ -1,29 +1,46 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Minus, Plus, Ruler, X, Check } from 'lucide-react';
+import { Minus, Plus, Ruler, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import ProductCard from './ProductCard';
 import type { StockStatus } from '@/models/Product';
 
+interface VariantSelectedOption {
+  name: string;
+  value: string;
+}
+
 interface Variant {
   _id?: string;
   sku: string;
+  title?: string;
   label?: string;
   size?: string;
   colorName?: string;
   colorHex?: string;
+  selectedOptions?: VariantSelectedOption[];
   attributes?: { key: string; value: string }[];
   price?: number;
   discountPrice?: number;
   costPrice?: number;
   stock: number;
   stockStatus?: StockStatus;
-  image?: { url: string; key: string };
+  image?: { url: string; key?: string };
   isDefault?: boolean;
   isActive?: boolean;
+}
+
+interface VariantOptionValue {
+  label: string;
+  meta?: string;
+}
+
+interface VariantOptionGroup {
+  name: string;
+  values: VariantOptionValue[];
 }
 
 interface ModifierOption {
@@ -67,6 +84,42 @@ interface ProductDetailProps {
   showroomAddress?: string;
 }
 
+const COLOR_HEX_MAP: Record<string, string> = {
+  black: '#111111',
+  'midnight black': '#111111',
+  white: '#FFFFFF',
+  'pure white': '#FFFFFF',
+  zinc: '#71717A',
+  grey: '#9CA3AF',
+  gray: '#9CA3AF',
+  'sand dune': '#C2A68D',
+  sand: '#C2A68D',
+  beige: '#F5F5DC',
+  taupe: '#87756B',
+  brown: '#5C4033',
+  chocolate: '#3E2723',
+  'emerald moss green': '#1b4d3e',
+  emerald: '#046A38',
+  'moss green': '#4A5D4E',
+  green: '#15803D',
+  olive: '#556B2F',
+  maroon: '#800000',
+  burgundy: '#800020',
+  plum: '#581845',
+  navy: '#0F172A',
+  blue: '#1E3A8A',
+  pink: '#F472B6',
+  'baby pink': '#FBCFE8',
+  gold: '#D4AF37',
+  khaki: '#C3B091',
+};
+
+function resolveColorHex(label: string, meta?: string): string {
+  if (meta && (meta.startsWith('#') || meta.startsWith('rgb'))) return meta;
+  const key = label.trim().toLowerCase();
+  return COLOR_HEX_MAP[key] || '#71717A';
+}
+
 export default function ProductDetailView({
   product,
   relatedProducts,
@@ -79,32 +132,154 @@ export default function ProductDetailView({
   const { addToCart } = useCart();
 
   const hasVariants = product.hasVariants !== false && (product.variants?.length || 0) > 0;
-  const activeVariants: Variant[] = hasVariants
-    ? (product.variants as Variant[]).filter((v) => v.isActive !== false)
-    : [];
+  const activeVariants: Variant[] = useMemo(() => {
+    return hasVariants
+      ? (product.variants as Variant[]).filter((v) => v.isActive !== false)
+      : [];
+  }, [hasVariants, product.variants]);
+
+  // Extract or derive option groups (e.g. Size, Color)
+  const optionGroups = useMemo<VariantOptionGroup[]>(() => {
+    if (!hasVariants || activeVariants.length === 0) return [];
+
+    if (product.variantOptions && Array.isArray(product.variantOptions) && product.variantOptions.length > 0) {
+      return product.variantOptions;
+    }
+
+    // Dynamic derivation from variants
+    const groupMap = new Map<string, Map<string, string | undefined>>();
+
+    activeVariants.forEach((v) => {
+      if (v.selectedOptions && Array.isArray(v.selectedOptions) && v.selectedOptions.length > 0) {
+        v.selectedOptions.forEach((so) => {
+          if (!groupMap.has(so.name)) groupMap.set(so.name, new Map());
+          const meta = so.name.toLowerCase() === 'color' ? v.colorHex : undefined;
+          groupMap.get(so.name)!.set(so.value, meta);
+        });
+      } else if (v.label && v.label.includes(' / ')) {
+        const parts = v.label.split(' / ').map((s) => s.trim());
+        if (parts.length === 2) {
+          if (!groupMap.has('Size')) groupMap.set('Size', new Map());
+          if (!groupMap.has('Color')) groupMap.set('Color', new Map());
+          groupMap.get('Size')!.set(parts[0], undefined);
+          groupMap.get('Color')!.set(parts[1], v.colorHex);
+        }
+      } else if (v.size) {
+        if (!groupMap.has('Size')) groupMap.set('Size', new Map());
+        groupMap.get('Size')!.set(v.size, undefined);
+        if (v.colorName) {
+          if (!groupMap.has('Color')) groupMap.set('Color', new Map());
+          groupMap.get('Color')!.set(v.colorName, v.colorHex);
+        }
+      }
+    });
+
+    if (groupMap.size > 0) {
+      return Array.from(groupMap.entries()).map(([name, valMap]) => ({
+        name,
+        values: Array.from(valMap.entries()).map(([label, meta]) => ({ label, meta })),
+      }));
+    }
+
+    return [
+      {
+        name: 'Option',
+        values: activeVariants.map((v) => ({ label: v.label || v.size || v.sku || 'Default' })),
+      },
+    ];
+  }, [hasVariants, activeVariants, product.variantOptions]);
 
   // Default variant selection
-  const defaultVariant =
-    activeVariants.find((v) => v.isDefault) ||
-    activeVariants.find(
-      (v) =>
-        v.stockStatus !== 'FORCE_OUT_OF_STOCK' &&
-        (v.stock > 0 || v.stockStatus === 'PRE_ORDER')
-    ) ||
-    activeVariants[0];
-
-  const [selectedVariantId, setSelectedVariantId] = useState<string>(
-    defaultVariant?._id?.toString() || defaultVariant?.sku || ''
-  );
-
-  const selectedVariant = hasVariants
-    ? activeVariants.find(
+  const defaultVariant = useMemo(() => {
+    return (
+      activeVariants.find((v) => v.isDefault) ||
+      activeVariants.find(
         (v) =>
-          (v._id?.toString() && v._id.toString() === selectedVariantId) ||
-          v.sku === selectedVariantId ||
-          v.size === selectedVariantId
-      ) || defaultVariant
-    : null;
+          v.stockStatus !== 'FORCE_OUT_OF_STOCK' &&
+          (v.stock > 0 || v.stockStatus === 'PRE_ORDER')
+      ) ||
+      activeVariants[0]
+    );
+  }, [activeVariants]);
+
+  // Client-side Option Selection Map (e.g. { Size: '54', Color: 'Sand Dune' })
+  const [selectedOptionMap, setSelectedOptionMap] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    if (defaultVariant?.selectedOptions && defaultVariant.selectedOptions.length > 0) {
+      defaultVariant.selectedOptions.forEach((so) => {
+        initial[so.name] = so.value;
+      });
+    } else if (defaultVariant?.label && defaultVariant.label.includes(' / ')) {
+      const parts = defaultVariant.label.split(' / ').map((s) => s.trim());
+      if (parts.length === 2) {
+        initial['Size'] = parts[0];
+        initial['Color'] = parts[1];
+      }
+    } else if (defaultVariant?.size) {
+      initial['Size'] = defaultVariant.size;
+      if (defaultVariant.colorName) {
+        initial['Color'] = defaultVariant.colorName;
+      }
+    }
+    return initial;
+  });
+
+  // Ensure all option groups are populated
+  useEffect(() => {
+    if (optionGroups.length === 0) return;
+    setSelectedOptionMap((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      optionGroups.forEach((group) => {
+        if (!next[group.name] && group.values.length > 0) {
+          next[group.name] = group.values[0].label;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [optionGroups]);
+
+  // Intersecting Variant Matcher
+  const selectedVariant = useMemo(() => {
+    if (!hasVariants || activeVariants.length === 0) return null;
+
+    // 1. Exact match across all selected options
+    const exact = activeVariants.find((v) => {
+      if (v.selectedOptions && v.selectedOptions.length > 0) {
+        return Object.entries(selectedOptionMap).every(([groupName, optVal]) =>
+          v.selectedOptions?.some(
+            (so) =>
+              so.name.toLowerCase() === groupName.toLowerCase() &&
+              so.value.toLowerCase() === optVal.toLowerCase()
+          )
+        );
+      }
+      return Object.values(selectedOptionMap).every((val) => {
+        const vLabel = (v.label || v.title || v.sku || '').toLowerCase();
+        const vSize = (v.size || '').toLowerCase();
+        const vColor = (v.colorName || '').toLowerCase();
+        const target = val.toLowerCase();
+        return vLabel.includes(target) || vSize === target || vColor === target;
+      });
+    });
+
+    if (exact) return exact;
+
+    // 2. Partial match fallback
+    const partial = activeVariants.find((v) => {
+      return Object.values(selectedOptionMap).some((val) => {
+        const target = val.toLowerCase();
+        return (
+          v.selectedOptions?.some((so) => so.value.toLowerCase() === target) ||
+          (v.label || '').toLowerCase().includes(target) ||
+          (v.size || '').toLowerCase() === target
+        );
+      });
+    });
+
+    return partial || defaultVariant || activeVariants[0];
+  }, [hasVariants, activeVariants, selectedOptionMap, defaultVariant]);
 
   // Modifiers state: groupName -> array of selected labels
   const [selectedModifiers, setSelectedModifiers] = useState<Record<string, string[]>>({});
@@ -120,23 +295,62 @@ export default function ProductDetailView({
     { url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80', key: '', type: 'IMAGE' },
   ];
 
+  // Resolve active gallery display with user override precedence
   const currentImage =
     images[activeGalleryIdx]?.url || selectedVariant?.image?.url || images[0]?.url;
 
-  const handleVariantSelect = (variantId: string) => {
-    setSelectedVariantId(variantId);
-    const found = activeVariants.find(
-      (v) =>
-        (v._id?.toString() && v._id.toString() === variantId) ||
-        v.sku === variantId ||
-        v.size === variantId
-    );
-    if (found?.image?.url) {
-      const idx = images.findIndex((img: { url: string }) => img.url === found.image?.url);
+  // Handle option select with auto image sync
+  const handleOptionSelect = (groupName: string, value: string) => {
+    const nextMap = { ...selectedOptionMap, [groupName]: value };
+    setSelectedOptionMap(nextMap);
+
+    const matched = activeVariants.find((v) => {
+      if (v.selectedOptions && v.selectedOptions.length > 0) {
+        return Object.entries(nextMap).every(([g, val]) =>
+          v.selectedOptions?.some(
+            (so) => so.name.toLowerCase() === g.toLowerCase() && so.value.toLowerCase() === val.toLowerCase()
+          )
+        );
+      }
+      return Object.values(nextMap).every((val) => {
+        const target = val.toLowerCase();
+        return (
+          (v.label || '').toLowerCase().includes(target) ||
+          (v.size || '').toLowerCase() === target
+        );
+      });
+    });
+
+    if (matched?.image?.url) {
+      const idx = images.findIndex((img: { url: string }) => img.url === matched.image?.url);
       if (idx !== -1) {
         setActiveGalleryIdx(idx);
       }
     }
+  };
+
+  // Option availability helper
+  const isOptionAvailable = (groupName: string, value: string) => {
+    const testMap = { ...selectedOptionMap, [groupName]: value };
+    const v = activeVariants.find((variant) => {
+      if (variant.selectedOptions && variant.selectedOptions.length > 0) {
+        return Object.entries(testMap).every(([g, val]) =>
+          variant.selectedOptions?.some(
+            (so) => so.name.toLowerCase() === g.toLowerCase() && so.value.toLowerCase() === val.toLowerCase()
+          )
+        );
+      }
+      return Object.values(testMap).every((val) => {
+        const target = val.toLowerCase();
+        return (
+          (variant.label || '').toLowerCase().includes(target) ||
+          (variant.size || '').toLowerCase() === target
+        );
+      });
+    });
+
+    if (!v) return false;
+    return v.stockStatus !== 'FORCE_OUT_OF_STOCK' && (v.stock > 0 || v.stockStatus === 'PRE_ORDER');
   };
 
   // 1. PRICE RESOLUTION LOGIC:
@@ -258,8 +472,12 @@ export default function ProductDetailView({
         title: product.title,
         slug: product.slug,
         image: currentImage,
-        size: selectedVariant?.size || '',
-        variantLabel: selectedVariant?.label || selectedVariant?.size || '',
+        size: selectedOptionMap['Size'] || selectedVariant?.size || '',
+        variantLabel:
+          selectedVariant?.title ||
+          selectedVariant?.label ||
+          Object.values(selectedOptionMap).join(' / ') ||
+          '',
         attributes: selectedVariant?.attributes || undefined,
         modifiers: chosenModifierList.length > 0 ? chosenModifierList : undefined,
         price: finalUnitPrice,
@@ -324,8 +542,8 @@ export default function ProductDetailView({
                 <button
                   key={i}
                   onClick={() => setActiveGalleryIdx(i)}
-                  className={`relative w-20 aspect-[3/4] border overflow-hidden cursor-pointer shrink-0 ${
-                    activeGalleryIdx === i ? 'border-zinc-900 ring-1 ring-zinc-900' : 'border-zinc-200 opacity-60'
+                  className={`relative w-20 aspect-[3/4] border overflow-hidden cursor-pointer shrink-0 transition active:scale-[0.98] duration-75 ${
+                    activeGalleryIdx === i ? 'border-zinc-900 ring-1 ring-zinc-900' : 'border-zinc-200 opacity-60 hover:opacity-100'
                   }`}
                 >
                   <Image src={img.url} alt="" fill className="object-cover" />
@@ -343,12 +561,20 @@ export default function ProductDetailView({
             </p>
           )}
 
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 mb-3">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 mb-1.5">
             {product.title}
           </h1>
 
+          {/* Product Code / SKU Display (matches reference: 'Product Code: 251811K') */}
+          <p className="text-xs text-zinc-500 font-medium mb-3">
+            Product Code:{' '}
+            <span className="text-zinc-800 font-mono font-semibold">
+              {selectedVariant?.sku || product.sku || 'N/A'}
+            </span>
+          </p>
+
           {/* Price Row */}
-          <div className="flex items-baseline gap-3 mb-6">
+          <div className="flex items-baseline gap-3 mb-4">
             {hasDiscount && (
               <span className="text-lg line-through text-zinc-400">
                 {originalPrice.toLocaleString()}৳
@@ -369,81 +595,127 @@ export default function ProductDetailView({
             {product.description}
           </p>
 
-          {/* Variant Selector (Only shown if hasVariants === true) */}
-          {hasVariants && activeVariants.length > 0 && (
-            <div className="space-y-4 mb-6 pt-2 border-t border-zinc-100">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold uppercase tracking-wider text-zinc-800">
-                  {product.productType === 'CLOTHING' ? 'Size / Option' : 'Select Option'}:{' '}
-                  <strong className="text-zinc-950">
-                    {selectedVariant?.label || selectedVariant?.size || selectedVariant?.sku}
-                  </strong>
-                </span>
+          {/* Variant Selector (Separated Size Pills & Color Swatches) */}
+          {hasVariants && optionGroups.length > 0 && (
+            <div className="space-y-5 mb-6 pt-2 border-t border-zinc-100">
+              {optionGroups.map((group) => {
+                const isColor =
+                  group.name.toLowerCase() === 'color' ||
+                  group.name.toLowerCase() === 'shade' ||
+                  group.values.some((v) => Boolean(v.meta));
+                const isSize = group.name.toLowerCase() === 'size';
+                const currentSelectedVal = selectedOptionMap[group.name] || group.values[0]?.label;
 
-                {hasSizeChart && (
-                  <button
-                    type="button"
-                    onClick={() => setIsSizeGuideOpen(true)}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-600 hover:text-zinc-950 cursor-pointer"
-                  >
-                    <Ruler className="w-3.5 h-3.5" />
-                    <span>Size Guide</span>
-                  </button>
-                )}
-              </div>
+                return (
+                  <div key={group.name} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold uppercase tracking-wider text-zinc-800">
+                        {group.name}: <strong className="text-zinc-950 font-semibold">{currentSelectedVal}</strong>
+                      </span>
 
-              {/* Selector Pills / Buttons */}
-              <div className="flex flex-wrap gap-2">
-                {activeVariants.map((v: Variant) => {
-                  const idKey = v._id?.toString() || v.sku || v.size || '';
-                  const isSelected =
-                    selectedVariantId === idKey ||
-                    selectedVariant?._id?.toString() === idKey ||
-                    selectedVariant?.sku === idKey;
-                  const variantOOS =
-                    v.stockStatus === 'FORCE_OUT_OF_STOCK' ||
-                    (v.stock <= 0 && v.stockStatus !== 'PRE_ORDER');
-
-                  const displayLabel = v.size || v.label || v.sku;
-
-                  return (
-                    <button
-                      key={idKey}
-                      type="button"
-                      onClick={() => handleVariantSelect(idKey)}
-                      disabled={variantOOS}
-                      className={`min-w-10 px-3 h-10 text-xs font-bold border transition relative cursor-pointer flex items-center justify-center gap-1.5 ${
-                        isSelected
-                          ? 'bg-zinc-950 text-white border-zinc-950'
-                          : variantOOS
-                          ? 'bg-zinc-100 text-zinc-300 border-zinc-200 cursor-not-allowed line-through'
-                          : 'bg-white text-zinc-800 border-zinc-300 hover:border-zinc-950'
-                      }`}
-                    >
-                      {v.colorHex && (
-                        <span
-                          className="w-3 h-3 rounded-full border border-black/20 shrink-0"
-                          style={{ backgroundColor: v.colorHex }}
-                        />
+                      {isSize && hasSizeChart && (
+                        <button
+                          type="button"
+                          onClick={() => setIsSizeGuideOpen(true)}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-600 hover:text-zinc-950 transition active:scale-[0.98] duration-75 cursor-pointer"
+                        >
+                          <Ruler className="w-3.5 h-3.5" />
+                          <span>Size Guide</span>
+                        </button>
                       )}
-                      <span>{displayLabel}</span>
-                      {v.price && v.price !== product.basePrice && (
-                        <span className="text-[10px] opacity-75 font-normal ml-0.5">
-                          ({v.discountPrice ?? v.price}৳)
-                        </span>
-                      )}
-                      {v.stock > 0 && v.stock <= 5 && !variantOOS && (
-                        <span className="absolute -top-1.5 -right-1 px-1 bg-amber-500 text-white text-[8px] font-bold rounded-xs">
-                          {v.stock} left
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                    </div>
 
-              {isOutOfStock && (
-                <p className="text-xs text-red-600 font-medium">Selected option is currently out of stock.</p>
+                    {isColor ? (
+                      /* Color Swatches Row */
+                      <div className="flex flex-wrap gap-2.5 pt-0.5">
+                        {group.values.map((val) => {
+                          const isSelected = currentSelectedVal === val.label;
+                          const isAvailable = isOptionAvailable(group.name, val.label);
+                          const hex = resolveColorHex(val.label, val.meta);
+                          const isWhite = hex.toLowerCase() === '#ffffff' || hex.toLowerCase() === '#fff';
+
+                          return (
+                            <button
+                              key={val.label}
+                              type="button"
+                              onClick={() => handleOptionSelect(group.name, val.label)}
+                              className={`group flex items-center gap-2 px-3.5 py-2 rounded-sm border text-xs font-medium transition active:scale-[0.98] duration-75 cursor-pointer ${
+                                isSelected
+                                  ? 'border-zinc-950 bg-zinc-950 text-white shadow-xs'
+                                  : !isAvailable
+                                  ? 'border-zinc-200 bg-zinc-50 text-zinc-400 opacity-60'
+                                  : 'border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400'
+                              }`}
+                            >
+                              <span
+                                className={`w-3.5 h-3.5 rounded-full shrink-0 border transition ${
+                                  isWhite ? 'border-zinc-300' : 'border-black/20'
+                                } ${isSelected ? 'ring-2 ring-white ring-offset-1 ring-offset-zinc-950' : ''}`}
+                                style={{ backgroundColor: hex }}
+                              />
+                              <span>{val.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      /* Size Pills Row / Standard Option Pills */
+                      <div className="flex flex-wrap gap-2 pt-0.5">
+                        {group.values.map((val) => {
+                          const isSelected = currentSelectedVal === val.label;
+                          const isAvailable = isOptionAvailable(group.name, val.label);
+
+                          return (
+                            <button
+                              key={val.label}
+                              type="button"
+                              onClick={() => handleOptionSelect(group.name, val.label)}
+                              className={`min-w-11 px-3.5 h-10 rounded-sm text-xs font-semibold border transition active:scale-[0.98] duration-75 cursor-pointer flex items-center justify-center ${
+                                isSelected
+                                  ? 'bg-zinc-950 text-white border-zinc-950 shadow-xs'
+                                  : !isAvailable
+                                  ? 'bg-zinc-50 text-zinc-300 border-zinc-200 line-through'
+                                  : 'bg-white text-zinc-800 border-zinc-300 hover:border-zinc-950'
+                              }`}
+                            >
+                              {val.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Dynamic Live Stock Badge (Selling Fast / Out of Stock / In Stock) */}
+              {selectedVariant && (
+                <div className="pt-1">
+                  {isOutOfStock ? (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
+                      <span className="w-2 h-2 rounded-full bg-red-500" />
+                      Sold Out — Currently Unavailable
+                    </div>
+                  ) : isPreOrder ? (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium">
+                      <span className="w-2 h-2 rounded-full bg-blue-500" />
+                      Pre-Order — Dispatches in 5–7 Days
+                    </div>
+                  ) : selectedVariant.stock > 0 && selectedVariant.stock <= 3 ? (
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-900 text-xs font-bold tracking-tight">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                      </span>
+                      ONLY {selectedVariant.stock} LEFT — SELLING FAST
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                      In Stock — Ready to Dispatch
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -476,7 +748,7 @@ export default function ProductDetailView({
                             type="button"
                             disabled={disabled}
                             onClick={() => handleModifierToggle(group, opt.label)}
-                            className={`p-2.5 text-xs text-left border rounded transition flex items-center justify-between cursor-pointer ${
+                            className={`p-2.5 text-xs text-left border rounded transition active:scale-[0.98] duration-75 flex items-center justify-between cursor-pointer ${
                               isChecked
                                 ? 'bg-zinc-900 text-white border-zinc-900'
                                 : disabled
@@ -503,14 +775,14 @@ export default function ProductDetailView({
             <div className="flex items-center border border-zinc-300 bg-white">
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="px-3 py-3 text-zinc-600 hover:text-zinc-950 cursor-pointer"
+                className="px-3 py-3 text-zinc-600 hover:text-zinc-950 transition active:scale-[0.98] duration-75 cursor-pointer"
               >
                 <Minus className="w-3.5 h-3.5" />
               </button>
               <span className="w-10 text-center text-xs font-bold">{quantity}</span>
               <button
                 onClick={() => setQuantity((q) => q + 1)}
-                className="px-3 py-3 text-zinc-600 hover:text-zinc-950 cursor-pointer"
+                className="px-3 py-3 text-zinc-600 hover:text-zinc-950 transition active:scale-[0.98] duration-75 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -519,7 +791,7 @@ export default function ProductDetailView({
             <button
               onClick={() => handleAdd(false)}
               disabled={isOutOfStock}
-              className="flex-1 py-3.5 px-6 bg-stone-100 hover:bg-stone-200 text-zinc-900 text-xs font-bold uppercase tracking-[0.18em] transition cursor-pointer disabled:opacity-40"
+              className="flex-1 py-3.5 px-6 bg-stone-100 hover:bg-stone-200 text-zinc-900 text-xs font-bold uppercase tracking-[0.18em] transition active:scale-[0.98] duration-75 cursor-pointer disabled:opacity-40"
             >
               {isOutOfStock ? 'SOLD OUT' : isPreOrder ? 'PRE-ORDER TO CART' : 'ADD TO CART'}
             </button>
@@ -530,7 +802,7 @@ export default function ProductDetailView({
             onClick={() => handleAdd(true)}
             disabled={isOutOfStock}
             style={{ backgroundColor: isOutOfStock ? '#A1A1AA' : accentColor }}
-            className="w-full py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:opacity-95 cursor-pointer disabled:opacity-40 mb-5"
+            className="w-full py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white transition active:scale-[0.98] duration-75 hover:opacity-95 cursor-pointer disabled:opacity-40 mb-5"
           >
             {isOutOfStock ? 'OUT OF STOCK' : isPreOrder ? 'PRE-ORDER NOW' : 'ORDER NOW'}
           </button>
@@ -561,7 +833,7 @@ export default function ProductDetailView({
               style={{
                 borderColor: activeTab === tab.id ? accentColor : 'transparent',
               }}
-              className={`pb-3.5 text-xs font-bold uppercase tracking-widest border-b-2 transition cursor-pointer ${
+              className={`pb-3.5 text-xs font-bold uppercase tracking-widest border-b-2 transition active:scale-[0.98] duration-75 cursor-pointer ${
                 activeTab === tab.id ? 'text-zinc-950' : 'text-zinc-400 hover:text-zinc-700'
               }`}
             >
@@ -659,7 +931,7 @@ export default function ProductDetailView({
               </div>
               <button
                 onClick={() => setIsSizeGuideOpen(false)}
-                className="text-zinc-400 hover:text-zinc-900 cursor-pointer"
+                className="text-zinc-400 hover:text-zinc-900 transition active:scale-[0.98] duration-75 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
