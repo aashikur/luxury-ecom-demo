@@ -104,6 +104,10 @@ function DesktopMegaMenu({
         const hasChildren = Boolean(item.children && item.children.length > 0);
         const isDropdownOpen = openDropdownId === item.id;
 
+        const isMultiColumnMega = Boolean(
+          item.children?.some((child) => Boolean(child.children && child.children.length > 0))
+        );
+
         return (
           <div
             key={item.id || item.href}
@@ -143,24 +147,65 @@ function DesktopMegaMenu({
 
             {/* Mega-Menu Dropdown Panel with Hover Bridge */}
             {hasChildren && isDropdownOpen && (
-              <div
-                className="absolute top-[calc(100%-1px)] left-0 min-w-[280px] bg-white border border-zinc-200 rounded-b-lg shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:w-full before:h-3"
-                onMouseEnter={() => handleMouseEnter(item.id)}
-                onMouseLeave={handleMouseLeave}
-              >
-                <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-zinc-400 uppercase border-b border-zinc-100 flex items-center justify-between">
-                  <span>{item.label} Curation</span>
-                  <span className="text-[9px] font-normal lowercase text-zinc-400">
-                    {item.children!.length} sub-collections
-                  </span>
+              isMultiColumnMega ? (
+                /* Multi-Column Mega Menu (Full-width banner across viewport) */
+                <div
+                  className="fixed left-0 right-0 top-20 bg-white/98 backdrop-blur-md border-b border-zinc-200 shadow-xl z-50 py-8 px-6 lg:px-12 animate-in fade-in slide-in-from-top-1 duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:w-full before:h-3"
+                  onMouseEnter={() => handleMouseEnter(item.id)}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <div className="max-w-[1360px] mx-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
+                    {item.children!.map((col) => (
+                      <div key={col.id || col.label} className="space-y-3.5">
+                        <Link
+                          href={col.href}
+                          onClick={() => setOpenDropdownId(null)}
+                          className="block text-[11px] font-bold uppercase tracking-[0.18em] text-[#060d11] hover:text-[#076E46] transition"
+                        >
+                          {col.label}
+                        </Link>
+                        {col.children && col.children.length > 0 && (
+                          <ul className="space-y-2">
+                            {col.children.map((sub) => (
+                              <li key={sub.id || sub.href}>
+                                <Link
+                                  href={sub.href}
+                                  onClick={() => setOpenDropdownId(null)}
+                                  className="inline-flex items-center gap-1.5 text-xs font-normal text-zinc-600 hover:text-zinc-950 hover:underline transition"
+                                >
+                                  <span>{sub.label}</span>
+                                  {sub.badgeText && (
+                                    <span
+                                      style={{ backgroundColor: accentColor }}
+                                      className="px-1.5 py-0.2 rounded-full text-[8px] font-bold text-white uppercase tracking-wider"
+                                    >
+                                      {sub.badgeText}
+                                    </span>
+                                  )}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="py-1">
+              ) : (
+                /* Sleek Single / Double Column Dropdown */
+                <div
+                  className={`absolute top-[calc(100%-1px)] left-0 ${
+                    item.children!.length > 6 ? 'min-w-[420px] grid grid-cols-2 gap-x-1 p-2' : 'min-w-[240px] py-2'
+                  } bg-white border border-zinc-200 rounded-b-lg shadow-xl z-50 animate-in fade-in slide-in-from-top-1 duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:w-full before:h-3`}
+                  onMouseEnter={() => handleMouseEnter(item.id)}
+                  onMouseLeave={handleMouseLeave}
+                >
                   {item.children!.map((sub) => (
                     <Link
                       key={sub.id || sub.href}
                       href={sub.href}
                       onClick={() => setOpenDropdownId(null)}
-                      className="flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-zinc-700 hover:text-zinc-950 hover:bg-zinc-50 transition active:scale-[0.98] duration-75 group"
+                      className="flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-zinc-700 hover:text-zinc-950 hover:bg-zinc-50 transition active:scale-[0.98] duration-75 group rounded"
                     >
                       <span className="group-hover:translate-x-0.5 transition-transform duration-150">
                         {sub.label}
@@ -179,7 +224,7 @@ function DesktopMegaMenu({
                     </Link>
                   ))}
                 </div>
-              </div>
+              )
             )}
           </div>
         );
@@ -434,26 +479,28 @@ export default function Navbar({
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="relative p-2 text-zinc-900 hover:text-zinc-600 transition active:scale-[0.98] duration-75 cursor-pointer"
+              className="p-2 text-zinc-900 hover:text-zinc-600 transition active:scale-[0.98] duration-75 cursor-pointer"
               aria-label="Open Shopping Bag"
             >
-              <ShoppingBag
-                className={`w-5 h-5 text-zinc-900 transition-transform duration-300 ${
-                  isCartBumping ? 'scale-125 -rotate-12 text-[#076E46]' : 'scale-100 rotate-0'
-                }`}
-              />
-              {totalItems > 0 && (
-                <span
-                  style={{ backgroundColor: accentColor }}
-                  className={`absolute -top-0.5 -right-0.5 min-w-[19px] h-[19px] px-1 rounded-full text-[10px] font-bold text-white flex items-center justify-center shadow-xs transition-all duration-300 pointer-events-none ${
-                    isCartBumping
-                      ? 'scale-125 ring-2 ring-emerald-400 animate-bounce'
-                      : 'scale-100'
+              <div className="relative">
+                <ShoppingBag
+                  className={`w-5 h-5 text-zinc-900 transition-transform duration-300 ${
+                    isCartBumping ? 'scale-125 -rotate-12 text-[#076E46]' : 'scale-100 rotate-0'
                   }`}
-                >
-                  {totalItems}
-                </span>
-              )}
+                />
+                {totalItems > 0 && (
+                  <span
+                    style={{ backgroundColor: accentColor }}
+                    className={`absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-bold text-white flex items-center justify-center shadow-xs transition-all duration-300 pointer-events-none leading-none ${
+                      isCartBumping
+                        ? 'scale-125 ring-2 ring-emerald-400 animate-bounce'
+                        : 'scale-100'
+                    }`}
+                  >
+                    {totalItems}
+                  </span>
+                )}
+              </div>
             </button>
           </div>
         </div>
@@ -628,25 +675,53 @@ export default function Navbar({
                     {isExpanded && (
                       <div className="pl-3 pb-2 space-y-1.5 animate-in fade-in duration-150">
                         {item.children!.map((sub: HeaderNavLinkItem) => (
-                          <Link
-                            key={sub.id}
-                            href={sub.href}
-                            onClick={() => setIsDrawerOpen(false)}
-                            className="flex items-center justify-between text-xs font-semibold text-zinc-600 hover:text-zinc-950 py-2 transition active:scale-[0.98] duration-75 border-b border-zinc-50"
-                          >
-                            <span>{sub.label}</span>
-                            <div className="flex items-center gap-1.5">
-                              {sub.badgeText && (
-                                <span
-                                  style={{ backgroundColor: accentColor }}
-                                  className="px-1.5 py-0.5 text-[8px] font-bold text-white rounded-full uppercase"
-                                >
-                                  {sub.badgeText}
-                                </span>
-                              )}
-                              <ArrowRight className="w-3.5 h-3.5 text-zinc-300" />
+                          sub.children && sub.children.length > 0 ? (
+                            <div key={sub.id} className="pt-2 pb-1 border-t border-zinc-100 first:border-0 first:pt-0">
+                              <span className="block text-[11px] font-bold uppercase tracking-wider text-zinc-900 mb-1.5">
+                                {sub.label}
+                              </span>
+                              <div className="pl-2 space-y-1">
+                                {sub.children.map((leaf) => (
+                                  <Link
+                                    key={leaf.id}
+                                    href={leaf.href}
+                                    onClick={() => setIsDrawerOpen(false)}
+                                    className="flex items-center justify-between text-xs text-zinc-600 hover:text-zinc-950 py-1 transition"
+                                  >
+                                    <span>{leaf.label}</span>
+                                    {leaf.badgeText && (
+                                      <span
+                                        style={{ backgroundColor: accentColor }}
+                                        className="px-1.5 py-0.2 rounded-full text-[8px] font-bold text-white uppercase tracking-wider"
+                                      >
+                                        {leaf.badgeText}
+                                      </span>
+                                    )}
+                                  </Link>
+                                ))}
+                              </div>
                             </div>
-                          </Link>
+                          ) : (
+                            <Link
+                              key={sub.id}
+                              href={sub.href}
+                              onClick={() => setIsDrawerOpen(false)}
+                              className="flex items-center justify-between text-xs font-semibold text-zinc-600 hover:text-zinc-950 py-2 transition active:scale-[0.98] duration-75 border-b border-zinc-50"
+                            >
+                              <span>{sub.label}</span>
+                              <div className="flex items-center gap-1.5">
+                                {sub.badgeText && (
+                                  <span
+                                    style={{ backgroundColor: accentColor }}
+                                    className="px-1.5 py-0.5 text-[8px] font-bold text-white rounded-full uppercase"
+                                  >
+                                    {sub.badgeText}
+                                  </span>
+                                )}
+                                <ArrowRight className="w-3.5 h-3.5 text-zinc-300" />
+                              </div>
+                            </Link>
+                          )
                         ))}
                       </div>
                     )}

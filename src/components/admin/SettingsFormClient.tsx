@@ -21,6 +21,7 @@ import {
   Trash2,
   Edit2,
   X,
+  Check,
   ExternalLink,
 } from 'lucide-react';
 import {
@@ -131,6 +132,41 @@ export default function SettingsFormClient({
     href: '',
     badgeText: '',
   });
+
+  // Inline Badge Editor state
+  const [editingBadgeId, setEditingBadgeId] = useState<string | null>(null);
+  const [tempBadgeText, setTempBadgeText] = useState<string>('');
+
+  const startEditingBadge = (id: string, currentBadge: string = '') => {
+    setEditingBadgeId(id);
+    setTempBadgeText(currentBadge || '');
+  };
+
+  const saveBadge = (id: string, parentId?: string) => {
+    const text = tempBadgeText.trim();
+    const updated = (config.headerNavLinks || []).map((link: IHeaderNavLink) => {
+      // If parentId provided, it is a sub-link
+      if (parentId && link.id === parentId) {
+        const updatedChildren = (link.children || []).map((sub: IHeaderNavLink) => {
+          if (sub.id === id) {
+            return { ...sub, badgeText: text || undefined };
+          }
+          return sub;
+        });
+        return { ...link, children: updatedChildren };
+      }
+
+      // If no parentId, it is a primary link
+      if (link.id === id) {
+        return { ...link, badgeText: text || undefined };
+      }
+      return link;
+    });
+
+    setConfig({ ...config, headerNavLinks: updated });
+    setEditingBadgeId(null);
+    setTempBadgeText('');
+  };
 
   const checkScroll = () => {
     if (tabsRef.current) {
@@ -959,7 +995,7 @@ export default function SettingsFormClient({
                   .map((link: IHeaderNavLink, idx: number) => (
                     <div
                       key={link.id}
-                      className="p-3 rounded-md border border-slate-200 bg-white space-y-2.5"
+                      className="group p-3 rounded-md border border-slate-200 bg-white space-y-2 hover:border-slate-300 transition"
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
@@ -969,10 +1005,59 @@ export default function SettingsFormClient({
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-semibold text-[#060d11]">{link.label}</span>
-                              {link.badgeText && (
-                                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 uppercase">
-                                  {link.badgeText}
-                                </Badge>
+
+                              {/* Primary Link Inline Badge Editor */}
+                              {editingBadgeId === link.id ? (
+                                <div className="flex items-center gap-1 animate-in fade-in duration-100">
+                                  <input
+                                    type="text"
+                                    autoFocus
+                                    value={tempBadgeText}
+                                    onChange={(e) => setTempBadgeText(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') saveBadge(link.id);
+                                      if (e.key === 'Escape') setEditingBadgeId(null);
+                                    }}
+                                    placeholder="Badge text..."
+                                    className="w-24 px-1.5 py-0.5 text-[10px] font-bold uppercase border border-[#076E46] rounded focus:outline-none bg-white text-[#060d11]"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => saveBadge(link.id)}
+                                    className="p-0.5 text-[#076E46] hover:text-[#055C3A] cursor-pointer"
+                                    title="Save badge"
+                                  >
+                                    <Check className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingBadgeId(null)}
+                                    className="p-0.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                                    title="Cancel"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : link.badgeText ? (
+                                <button
+                                  type="button"
+                                  onClick={() => startEditingBadge(link.id, link.badgeText)}
+                                  className="group/badge inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
+                                  title="Click to edit badge"
+                                >
+                                  <span>{link.badgeText}</span>
+                                  <Edit2 className="w-2.5 h-2.5 opacity-40 group-hover/badge:opacity-100 text-emerald-700" />
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => startEditingBadge(link.id, '')}
+                                  className="opacity-0 group-hover:opacity-100 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium uppercase tracking-wider text-slate-400 hover:text-[#076E46] hover:bg-slate-100 border border-dashed border-slate-200 hover:border-[#076E46] transition cursor-pointer"
+                                  title="Add badge"
+                                >
+                                  <Plus className="w-2.5 h-2.5" />
+                                  <span>Badge</span>
+                                </button>
                               )}
                             </div>
                             <span className="text-xs font-mono text-slate-500">{link.href}</span>
@@ -1031,27 +1116,75 @@ export default function SettingsFormClient({
                         </div>
                       </div>
 
-                      {/* Nested Sub-Links */}
+                      {/* Nested Sub-Links: Clean unboxed layout with inline badge editing */}
                       {link.children && link.children.length > 0 && (
-                        <div className="pl-9 pt-2 space-y-1.5 border-t border-slate-100">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                            Nested Sub-Links ({link.children.length})
-                          </span>
+                        <div className="pl-9 pt-1 space-y-0.5 border-t border-slate-100/70">
                           {link.children.map((sub: IHeaderNavLink, subIdx: number) => (
                             <div
                               key={sub.id}
-                              className="flex items-center justify-between py-1.5 px-3 rounded bg-slate-50 border border-slate-200 text-xs"
+                              className="group/sub flex items-center justify-between py-1 px-2 rounded-md hover:bg-slate-50 transition text-xs opacity-70 hover:opacity-100"
                             >
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold text-slate-800">↳ {sub.label}</span>
-                                {sub.badgeText && (
-                                  <Badge variant="secondary" className="text-[9px] py-0 px-1 uppercase">
-                                    {sub.badgeText}
-                                  </Badge>
+                                <span className="font-medium text-slate-800">↳ {sub.label}</span>
+
+                                {/* Sub-Link Inline Badge Editor */}
+                                {editingBadgeId === sub.id ? (
+                                  <div className="flex items-center gap-1 animate-in fade-in duration-100">
+                                    <input
+                                      type="text"
+                                      autoFocus
+                                      value={tempBadgeText}
+                                      onChange={(e) => setTempBadgeText(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') saveBadge(sub.id, link.id);
+                                        if (e.key === 'Escape') setEditingBadgeId(null);
+                                      }}
+                                      placeholder="Badge..."
+                                      className="w-20 px-1.5 py-0.5 text-[9px] font-bold uppercase border border-[#076E46] rounded focus:outline-none bg-white text-[#060d11]"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => saveBadge(sub.id, link.id)}
+                                      className="p-0.5 text-[#076E46] hover:text-[#055C3A] cursor-pointer"
+                                      title="Save badge"
+                                    >
+                                      <Check className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingBadgeId(null)}
+                                      className="p-0.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                                      title="Cancel"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ) : sub.badgeText ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => startEditingBadge(sub.id, sub.badgeText)}
+                                    className="group/subbadge inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 border border-slate-200 transition cursor-pointer"
+                                    title="Click to edit badge"
+                                  >
+                                    <span>{sub.badgeText}</span>
+                                    <Edit2 className="w-2 h-2 opacity-40 group-hover/subbadge:opacity-100 text-slate-600" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => startEditingBadge(sub.id, '')}
+                                    className="opacity-0 group-hover/sub:opacity-100 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-medium uppercase tracking-wider text-slate-400 hover:text-[#076E46] hover:bg-slate-100 border border-dashed border-slate-200 hover:border-[#076E46] transition cursor-pointer"
+                                    title="Add badge"
+                                  >
+                                    <Plus className="w-2 h-2" />
+                                    <span>Badge</span>
+                                  </button>
                                 )}
+
                                 <span className="text-slate-400 font-mono text-[11px]">{sub.href}</span>
                               </div>
-                              <div className="flex items-center gap-1">
+
+                              <div className="flex items-center gap-1 opacity-40 group-hover/sub:opacity-100 transition">
                                 <button
                                   type="button"
                                   onClick={() => moveSubLinkOrder(link.id, sub.id, 'up')}
