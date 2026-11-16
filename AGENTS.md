@@ -52,4 +52,12 @@ All checkout, payment, order state, and courier integrations must follow `.gemin
 - **Steadfast Courier 1-Click Booking:** 1-click consignment creation via `src/services/courier.service.ts` with automated fallback sandbox simulation in dev.
 - **Anti-Over-Engineering Data Boundaries:** Variants are embedded in `Product.variants[]`. Banners are embedded in `StoreConfig.homeSections[]`. Carts live client-side in Zustand. No separate DB collections for Variants, Banners, or Carts.
 
+## Storefront Animation & Tactile Interaction Rules
+All storefront components must adhere strictly to `.gemini/rules/storefront-animation-and-interaction-rules.md`:
+- **Hero Slider:** Subtle image scale-down (`scale-105` to `scale-100` over 900ms) within static `overflow-hidden` frame; text micro fade-in (`translate-y-2` to `0`).
+- **3:4 Image Reveal:** Solid neutral curtain unmasking (`#f8fafc`) upon R2 image load with zero Cumulative Layout Shift (CLS = 0).
+- **Tactile Touch Feedback:** Immediate active press micro-scale (`active:scale-[0.98] duration-75`) and `-webkit-tap-highlight-color: transparent` across all clickable buttons, pills, cards, and links.
+- **Header Symmetry:** Desktop `[Logo ─── Navlinks ─── Search · Track · Profile · Cart]`; Mobile `[Menu ─── Logo ─── Search · Profile · Cart]`.
+
+
 
