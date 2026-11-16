@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
     const newCollection = await Collection.create({
       title: body.title.trim(),
       slug: finalSlug,
+      parentSlug: body.parentSlug ? body.parentSlug.trim() : null,
       description: body.description || '',
       bannerImage: body.bannerImage || { url: '', key: '' },
       badgeText: body.badgeText || '',
@@ -106,6 +107,7 @@ export async function PUT(request: NextRequest) {
     }
 
     if (updates.title) collection.title = updates.title.trim();
+    if (updates.parentSlug !== undefined) collection.parentSlug = updates.parentSlug ? updates.parentSlug.trim() : null;
     if (updates.description !== undefined) collection.description = updates.description;
     if (updates.bannerImage !== undefined) collection.bannerImage = updates.bannerImage;
     if (updates.badgeText !== undefined) collection.badgeText = updates.badgeText;

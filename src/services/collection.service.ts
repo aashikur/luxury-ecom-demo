@@ -6,6 +6,7 @@ export interface ICollectionNavItem {
   _id: string;
   title: string;
   slug: string;
+  parentSlug?: string | null;
   badgeText?: string;
   isFeaturedHome?: boolean;
   displayOrder?: number;
@@ -34,7 +35,7 @@ export const getActiveCollections = unstable_cache(
     try {
       await connectDB();
       const collections = await Collection.find({ isActive: true })
-        .select('_id title slug badgeText isFeaturedHome displayOrder')
+        .select('_id title slug parentSlug badgeText isFeaturedHome displayOrder')
         .sort({ displayOrder: 1, createdAt: -1 })
         .lean();
 

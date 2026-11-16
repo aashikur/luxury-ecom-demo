@@ -8,6 +8,7 @@ export interface ICollectionImage {
 export interface ICollection extends Document {
   title: string;
   slug: string;
+  parentSlug?: string | null;
   description?: string;
   bannerImage?: ICollectionImage;
   badgeText?: string; // e.g. "FLAT 20% OFF", "LIMITED DROP"
@@ -26,6 +27,7 @@ const CollectionSchema = new Schema<ICollection>(
   {
     title: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    parentSlug: { type: String, default: null, index: true },
     description: { type: String, default: '' },
     bannerImage: {
       url: { type: String, default: '' },
@@ -46,6 +48,7 @@ const CollectionSchema = new Schema<ICollection>(
 );
 
 CollectionSchema.index({ isFeaturedHome: 1, displayOrder: 1 });
+CollectionSchema.index({ parentSlug: 1, displayOrder: 1 });
 
 export const Collection: Model<ICollection> =
   mongoose.models.Collection || mongoose.model<ICollection>('Collection', CollectionSchema);
