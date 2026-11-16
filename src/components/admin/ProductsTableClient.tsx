@@ -79,7 +79,7 @@ export default function ProductsTableClient({
   // Client-side live sync fallback to guarantee fresh inventory & images on mount
   const refreshProducts = async () => {
     try {
-      const res = await fetch('/api/products?all=true', { cache: 'no-store' });
+      const res = await fetch('/api/products?all=true&limit=500', { cache: 'no-store' });
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setProducts(data.data);

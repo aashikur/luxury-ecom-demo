@@ -121,7 +121,23 @@ export default function ProductDetailView({
   ];
 
   const currentImage =
-    selectedVariant?.image?.url || images[activeGalleryIdx]?.url || images[0]?.url;
+    images[activeGalleryIdx]?.url || selectedVariant?.image?.url || images[0]?.url;
+
+  const handleVariantSelect = (variantId: string) => {
+    setSelectedVariantId(variantId);
+    const found = activeVariants.find(
+      (v) =>
+        (v._id?.toString() && v._id.toString() === variantId) ||
+        v.sku === variantId ||
+        v.size === variantId
+    );
+    if (found?.image?.url) {
+      const idx = images.findIndex((img: { url: string }) => img.url === found.image?.url);
+      if (idx !== -1) {
+        setActiveGalleryIdx(idx);
+      }
+    }
+  };
 
   // 1. PRICE RESOLUTION LOGIC:
   const baseEffectivePrice = hasVariants && selectedVariant
@@ -394,7 +410,7 @@ export default function ProductDetailView({
                     <button
                       key={idKey}
                       type="button"
-                      onClick={() => setSelectedVariantId(idKey)}
+                      onClick={() => handleVariantSelect(idKey)}
                       disabled={variantOOS}
                       className={`min-w-10 px-3 h-10 text-xs font-bold border transition relative cursor-pointer flex items-center justify-center gap-1.5 ${
                         isSelected
