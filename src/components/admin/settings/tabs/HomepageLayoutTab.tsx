@@ -86,7 +86,7 @@ function SectionImageField({
   };
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <label className="text-[11px] font-semibold text-slate-700 block">
           {label}
@@ -101,81 +101,107 @@ function SectionImageField({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Input
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="Paste CDN URL or click Upload"
-            className="text-xs pr-8 font-mono"
-          />
-          {value && (
-            <button
-              type="button"
-              onClick={() => onChange('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-              title="Clear Image"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        className="hidden"
+      />
 
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          accept="image/*"
-          className="hidden"
-        />
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-          className="shrink-0 text-xs h-9 px-3 border-slate-300 hover:bg-slate-50 inline-flex items-center gap-1.5 cursor-pointer"
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#076E46]" />
-              <span>Compressing...</span>
-            </>
-          ) : (
-            <>
-              <Upload className="w-3.5 h-3.5 text-[#076E46]" />
-              <span>Upload</span>
-            </>
-          )}
-        </Button>
-      </div>
-
-      <p className="text-[11px] text-slate-500 flex items-center gap-1">
-        <span className="text-emerald-700 font-medium">💡 Spec Hint:</span>
-        <span>{tip}</span>
-      </p>
-
-      {/* Live Preview if value exists */}
-      {value && (
-        <div className="relative mt-2 p-1.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-3">
-          <div className="relative w-16 h-12 rounded overflow-hidden bg-slate-200 shrink-0 border border-slate-200">
+      {value ? (
+        /* Clean 16:9 Aspect Ratio Preview with Actions */
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-3 bg-slate-50 border border-slate-200/90 rounded-xl">
+          <div className="relative aspect-video w-full sm:w-64 rounded-lg overflow-hidden bg-slate-200 border border-slate-300 shadow-2xs shrink-0 group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={value}
-              alt="Preview"
+              alt="Banner Preview"
               className="w-full h-full object-cover"
             />
+            {/* Floating Cross Button */}
+            <button
+              type="button"
+              onClick={() => onChange('')}
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black text-white transition shadow-sm cursor-pointer"
+              title="Remove image"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-medium text-slate-700 truncate font-mono">{value}</p>
-            <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1 mt-0.5">
-              <Check className="w-3 h-3 text-emerald-600" />
+
+          <div className="flex flex-col gap-2.5 w-full sm:w-auto">
+            <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 text-emerald-600" />
               Active on Storefront
             </span>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="text-xs h-8 px-3 border-slate-300 hover:bg-white inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#076E46]" />
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-3.5 h-3.5 text-[#076E46]" />
+                    <span>Upload New</span>
+                  </>
+                )}
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => onChange('')}
+                className="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1.5 rounded-md transition cursor-pointer border border-transparent hover:border-rose-200"
+                title="Remove image"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Remove</span>
+              </button>
+            </div>
           </div>
         </div>
+      ) : (
+        /* Empty Upload Dropzone */
+        <div className="flex items-center gap-3 p-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl">
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="bg-[#076E46] text-white hover:bg-[#055C3A] text-xs h-9 px-4 inline-flex items-center gap-2 cursor-pointer shadow-2xs"
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                <span>Compressing & Uploading...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="w-3.5 h-3.5 text-white" />
+                <span>Upload Banner Picture</span>
+              </>
+            )}
+          </Button>
+          <span className="text-xs text-slate-500">
+            JPG, PNG or WebP &bull; 16:9 / 21:9 auto-optimized
+          </span>
+        </div>
       )}
+
+      {/* Clean helper text without '💡 Spec Hint:' */}
+      <p className="text-xs text-slate-500 mt-1">
+        {tip}
+      </p>
     </div>
   );
 }
@@ -667,9 +693,9 @@ export default function HomepageLayoutTab({
                 <div className="space-y-1">
                   <label className="text-[11px] font-semibold text-slate-600 block">Button Link Target</label>
                   <Input
-                    value={newSection.buttonLink || ''}
+                    value={newSection.buttonLink || '/shop'}
                     onChange={(e) => setNewSection({ ...newSection, buttonLink: e.target.value })}
-                    placeholder="/shop or /category/hoodies"
+                    placeholder="/shop"
                   />
                 </div>
               </div>
@@ -880,10 +906,11 @@ export default function HomepageLayoutTab({
                 <div className="space-y-1">
                   <label className="text-[11px] font-semibold text-slate-600 block">Button Link Target</label>
                   <Input
-                    value={editingSection.buttonLink || ''}
+                    value={editingSection.buttonLink || '/shop'}
                     onChange={(e) =>
                       setEditingSection({ ...editingSection, buttonLink: e.target.value })
                     }
+                    placeholder="/shop"
                   />
                 </div>
 
