@@ -102,12 +102,16 @@ export default function ProductsTableClient({
   const [isUpdatingStock, setIsUpdatingStock] = useState(false);
 
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const categoryMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // Close menu on click outside
+  // Close menus on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setActiveMenuId(null);
+      }
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(e.target as Node)) {
+        setIsCategoryMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -338,29 +342,32 @@ export default function ProductsTableClient({
             />
           </div>
 
-          <div className="relative">
+          <div ref={categoryMenuRef} className="relative">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setIsCategoryMenuOpen((prev) => !prev)}
-              className="gap-1.5 text-xs font-semibold h-9"
+              className="gap-1.5 text-xs font-semibold h-9 shrink-0"
             >
               <Layers className="w-3.5 h-3.5 text-slate-400" />
-              <span>{selectedCategory === 'ALL' ? 'Category' : selectedCategory}</span>
+              <span className="truncate max-w-[110px] sm:max-w-[150px]">
+                {selectedCategory === 'ALL' ? 'Category' : selectedCategory}
+              </span>
               <ChevronDown className="w-3 h-3 text-slate-400 ml-0.5" />
             </Button>
 
             {isCategoryMenuOpen && (
-              <div className="absolute left-0 mt-1.5 w-44 rounded-lg border border-slate-200 bg-white py-1 text-xs text-slate-700 shadow-lg z-30">
+              <div className="absolute right-0 sm:right-auto sm:left-0 mt-1.5 w-60 max-h-72 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 text-xs text-slate-700 shadow-xl z-30">
                 {categories.map((c) => (
                   <button
                     key={c}
+                    type="button"
                     onClick={() => {
                       setSelectedCategory(c);
                       setIsCategoryMenuOpen(false);
                     }}
-                    className={`w-full text-left px-3.5 py-2 hover:bg-slate-50 cursor-pointer ${
+                    className={`w-full text-left px-3.5 py-2 hover:bg-slate-50 cursor-pointer transition ${
                       selectedCategory === c ? 'font-bold text-emerald-700 bg-emerald-50/50' : ''
                     }`}
                   >
