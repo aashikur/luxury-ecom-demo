@@ -7,6 +7,7 @@ import { Minus, Plus, Ruler, X, Play, Volume2, VolumeX, Check } from 'lucide-rea
 import { useCart } from '@/context/CartContext';
 import ProductCard from './ProductCard';
 import type { StockStatus } from '@/models/Product';
+import { getProductPrimaryImage, isVideoUrl } from '@/lib/utils';
 
 function extractYouTubeId(url: string): string | null {
   const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/;
@@ -305,9 +306,10 @@ export default function ProductDetailView({
 
   // Resolve active gallery display with user override precedence
   const currentMedia = images[activeGalleryIdx] || images[0];
-  const isCurrentVideo = currentMedia?.type === 'VIDEO';
+  const isCurrentVideo = currentMedia?.type === 'VIDEO' || isVideoUrl(currentMedia?.url);
   const currentImage =
     currentMedia?.url || selectedVariant?.image?.url || images[0]?.url;
+  const safeMainImage = isVideoUrl(currentImage) ? getProductPrimaryImage(product) : (currentImage || getProductPrimaryImage(product));
 
   // Handle option select with auto image sync
   const handleOptionSelect = (groupName: string, value: string) => {
@@ -477,6 +479,10 @@ export default function ProductDetailView({
       }
     }
 
+    const safeCartImage = isVideoUrl(currentImage)
+      ? getProductPrimaryImage(product)
+      : (currentImage || getProductPrimaryImage(product));
+
     addToCart(
       {
         productId: product._id,
@@ -484,7 +490,7 @@ export default function ProductDetailView({
         sku: selectedVariant?.sku || product.sku || '',
         title: product.title,
         slug: product.slug,
-        image: currentImage,
+        image: safeCartImage,
         size: selectedOptionMap['Size'] || selectedVariant?.size || '',
         variantLabel:
           selectedVariant?.title ||
@@ -550,7 +556,7 @@ export default function ProductDetailView({
               )
             ) : (
               <Image
-                src={currentImage}
+                src={safeMainImage}
                 alt={product.title}
                 fill
                 priority
@@ -583,8 +589,8 @@ export default function ProductDetailView({
           {images.length > 1 && (
             <div className="flex gap-3 overflow-x-auto pb-1">
               {images.map((img: any, i: number) => {
-                const isVid = img.type === 'VIDEO';
-                const thumbSrc = img.thumbnailUrl || (isVid ? '/placeholder.webp' : img.url);
+                const isVid = img.type === 'VIDEO' || isVideoUrl(img.url);
+                const thumbSrc = img.thumbnailUrl || (isVid ? '/placeholder.webp' : (img.url || '/placeholder.webp'));
 
                 return (
                   <button
