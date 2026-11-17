@@ -83,7 +83,7 @@ export default function ProductsTableClient({
   // Client-side live sync fallback to guarantee fresh inventory & images on mount
   const refreshProducts = async () => {
     try {
-      const res = await fetch('/api/products?all=true&limit=500', { cache: 'no-store' });
+      const res = await fetch('/api/products?all=true&limit=500&sort=date-desc', { cache: 'no-store' });
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setProducts(data.data);
@@ -128,32 +128,39 @@ export default function ProductsTableClient({
     return ['ALL', ...Array.from(cats)];
   }, [products]);
 
-  // Filtered Products
+  // Filtered & Sorted Products (Default: Newest first so newly added products are at the top)
   const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
-      const isPublished = p.status === 'PUBLISHED' || (!p.status && p.isActive);
-      const isDraft = p.status === 'DRAFT' || (!p.status && !p.isActive);
-      const isArchived = p.status === 'ARCHIVED';
+    return products
+      .filter((p) => {
+        const isPublished = p.status === 'PUBLISHED' || (!p.status && p.isActive);
+        const isDraft = p.status === 'DRAFT' || (!p.status && !p.isActive);
+        const isArchived = p.status === 'ARCHIVED';
 
-      if (activeTab === 'ACTIVE' && !isPublished) return false;
-      if (activeTab === 'DRAFT' && !isDraft) return false;
-      if (activeTab === 'ARCHIVED' && !isArchived) return false;
+        if (activeTab === 'ACTIVE' && !isPublished) return false;
+        if (activeTab === 'DRAFT' && !isDraft) return false;
+        if (activeTab === 'ARCHIVED' && !isArchived) return false;
 
-      const catName = p.categoryName;
-      if (selectedCategory !== 'ALL' && catName !== selectedCategory) {
-        return false;
-      }
+        const catName = p.categoryName;
+        if (selectedCategory !== 'ALL' && catName !== selectedCategory) {
+          return false;
+        }
 
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesTitle = p.title.toLowerCase().includes(q);
-        const matchesCat = catName?.toLowerCase().includes(q);
-        const matchesBrand = p.brandName?.toLowerCase().includes(q);
-        if (!matchesTitle && !matchesCat && !matchesBrand) return false;
-      }
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          const matchesTitle = p.title.toLowerCase().includes(q);
+          const matchesCat = catName?.toLowerCase().includes(q);
+          const matchesBrand = p.brandName?.toLowerCase().includes(q);
+          if (!matchesTitle && !matchesCat && !matchesBrand) return false;
+        }
 
-      return true;
-    });
+        return true;
+      })
+      .sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        if (timeB !== timeA) return timeB - timeA;
+        return (b._id || '').localeCompare(a._id || '');
+      });
   }, [products, activeTab, selectedCategory, searchQuery]);
 
   // Reset to page 1 on filter or search changes

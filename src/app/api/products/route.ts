@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     const brand = searchParams.get('brand') || undefined;
     const status = (searchParams.get('status') as ProductStatus) || undefined;
     const q = searchParams.get('q') || undefined;
+    const sort = searchParams.get('sort') || undefined;
     const all = searchParams.get('all') === 'true';
 
     const minPrice = searchParams.get('minPrice')
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
       status,
       isPinned,
       q,
+      sort,
       minPrice,
       maxPrice,
       inStock,

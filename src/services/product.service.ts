@@ -193,8 +193,11 @@ export async function getProductsList(
     ];
   }
 
-  // Sorting strategy (9-Tier Architecture per Phase 7)
-  let sortOption: Record<string, 1 | -1> = { isPinned: -1, priority: -1, createdAt: -1 };
+  // Sorting strategy (Admin defaults strictly to newest-first, storefront defaults to merchandising priorities)
+  let sortOption: Record<string, 1 | -1> = params.all
+    ? { createdAt: -1, _id: -1 }
+    : { isPinned: -1, priority: -1, createdAt: -1 };
+
   if (params.sort === 'price-asc') {
     sortOption = { basePrice: 1 };
   } else if (params.sort === 'price-desc') {
@@ -204,9 +207,9 @@ export async function getProductsList(
   } else if (params.sort === 'title-desc' || params.sort === 'alpha-desc') {
     sortOption = { title: -1 };
   } else if (params.sort === 'date-asc' || params.sort === 'oldest') {
-    sortOption = { createdAt: 1 };
+    sortOption = { createdAt: 1, _id: 1 };
   } else if (params.sort === 'date-desc' || params.sort === 'newest') {
-    sortOption = { createdAt: -1 };
+    sortOption = { createdAt: -1, _id: -1 };
   } else if (params.sort === 'best-selling') {
     sortOption = { isPinned: -1, totalStock: -1, createdAt: -1 };
   } else if (params.sort === 'relevant') {
