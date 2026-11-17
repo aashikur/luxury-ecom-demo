@@ -257,18 +257,17 @@ export default function CartDrawer({
   if (!isCartOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex justify-end overflow-hidden">
       {/* Backdrop */}
       <div
         onClick={() => setIsCartOpen(false)}
-        className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300 animate-in fade-in"
       />
 
       {/* Slide-Over Panel */}
-      <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between">
-          {/* Header */}
-          <div className="p-5 border-b border-zinc-200 flex items-center justify-between bg-zinc-50">
+      <div className="relative w-full sm:max-w-md bg-white h-full shadow-2xl flex flex-col justify-between z-10 animate-in slide-in-from-right duration-300">
+        {/* Header */}
+        <div className="p-4 sm:p-5 border-b border-zinc-200 flex items-center justify-between bg-zinc-50">
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-5 h-5 text-zinc-900" />
               <h2 className="text-sm font-bold uppercase tracking-widest text-zinc-950">
@@ -670,7 +669,7 @@ export default function CartDrawer({
 
           {/* Footer Actions */}
           {!orderSuccess && cart.length > 0 && (
-            <div className="p-5 border-t border-zinc-200 bg-zinc-50 space-y-3">
+            <div className="p-4 sm:p-5 border-t border-zinc-200 bg-zinc-50 space-y-3 pb-6 sm:pb-5">
               {smartCheckoutEnabled ? (
                 /* Mode 1: Fast In-Drawer Checkout Footer */
                 <>
@@ -744,6 +743,5 @@ export default function CartDrawer({
           )}
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
