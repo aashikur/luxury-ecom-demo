@@ -275,7 +275,8 @@ export default async function CollectionPage({
                 </div>
                 <Link
                   href={`/collections/${sc.collection.slug}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-800 hover:text-emerald-950 transition active:scale-[0.98] duration-75 shrink-0"
+                  style={{ color: branding.colors?.accent || '#B8860B' }}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider hover:opacity-80 transition active:scale-[0.98] duration-75 shrink-0"
                 >
                   <span>Explore All {sc.collection.title}</span>
                   <ArrowRight className="w-3.5 h-3.5" />

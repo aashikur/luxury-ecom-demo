@@ -74,7 +74,7 @@ export default function CollectionSection({
 
           <Link
             href={buttonLink}
-            className={`px-5 py-2 text-[11px] font-bold uppercase tracking-[0.16em] border transition cursor-pointer ${
+            className={`px-5 py-2 text-[11px] font-bold uppercase tracking-[0.16em] border transition active:scale-[0.98] duration-75 ease-out touch-manipulation [-webkit-tap-highlight-color:transparent] select-none cursor-pointer ${
               isDarkBand
                 ? 'border-zinc-700 text-white hover:bg-white hover:text-zinc-950'
                 : 'border-zinc-900 text-zinc-900 hover:bg-zinc-950 hover:text-white'

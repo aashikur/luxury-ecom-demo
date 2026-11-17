@@ -42,8 +42,9 @@ export default function PromoCard({
         </div>
 
         <button
+          type="button"
           onClick={() => setIsCartOpen(true)}
-          className="px-8 py-3.5 bg-zinc-950 text-white text-xs font-bold uppercase tracking-[0.2em] hover:bg-zinc-800 transition shrink-0 cursor-pointer"
+          className="px-8 py-3.5 bg-zinc-950 text-white text-xs font-bold uppercase tracking-[0.2em] hover:bg-zinc-800 transition active:scale-[0.98] duration-75 ease-out touch-manipulation [-webkit-tap-highlight-color:transparent] select-none shrink-0 cursor-pointer shadow-sm"
         >
           {buttonText}
         </button>
