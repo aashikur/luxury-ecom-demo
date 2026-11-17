@@ -11,13 +11,30 @@
 * `src/lib/auth.ts`: Better Auth server configuration with MongoDB adapter, email/password credentials, and administrative 5-role RBAC schema.
 * `src/lib/auth-client.ts`: Better Auth client instance exposing React hooks (`signIn`, `signOut`, `useSession`) for storefront and admin UI.
 * `src/app/api/auth/[...all]/route.ts`: Wildcard App Router route handler serving Better Auth authentication endpoints (`toNextJsHandler(auth.handler)`).
-* `src/middleware.ts`: Next.js Edge Middleware verifying Better Auth sessions and shielding `/admin/**` with role-based access control (`SUPER_ADMIN`, `ADMIN`, `MODERATOR`).
+* `src/app/(auth)/layout.tsx`: Dedicated, minimal authentication layout featuring a "Back to Store" escape link, brand identity, and 256-bit TLS encrypted session badge.
+* `src/app/(auth)/auth/login/page.tsx`: Modern unified login view featuring 1-click "Fill Super Admin" demo pill (`admin@aurem.com` / `AdminPassword123!`), Better Auth `signIn.email` integration, and redirect callback preservation.
+* `src/app/(auth)/auth/register/page.tsx`: User registration portal powered by Better Auth `signUp.email`.
+* `src/app/(admin)/admin/login/page.tsx`: Backward-compatible auto-redirect forwarding legacy `/admin/login` requests to `/auth/login`.
+* `src/components/admin/AdminShellClient.tsx`: Admin dashboard shell integrating `authClient.signOut()` trigger.
+* `src/middleware.ts`: Next.js Edge Middleware verifying Better Auth sessions and shielding `/admin/**` with role-based access control, governed by an environment-driven permissive toggle (`AUTH_GUARD_ENABLED`).
 * `src/services/auth.service.ts`: Administrative auth domain service providing helper methods for staff verification, session inspection, and audit trail hooks.
 * `src/services/order.service.ts`: Reusable order business engine handling server-authoritative pricing, 3-zone tariffs, and atomic inventory locks.
 
 ---
 
 ## 2. Why We Built It (Senior Engineering / Interview Concept)
+
+### Why Unified `(auth)` Route Group over Nested `(admin)/admin/login`?
+1. **Decoupled Identity Lifecycle:**  
+   Authentication is a shared domain across the entire enterprise, not merely an administrative sub-feature. Decoupling auth into `src/app/(auth)/` allows registered shoppers (order tracking, wishlists) and administrative staff (`SUPER_ADMIN`, `ADMIN`, `MODERATOR`) to share a clean, high-performance authentication layout without inheriting the heavy admin navigation shell or storefront carousels.
+2. **Backward-Compatible Route Redirection:**  
+   Legacy bookmarks or links to `/admin/login` are preserved via an automatic client-side and server redirect to `/auth/login`, ensuring zero broken URLs during architectural migrations.
+
+### Why a Configurable Middleware Auth Guard (`AUTH_GUARD_ENABLED`)?
+1. **Rapid Development & Testing Velocity:**  
+   During UI/UX audits, rapid manual testing, and design system verification, strict Edge session expiration frequently interrupts workflows by redirecting developers back to login screens.
+2. **Single Environment Variable Lock-in:**  
+   By defining `const AUTH_GUARD_ENABLED = process.env.ENABLE_AUTH_GUARD === 'true'`, development and preview deployments can remain permissive for automated end-to-end user flow testing, while production environments enforce 100% strict session and RBAC guards by setting `ENABLE_AUTH_GUARD=true`.
 
 ### Why Better Auth over NextAuth v5 or Hosted SaaS (Clerk/Auth0)?
 1. **Zero External Dependency & Zero SaaS Vendor Lock-in:**  
@@ -37,8 +54,12 @@
 
 ## 3. Key Concepts Checklist (Quick Revision)
 
+* [x] **Unified Auth Surface:** Standalone `/auth/login` and `/auth/register` routes in isolated `(auth)` route group with 256-bit TLS reassurance badge.
+* [x] **One-Click Demo Pill:** Clickable credentials pill (`admin@aurem.com`) pre-filling the login form for frictionless developer testing.
+* [x] **Permissive Dev Toggle:** `AUTH_GUARD_ENABLED = process.env.ENABLE_AUTH_GUARD === 'true'` in `src/middleware.ts`.
 * [x] **Thin Controllers:** `src/app/api/**/route.ts` only extracts body/params, calls the Domain Service, and wraps output in `{ success, data, pagination, error, code }`.
-* [x] **Edge Gatekeeper:** `src/middleware.ts` runs on Vercel Edge. Unauthenticated visitors hitting `/admin/**` are redirected to `/admin/login` before reaching serverless functions.
+* [x] **Edge Gatekeeper:** `src/middleware.ts` runs on Vercel Edge. Unauthenticated visitors hitting `/admin/**` are redirected to `/auth/login` when auth guard is active.
+* [x] **Admin Sign-Out:** Clean session destruction via `authClient.signOut()` in `AdminShellClient.tsx`.
 * [x] **Atomic Inventory Guarantee:** Stock decrement uses `{ 'variants.stock': { $gte: qty } }` with `$inc` to mathematically prevent negative inventory during flash sales.
 * [x] **Server-Authoritative Pricing:** Server resolves prices from MongoDB `Product` documents; client `unitPrice` is strictly ignored.
 * [x] **5-Role RBAC Model:** `SUPER_ADMIN` (settings + credentials), `ADMIN` (catalog + fulfillment), `MODERATOR` (call center verify), `MERCHANT` (wholesale price gate), and `USER` (retail).

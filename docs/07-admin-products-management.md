@@ -17,12 +17,17 @@
   - Locked `export const dynamic = 'force-dynamic'` and `export const revalidate = 0` on all admin product routes.
   - Table client component (`ProductsTableClient.tsx`) syncs server prop updates via `useEffect([initialProducts])` and executes an immediate background `no-store` fetch on mount and after mutations.
   - Mutation handlers (`POST /api/products`, `PUT /api/products/[slug]`, `DELETE /api/products/[slug]`) call `revalidatePath` to purge Vercel edge and Next.js full-route caches in real time.
+- **Newest-First Chronological Admin Sorting**:
+  - Domain service `getProductsList` (`src/services/product.service.ts`) automatically separates public catalog queries from administrative requests (`params.all = true`).
+  - Admin queries default to strict reverse-chronological sorting (`{ createdAt: -1, _id: -1 }`), while public storefront queries preserve merchandising pins and priority weights (`{ isPinned: -1, priority: -1, createdAt: -1 }`).
+  - `ProductsTableClient.tsx` includes an in-memory timestamp comparator (`b.createdAt - a.createdAt`) ensuring newly created or edited products immediately take the #1 top spot.
 
 ---
 
 ## 2. Why We Built It (Senior Interview Concepts)
 - **1:1 Design Parity**: Fully locks the Admin UX to the Apex Dashboard reference images.
 - **Operational Efficiency**: The inline stock edit feature allows merchants to adjust stock in under 2 seconds during showroom inventory counts.
+- **Anti-Priority-Clogging for Store Operators**: In merchandising, featured hero items are assigned high `priority` values (e.g. `99`) and `isPinned: true`. If the admin inventory table shares the storefront sort hierarchy, newly added products with default priority `0` sink to the bottom (e.g. page 11). Decoupling admin queries to default to `{ createdAt: -1 }` guarantees operators immediately verify their creations at row 1.
 - **Zero Cache Lag**: Without `force-dynamic` and on-demand `revalidatePath`, Vercel Edge CDN caches product lists as static HTML (`X-Vercel-Cache: HIT`), causing newly created garments and updated images to vanish from the products table while appearing only in single view routes.
 - **Optimistic UI with Fallback SWR**: Table filtering, sorting, popovers, and stock edits use optimistic client states backed by atomic Mongoose updates and background revalidation.
 - **Product Video Engine & Dual Storage Support**: Supports direct Cloudflare R2 MP4 uploads (for muted 5–15s luxury fabric motion loops) and YouTube/Vimeo embed URL fallbacks. Handled via `product.media` with `{ type: 'VIDEO', videoProvider: 'R2' | 'YOUTUBE' }`.
@@ -38,6 +43,7 @@
 - [x] Create dedicated Edit Page at `src/app/(admin)/admin/products/[id]/edit/page.tsx`.
 - [x] Enforce dynamic rendering and on-demand cache revalidation across catalog and admin routes.
 - [x] Add client-side live fetch on mount with `cache: 'no-store'` to eliminate router cache desync.
+- [x] Prioritize newest items at top of Admin Products table (`{ createdAt: -1 }`).
 - [ ] Implement Admin Variant Matrix Generator with Size/Color option axes (`ProductFormClient.tsx`).
 - [ ] Integrate Product Video Uploader (`video/mp4` to Cloudflare R2 & YouTube embed URL).
 

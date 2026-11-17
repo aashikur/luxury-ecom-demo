@@ -129,6 +129,7 @@
   * `minPrice` & `maxPrice` (numbers)
   * `inStock` (boolean, `true | false`)
   * `isPinned` (boolean, `true | false`)
+  * `sort` (string, `newest | oldest | price_asc | price_desc | bestselling | priority`. Admin queries with `all=true` default to `newest` `{ createdAt: -1, _id: -1 }`)
   * `all` (boolean, `true` returns DRAFT/ARCHIVED for Admin)
 * **Success Response (`200 OK`):**
   ```json
@@ -471,6 +472,87 @@
     "data": {
       "matched": true,
       "orderNumber": "AUR-58291"
+    }
+  }
+  ```
+
+
+---
+
+## 9. Authentication & Staff RBAC (Better Auth)
+
+### `POST /api/auth/sign-in/email`
+* **Consumer:** Unified `/auth/login` portal, developer test scripts.
+* **Request Body:**
+  ```json
+  {
+    "email": "admin@aurem.com",
+    "password": "<admin_password>"
+  }
+  ```
+* **Success Response (`200 OK`):**
+  Sets HttpOnly session cookie (`better-auth.session_token`) and returns user and session data:
+  ```json
+  {
+    "user": {
+      "id": "6af901e...",
+      "email": "admin@aurem.com",
+      "name": "Super Admin",
+      "role": "SUPER_ADMIN"
+    },
+    "token": "sess_8912..."
+  }
+  ```
+
+### `POST /api/auth/sign-up/email`
+* **Consumer:** Unified `/auth/register` portal.
+* **Request Body:**
+  ```json
+  {
+    "email": "staff@aurem.com",
+    "password": "<secure_password>",
+    "name": "Staff Member"
+  }
+  ```
+* **Success Response (`200 OK`):**
+  ```json
+  {
+    "user": {
+      "id": "6af902f...",
+      "email": "staff@aurem.com",
+      "name": "Staff Member",
+      "role": "USER"
+    }
+  }
+  ```
+
+### `POST /api/auth/sign-out`
+* **Consumer:** Admin Shell Sign-out trigger (`AdminShellClient.tsx`).
+* **Headers:** Cookie: `better-auth.session_token=...`
+* **Success Response (`200 OK`):**
+  Clears session cookie.
+  ```json
+  {
+    "success": true
+  }
+  ```
+
+### `GET /api/auth/get-session`
+* **Consumer:** Storefront and Admin UI session verification (`useSession()` hook).
+* **Headers:** Cookie: `better-auth.session_token=...`
+* **Success Response (`200 OK`):**
+  ```json
+  {
+    "session": {
+      "id": "sess_8912...",
+      "userId": "6af901e...",
+      "expiresAt": "2026-11-24T18:00:00.000Z"
+    },
+    "user": {
+      "id": "6af901e...",
+      "email": "admin@aurem.com",
+      "name": "Super Admin",
+      "role": "SUPER_ADMIN"
     }
   }
   ```

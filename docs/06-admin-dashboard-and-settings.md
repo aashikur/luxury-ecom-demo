@@ -12,6 +12,10 @@
   4. *Steadfast Courier*: API Key, Secret Key, Base URL, Auto-booking switch, Fraud check ratio.
   5. *Homepage Sections*: Show/Hide visibility toggles and Up/Down reordering for Hero Banner, Collection Grids, and Promo Banner.
 - **Overview Landing Page (`/admin`)**: 4 KPI metric cards (Total Revenue, Active Orders, Garments in Catalog, Steadfast Dispatches) with instant jump buttons.
+- **Dual-Nav Settings Studio & Container Scroll Engine (`SettingsShell.tsx`)**:
+  - Replaced early monolithic 5-tab prototype with Shopify-standard 7-module dual navigation: sticky left sidebar (`w-60`) + top sub-section anchor jump pills.
+  - Built-in container-aware scrolling engine (`getScrollParent`) that detects the scrollable `<main overflow-y-auto>` ancestor, scrolls with 24px top clearance and `scroll-mt-16`, and flashes a 1-second emerald accent ring (`ring-2 ring-[#076E46]`).
+  - Homepage Layout Builder with smart entity auto-fill (`handleTargetSelection`), locked 16:9 aspect-video image preview, and clean spec tokens without emoji clutter.
 
 ---
 
@@ -29,6 +33,7 @@
 - [x] Implement `src/components/admin/SettingsFormClient.tsx` with 5 reactive tabs.
 - [x] Wire server component `src/app/(admin)/admin/settings/page.tsx` with live DB data.
 - [x] Implement overview dashboard landing at `src/app/(admin)/admin/page.tsx`.
+- [x] Upgrade Settings to Shopify-grade Dual-Nav layout with container-aware anchor jumping (`getScrollParent`).
 - [x] Verify production build passes with exit code 0 (`12/12` pages compiled).
 
 ---

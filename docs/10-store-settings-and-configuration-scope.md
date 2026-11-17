@@ -232,3 +232,30 @@ To balance rapid, 1-click merchant deployments with banking-grade credential pro
 - **Top Section Anchor Jump Pills:** Inside each module, sticky anchor pills allow 1-click smooth scrolling directly to specific cards (e.g. `[ Brand Identity ]` · `[ Theme & Colors ]` · `[ Navigation Menu ]`).
 - **Persistent Floating Save Action Bar:** Displays `"Unsaved changes • [ Reset ] [ Save Settings 💾 ]"` docked persistently so merchants never have to scroll back up to save changes.
 - **Code-Splitting (`tabs/*.tsx`):** Decouples the 3,700-line monolithic client component into 7 modular, lazy-loaded components, cutting initial JS bundle by 85% and guaranteeing <100ms render time.
+
+### 9.5 Container-Aware Smooth Scroll Engine (`getScrollParent`)
+- **The Problem:** Modern dashboard shells isolate content within an inner scroll container (`<main className="flex-1 overflow-y-auto">`) to keep headers and sidebars pinned. Standard `window.scrollTo({ top: y })` operates exclusively on `window.document.documentElement`, causing jump links to fail silently.
+- **Intelligent DOM Traversal (`getScrollParent`):**
+  - Traverses upward from the target card: `const overflowY = window.getComputedStyle(node).overflowY; if (overflowY === 'auto' || overflowY === 'scroll') return node;`
+  - When the scrollable parent container is located, it calculates the precise relative delta: `const topOffset = targetRect.top - containerRect.top + container.scrollTop - 24;`
+  - Triggers native smooth container scrolling: `container.scrollTo({ top: topOffset, behavior: 'smooth' });`
+- **Visual Feedback & Landing Confirmation:**
+  - Target cards include `scroll-mt-16` to preserve visual breathing room beneath sticky headers.
+  - On arrival, the engine applies a temporary 1-second emerald accent ring highlight (`ring-2 ring-[#076E46] transition-all duration-300`), eliminating user disorientation across long settings forms.
+
+### 9.6 Smart Homepage Layout Blocks Auto-Fill (`handleTargetSelection`)
+- **Merchandising Acceleration:** When an admin merchant selects a target Collection or Category in the "Add Homepage Block" or "Edit Block" modals, `handleTargetSelection` automatically infers and populates:
+  - **Section Title:** Clean title of the chosen taxonomy (e.g. *"Cashmere & Pashmina Shawls"*).
+  - **Subtitle / Description:** Contextual copy (e.g. *"Explore our curated collection"* or *"Browse the latest arrivals"*).
+  - **Button CTA Text:** Context-specific action label (`"EXPLORE COLLECTION"` or `"SHOP CATEGORY"`).
+  - **Button Link Target:** Canonical URL route (`/collections/${slug}` or `/shop?category=${slug}`). Default fallback: `/shop`.
+- **Manual Override Freedom:** All fields remain fully editable after auto-population, allowing customized promotional messaging without manual route syntax typing.
+
+### 9.7 Clean 16:9 Aspect-Video Image Preview UI
+- **Elimination of Clutter:**
+  - Removed raw URL string text clutter and repetitive upload links.
+  - Replaced noisy `💡 Spec Hint:` prefixes with crisp, locked token badges (`Ratio: 16:9 / 21:9 · Optimal: 1920 × 800px`).
+- **16:9 Aspect-Video Preview Card:**
+  - Selected or uploaded banner images render within a locked `aspect-video` (16:9) container with `object-cover rounded-lg border border-slate-200`.
+  - Includes a floating top-right remove button (`✕`) for instant clearing.
+  - Prominent "Upload New" button allows immediate replacement without modal friction.

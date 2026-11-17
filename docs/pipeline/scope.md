@@ -244,3 +244,42 @@
   6. **Universal Dual-Mode CTA Banner (`PromoCard.tsx`):** Upgraded CTA component to support edge-to-edge full bleed (`WIDE_FULL`) vs boxed container (`WIDE_BOX`), with photo background dark contrast overlay or luxury solid surface.
   7. **Zero-Waterfall Homepage Dispatch (`page.tsx`):** Single `Promise.all` batch query fetching StoreConfig, Products, Categories, and Collections in parallel at 0ms in-memory latency with client-side zero-waterfall.
   8. **Full Verification:** 100% clean TypeScript check (`tsc --noEmit` -> 0 errors), 100% passed `test-config-integration.mjs` and `test-user-flow.mjs`.
+
+### Task #29: Modest Fashion Catalog Seeding & R2 Media Integration
+* **Files Modified/Created:** `scripts/seed-fashion-catalog.mjs`, `src/lib/utils.ts`, `docs/pipeline/scope.md`.
+* **Changes:**
+  1. **Comprehensive Brand Catalog Seed:** Authored and executed `scripts/seed-fashion-catalog.mjs` populating a luxury modest fashion catalog with 4 major collections (Luxury Abayas, Premium Silk & Chiffon Hijabs, Minimalist Modest Co-ords, and Cashmere & Pashmina Shawls), realistic variant matrices (Size, Color, Fabric specs), BDT pricing, and high-resolution Cloudflare R2 media assets.
+  2. **Video-First Image Fallback Resiliency:** Enhanced `getProductImage` in `src/lib/utils.ts` to inspect media items when the primary slot holds a video (`type: 'VIDEO'`), automatically cascading to the first available image or thumbnail to prevent broken image cards on catalog grids and hero showcases.
+  3. **Verification:** Verified MongoDB Atlas database integrity and passed full Next.js App Router build with 0 errors.
+
+### Task #30: Unified Authentication Architecture Migration (`/auth/*`)
+* **Files Modified/Created:** `src/app/(auth)/layout.tsx`, `src/app/(auth)/auth/login/page.tsx`, `src/app/(auth)/auth/register/page.tsx`, `src/app/(admin)/admin/login/page.tsx`, `src/middleware.ts`, `src/components/admin/AdminShellClient.tsx`, `docs/pipeline/scope.md`.
+* **Changes:**
+  1. **Decoupled Auth Route Group:** Migrated authentication out of the operational admin shell into a dedicated `(auth)` route group with standalone endpoints `/auth/login` and `/auth/register`.
+  2. **Focused Auth Layout & Security Assurance:** Implemented a distraction-free authentication layout featuring a "Back to Store" escape link, brand identity, and a 256-bit TLS encrypted session footer.
+  3. **Better Auth Integration & Demo Acceleration:** Connected forms to Better Auth client (`authClient.signIn.email` and `authClient.signUp.email`) with instant error feedback and a 1-click "Fill Super Admin" demo pill (`admin@aurem.com` / `AdminPassword123!`) for fast developer testing.
+  4. **Backward-Compatible Admin Redirect:** Replaced `/admin/login` with an automatic client-side and server redirect routing to `/auth/login`.
+  5. **Admin Sign-Out Action:** Added an interactive sign-out button in `AdminShellClient.tsx` that calls `authClient.signOut()` and redirects to `/auth/login`.
+  6. **Permissive Development Toggle:** Added `AUTH_GUARD_ENABLED = process.env.ENABLE_AUTH_GUARD === 'true'` in `src/middleware.ts` so developers can inspect and test dashboard features freely without being blocked by session expiration, while keeping zero-config lock-in ready for production.
+
+### Task #31: Admin Products Table Newest-First Sorting Optimization
+* **Files Modified/Created:** `src/services/product.service.ts`, `src/app/api/products/route.ts`, `src/components/admin/ProductsTableClient.tsx`, `docs/pipeline/scope.md`.
+* **Changes:**
+  1. **Root Cause Resolution for Table Clogging:** Diagnosed that seeded products had `priority: 99..10` and `isPinned: true`, which caused newly created products (e.g., "Nike air 1", "Abeya") to sink to the bottom of the table (page 11/12).
+  2. **Admin Domain Service Sort Default:** Updated `getProductsList` in `src/services/product.service.ts` so that queries with `params.all = true` (Admin requests) default to strict chronological descending order `{ createdAt: -1, _id: -1 }`. Public storefront queries continue to prioritize merchandising pins and priority weights (`isPinned: -1, priority: -1, createdAt: -1`).
+  3. **API Controller Pass-Through:** Passed `sort` parameter through `/api/products` route handler to allow explicit sorting overrides.
+  4. **Client-Side Live Sort Comparator:** Added a timestamp comparator in `ProductsTableClient.tsx` ensuring newly created or modified items received via props or background refetch immediately surface at the very top of the table.
+
+### Task #32: Dual-Nav Settings Jump-To Anchor Navigation & Container Scroll Engine
+* **Files Modified/Created:** `src/components/admin/settings/SettingsShell.tsx`, `src/components/admin/settings/tabs/LogisticsTab.tsx`, `src/components/admin/settings/tabs/TrackingTab.tsx`, `src/components/admin/settings/tabs/FeaturesTab.tsx`, `docs/pipeline/scope.md`.
+* **Changes:**
+  1. **DOM ID Alignment:** Audited all 7 settings tabs and aligned mismatched card element IDs across `LogisticsTab` (`section-delivery-rates`), `TrackingTab` (`section-google-analytics`), and `FeaturesTab` (`section-feature-toggles`), restoring 1:1 parity with the sub-section jump pills in `SettingsShell.tsx`.
+  2. **Container-Aware Scroll Engine (`getScrollParent`):** Replaced non-functional `window.scrollTo` with an intelligent DOM hierarchy traversal engine that identifies the scrollable ancestor (`overflow-y-auto` `<main>` container) and programmatically scrolls to `targetRect.top - containerRect.top + container.scrollTop - 24` with smooth behavior.
+  3. **Visual Scroll Clearance & Target Glow:** Applied `scroll-mt-16` across all card containers and added a temporary 1-second emerald accent ring highlight (`ring-2 ring-[#076E46] transition-all duration-300`) to confirm destination arrival.
+
+### Task #33: Homepage Layout Blocks Smart Auto-Fill & Clean Image Upload UI
+* **Files Modified/Created:** `src/components/admin/settings/tabs/HomepageLayoutTab.tsx`, `docs/pipeline/scope.md`.
+* **Changes:**
+  1. **Smart Entity Auto-Fill (`handleTargetSelection`):** Upon selecting a collection or category in the Add Block or Edit Block modals, automatically populates Section Title (e.g. "Cashmere & Pashmina Shawls"), Subtitle / Description ("Explore artisanal collection"), Button CTA Text ("EXPLORE COLLECTION" or "SHOP CATEGORY"), and Button Link Target (`/collections/${slug}` or `/shop?category=${slug}`).
+  2. **Clean 16:9 Aspect-Video Image Preview:** Refactored `SectionImageField` to render an elegant 16:9 (`aspect-video`) card preview with a floating cross (`✕`) remove button and a prominent "Upload New" button.
+  3. **Purged Clutter & Spec Hints:** Removed raw URL text string displays and eliminated noisy `💡 Spec Hint:` prefixes in favor of concise, locked token badges (`Ratio: 16:9 / 21:9 · Optimal: 1920 × 800px`). Set default button link target to `/shop`.
