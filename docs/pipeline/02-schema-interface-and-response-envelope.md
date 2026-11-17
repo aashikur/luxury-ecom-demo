@@ -163,9 +163,18 @@ export interface IHomeSectionBannerImage {
   key: string;
 }
 
+export interface IHomeSectionSlide {
+  url: string;
+  key?: string;
+  title?: string;
+  subtitle?: string;
+  buttonText?: string;
+  buttonLink?: string;
+}
+
 export interface IHomeSection {
   id: string;                                    // Unique block ID (e.g. "sec_hero_1")
-  type: 'HERO_BANNER' | 'COLLECTION_SECTION' | 'PROMO_CTA_CARD';
+  type: 'HERO_BANNER' | 'COLLECTION_SECTION' | 'CATEGORY_PILLS' | 'PROMO_CTA_CARD' | 'SPLIT_SHOWCASE';
   title?: string;
   subtitle?: string;
   description?: string;
@@ -174,6 +183,11 @@ export interface IHomeSection {
   linkUrl?: string;
   collectionSlug?: string;                       // Bound collection slug
   bannerImage?: IHomeSectionBannerImage;
+  slides?: IHomeSectionSlide[];                  // 1-5 slide images for hero carousel
+  cardShape?: 'CIRCLE' | 'SQUARE' | 'PORTRAIT_3_4'; // Shape for CATEGORY_PILLS
+  showTitle?: boolean;                           // If false, renders pure edge-to-edge pill strip without header
+  bgMode?: 'PHOTO_BG' | 'SOLID_SURFACE';         // Full campaign photo vs solid surface for PROMO_CTA_CARD
+  selectedEntitySlugs?: string[];                // Slugs of categories/collections for story bubbles
   themeStyle?: 'LIGHT' | 'DARK_BAND';
   layoutWidth?: 'WIDE_FULL' | 'WIDE_BOX';        // 100vw vs 1280px container
   promoCardHeight?: 'S' | 'M' | 'L';             // 120px / 220px / 320px

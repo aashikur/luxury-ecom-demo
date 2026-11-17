@@ -86,10 +86,11 @@ export default function CollectionSection({
 
         {/* 4-Column Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
-          {products.slice(0, 4).map((product) => (
+          {products.slice(0, 4).map((product, idx) => (
             <ProductCard
               key={product._id}
               product={product}
+              index={idx}
               accentColor={accentColor}
               darkSurface={isDarkBand}
             />

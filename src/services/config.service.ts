@@ -18,12 +18,12 @@ export function invalidateConfigCaches() {
 }
 
 /**
- * Normalizes legacy section types into canonical 3-block architecture
+ * Normalizes legacy section types into canonical homepage blocks
  */
 function normalizeHomeSections(sections?: IHomeSection[]): IHomeSection[] {
   if (!Array.isArray(sections)) return [];
 
-  const typeMap: Record<string, 'HERO_BANNER' | 'COLLECTION_SECTION' | 'PROMO_CTA_CARD'> = {
+  const typeMap: Record<string, IHomeSection['type']> = {
     HERO_CAROUSEL: 'HERO_BANNER',
     PROMO_BANNER: 'PROMO_CTA_CARD',
     CATEGORY_GRID: 'COLLECTION_SECTION',
@@ -32,10 +32,7 @@ function normalizeHomeSections(sections?: IHomeSection[]): IHomeSection[] {
 
   return sections.map((sec, idx) => ({
     ...sec,
-    type: (typeMap[sec.type] || sec.type || 'COLLECTION_SECTION') as
-      | 'HERO_BANNER'
-      | 'COLLECTION_SECTION'
-      | 'PROMO_CTA_CARD',
+    type: (typeMap[sec.type] || sec.type || 'COLLECTION_SECTION') as IHomeSection['type'],
     order: typeof sec.order === 'number' ? sec.order : idx + 1,
     isActive: sec.isActive !== false,
   }));

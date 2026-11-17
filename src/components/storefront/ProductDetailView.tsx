@@ -1043,10 +1043,11 @@ export default function ProductDetailView({
             YOU MAY ALSO LIKE
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
-            {relatedProducts.slice(0, 4).map((rel) => (
+            {relatedProducts.slice(0, 4).map((rel, idx) => (
               <ProductCard
                 key={String(rel._id)}
                 product={rel}
+                index={idx}
                 accentColor={accentColor}
               />
             ))}

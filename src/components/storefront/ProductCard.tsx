@@ -26,12 +26,14 @@ export interface ProductCardProps {
   };
   accentColor?: string;
   darkSurface?: boolean;
+  index?: number;
 }
 
 export default function ProductCard({
   product,
   accentColor = '#B8860B',
   darkSurface = false,
+  index,
 }: ProductCardProps) {
   const { addToCart } = useCart();
 
@@ -83,12 +85,23 @@ export default function ProductCard({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        // Strict real-viewport check:
+        // 1. Must be intersecting with valid height (ignores initial unlaid 0px frame)
+        // 2. Element top must genuinely be inside visible viewport (< window.innerHeight)
+        if (
+          entry.isIntersecting &&
+          entry.boundingClientRect.height > 60 &&
+          entry.boundingClientRect.top < (window.innerHeight || 900)
+        ) {
           setIsInView(true);
           observer.disconnect();
         }
       },
-      { rootMargin: '120px 0px', threshold: 0.01 }
+      {
+        // -50px bottom margin: card MUST scroll at least 50px INTO the screen before triggering
+        rootMargin: '0px 0px -50px 0px',
+        threshold: [0.05, 0.15],
+      }
     );
 
     observer.observe(el);
@@ -172,6 +185,9 @@ export default function ProductCard({
 
           {/* Editorial Curtain Drop Layer (Unveils when in viewport & loaded) */}
           <div
+            style={{
+              transitionDelay: isRevealed && index !== undefined ? `${(index % 4) * 90}ms` : '0ms',
+            }}
             className={`absolute inset-0 pointer-events-none transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] z-[5] will-change-transform ${
               darkSurface ? 'bg-zinc-800' : 'bg-[#e4e4e7]'
             } ${isRevealed ? 'translate-y-full' : 'translate-y-0'}`}
@@ -179,6 +195,9 @@ export default function ProductCard({
 
           {/* Badges (Top Left) - Smoothly reveals as curtain drops */}
           <div
+            style={{
+              transitionDelay: isRevealed && index !== undefined ? `${(index % 4) * 90 + 150}ms` : '150ms',
+            }}
             className={`absolute top-3 left-3 flex flex-col gap-1.5 z-10 transition-opacity duration-500 ${
               isRevealed ? 'opacity-100' : 'opacity-0'
             }`}

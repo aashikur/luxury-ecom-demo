@@ -140,14 +140,19 @@ Full-funnel attribution, user behavior heatmaps, and advertising tracking.
 Zero-code, unlimited homepage visual arrangement stored as an ordered array in `StoreConfig` (loaded on the storefront via a single batch query `< 600ms`).
 - Configurable blocks & schema fields:
   - `id`: unique section identifier
-  - `type`: `HERO_BANNER` | `COLLECTION_SECTION` | `PROMO_CTA_CARD`
+  - `type`: `HERO_BANNER` | `COLLECTION_SECTION` | `CATEGORY_PILLS` | `PROMO_CTA_CARD` | `SPLIT_SHOWCASE`
   - `layoutWidth`: `WIDE_FULL` (100vw edge-to-edge) | `WIDE_BOX` (`max-w-7xl mx-auto px-4`)
+  - `cardShape`: `CIRCLE` (Instagram Story style rounded-full) | `SQUARE` (1:1 tiles) | `PORTRAIT_3_4` (standard 3:4 cards)
+  - `showTitle`: Toggle section title visibility (`true` default; `false` renders clean edge-to-edge image/pill strip)
+  - `bgMode`: `PHOTO_BG` (full campaign photo with dark overlay) | `SOLID_SURFACE` (minimal solid background)
   - `title` & `subtitle`: Optional overlay headings (omitting text turns image + `bannerURL_link` into a clickable poster)
-  - `bannerImages[]`: Array of `{ url, key }` — 1 image = static Hero Banner (zero JS overhead); >1 image = auto-playing Carousel
+  - `bannerImage`: `{ url, key }` for static banner or split showcase hero model image
+  - `slides[]`: Array of 1 to 5 `{ url, key, title, subtitle, buttonText, buttonLink }` (1 image = static hero; >1 image = auto-playing editorial carousel)
   - `bannerURL_link` / `buttonText` / `buttonLink`: Click target and CTA
   - `promoHeight`: `S` (~120px strip) | `M` (~220px card) | `L` (~320px event card)
   - `displayStyle`: `GRID` (4-col desktop / 2-col mobile) | `CAROUSEL`
   - `sourceMode`: `AUTO` (pulls by `collectionSlug` / `categorySlug`) | `MANUAL` (`curatedProductIds[]` 4–8 items)
+  - `selectedEntitySlugs[]`: Slugs of selected categories or collections for story bubbles
   - `themeStyle`: `LIGHT` | `DARK_BAND`
   - `isActive`: Toggle visibility on the storefront
   - `order`: Move Up / Down controls to rearrange sections visually (`[+ Add Section]`).
@@ -221,3 +226,9 @@ To balance rapid, 1-click merchant deployments with banking-grade credential pro
 - **Action Tokens:** Primary button `bg-[#076E46] text-white hover:bg-[#055C3A]`.
 - **Card Surfaces:** Completely unboxed white card bodies with zero nested grey backgrounds (`bg-slate-50`).
 - **Tab Navigation:** Responsive horizontal overflow with mousewheel translation (`onWheel -> scrollLeft`), left/right navigation chevrons, and subtle scroll indicators (`scrollbar-thin scrollbar-thumb-slate-300`).
+
+### 9.4 Dual-Nav Architecture & Anti-Monolith Code-Splitting (Shopify Standard)
+- **Left Sticky Sidebar (`w-60`):** Replaces crowded horizontal tabs with a permanent vertical module menu (`Branding`, `Logistics`, `Payment`, `Courier`, `Tracking`, `Homepage`, `Features`) always visible on desktop.
+- **Top Section Anchor Jump Pills:** Inside each module, sticky anchor pills allow 1-click smooth scrolling directly to specific cards (e.g. `[ Brand Identity ]` · `[ Theme & Colors ]` · `[ Navigation Menu ]`).
+- **Persistent Floating Save Action Bar:** Displays `"Unsaved changes • [ Reset ] [ Save Settings 💾 ]"` docked persistently so merchants never have to scroll back up to save changes.
+- **Code-Splitting (`tabs/*.tsx`):** Decouples the 3,700-line monolithic client component into 7 modular, lazy-loaded components, cutting initial JS bundle by 85% and guaranteeing <100ms render time.

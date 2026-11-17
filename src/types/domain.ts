@@ -123,12 +123,43 @@ export interface IStoreConfigTracking {
   tiktokPixelId?: string;
 }
 
-export interface IHomeSection {
-  id: string;
-  type: 'HERO' | 'BANNER' | 'PRODUCT_GRID' | 'COLLECTION_CAROUSEL' | 'MARQUEE';
+export interface IHomeSectionSlide {
+  url: string;
+  key?: string;
   title?: string;
   subtitle?: string;
+  buttonText?: string;
+  buttonLink?: string;
+}
+
+export interface IHomeSection {
+  id: string;
+  type:
+    | 'HERO_BANNER'
+    | 'COLLECTION_SECTION'
+    | 'CATEGORY_PILLS'
+    | 'PROMO_CTA_CARD'
+    | 'SPLIT_SHOWCASE'
+    | 'HERO'
+    | 'BANNER'
+    | 'PRODUCT_GRID'
+    | 'COLLECTION_CAROUSEL'
+    | 'MARQUEE';
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  linkUrl?: string;
   collectionSlug?: string;
+  selectedEntitySlugs?: string[];
+  bannerImage?: { url: string; key: string };
+  slides?: IHomeSectionSlide[];
+  cardShape?: 'CIRCLE' | 'SQUARE' | 'PORTRAIT_3_4';
+  showTitle?: boolean;
+  bgMode?: 'PHOTO_BG' | 'SOLID_SURFACE';
+  layoutWidth?: 'WIDE_FULL' | 'WIDE_BOX';
+  themeStyle?: 'LIGHT' | 'DARK_BAND';
   limit?: number;
   order: number;
   isActive: boolean;

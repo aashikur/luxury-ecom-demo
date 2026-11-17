@@ -1,16 +1,30 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export interface IHomeSectionSlide {
+  url: string;
+  key?: string;
+  title?: string;
+  subtitle?: string;
+  buttonText?: string;
+  buttonLink?: string;
+}
+
 export interface IHomeSection {
   id: string;
   type:
     | 'HERO_BANNER'
     | 'COLLECTION_SECTION'
+    | 'CATEGORY_PILLS'
     | 'PROMO_CTA_CARD'
+    | 'SPLIT_SHOWCASE'
     | 'HERO_CAROUSEL'
     | 'PROMO_BANNER'
     | 'CATEGORY_GRID'
     | 'CATEGORY_SLIDER';
   layoutWidth?: 'WIDE_FULL' | 'WIDE_BOX';
+  cardShape?: 'CIRCLE' | 'SQUARE' | 'PORTRAIT_3_4';
+  showTitle?: boolean;
+  bgMode?: 'PHOTO_BG' | 'SOLID_SURFACE';
   title?: string;
   subtitle?: string;
   description?: string;
@@ -18,10 +32,12 @@ export interface IHomeSection {
   buttonLink?: string;
   linkUrl?: string;
   collectionSlug?: string;
+  selectedEntitySlugs?: string[];
   bannerImage?: {
     url: string;
     key: string;
   };
+  slides?: IHomeSectionSlide[];
   promoHeight?: 'S' | 'M' | 'L';
   displayStyle?: 'GRID' | 'CAROUSEL';
   sourceMode?: 'AUTO' | 'MANUAL';
@@ -261,7 +277,9 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
           enum: [
             'HERO_BANNER',
             'COLLECTION_SECTION',
+            'CATEGORY_PILLS',
             'PROMO_CTA_CARD',
+            'SPLIT_SHOWCASE',
             'HERO_CAROUSEL',
             'PROMO_BANNER',
             'CATEGORY_GRID',
@@ -274,16 +292,38 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
           enum: ['WIDE_FULL', 'WIDE_BOX'],
           default: 'WIDE_BOX',
         },
+        cardShape: {
+          type: String,
+          enum: ['CIRCLE', 'SQUARE', 'PORTRAIT_3_4'],
+          default: 'CIRCLE',
+        },
+        showTitle: { type: Boolean, default: true },
+        bgMode: {
+          type: String,
+          enum: ['PHOTO_BG', 'SOLID_SURFACE'],
+          default: 'SOLID_SURFACE',
+        },
         title: { type: String, default: '' },
         subtitle: { type: String, default: '' },
         description: { type: String, default: '' },
         buttonText: { type: String, default: '' },
         buttonLink: { type: String, default: '' },
         collectionSlug: { type: String, default: '' },
+        selectedEntitySlugs: [{ type: String }],
         bannerImage: {
           url: { type: String, default: '' },
           key: { type: String, default: '' },
         },
+        slides: [
+          {
+            url: { type: String, default: '' },
+            key: { type: String, default: '' },
+            title: { type: String, default: '' },
+            subtitle: { type: String, default: '' },
+            buttonText: { type: String, default: '' },
+            buttonLink: { type: String, default: '' },
+          },
+        ],
         promoHeight: {
           type: String,
           enum: ['S', 'M', 'L'],
