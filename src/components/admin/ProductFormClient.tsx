@@ -107,8 +107,11 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
   const [newCatParentId, setNewCatParentId] = useState<string>('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
-  // Custom collection tag input
-  const [customTagInput, setCustomTagInput] = useState('');
+  // Quick Add Collection Modal State
+  const [showAddCollectionModal, setShowAddCollectionModal] = useState(false);
+  const [newColTitle, setNewColTitle] = useState('');
+  const [newColDescription, setNewColDescription] = useState('');
+  const [isCreatingCollection, setIsCreatingCollection] = useState(false);
 
   // Media
   const productMediaList = (product?.media?.length > 0 ? product.media : product?.images) || [];
@@ -541,51 +544,46 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
     });
   };
 
-  const handleAddCustomTag = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const val = customTagInput.trim();
-      if (!val) return;
+  const handleCreateCollection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = newColTitle.trim();
+    if (!val) return;
 
-      const slug = val
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
+    const slug = val
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
 
-      if (!form.collections.includes(slug)) {
-        setForm((prev) => ({ ...prev, collections: [...prev.collections, slug] }));
-      }
-      setCustomTagInput('');
-
-      const existsInDb = availableCollections.some((c) => c.slug === slug);
-      if (!existsInDb) {
-        try {
-          const res = await fetch('/api/collections', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title: val,
-              slug,
-              description: `Curated collection for ${val}`,
-              badgeText: 'Curated',
-            }),
-          });
-          const data = await res.json();
-          if (data.success && data.data) {
-            setAvailableCollections((prev) => [...prev, data.data]);
-          }
-        } catch (err) {
-          console.error('Failed to create collection behind custom tag:', err);
+    setIsCreatingCollection(true);
+    try {
+      const res = await fetch('/api/collections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: val,
+          slug,
+          description: newColDescription.trim() || undefined,
+          badgeText: '',
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setAvailableCollections((prev) => [...prev, data.data]);
+        if (!form.collections.includes(slug)) {
+          setForm((prev) => ({ ...prev, collections: [...prev.collections, slug] }));
         }
+        setShowAddCollectionModal(false);
+        setNewColTitle('');
+        setNewColDescription('');
+      } else {
+        alert(data.error || 'Failed to create collection.');
       }
+    } catch (err) {
+      console.error('Failed to create collection:', err);
+      alert('Error creating collection');
+    } finally {
+      setIsCreatingCollection(false);
     }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setForm((prev) => ({
-      ...prev,
-      collections: prev.collections.filter((t) => t !== tagToRemove),
-    }));
   };
 
   // Submit Handler
@@ -1252,12 +1250,21 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
               </Select>
 
               {/* Marketing Collections Tags */}
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <label className="block font-semibold text-slate-700 text-xs">
-                  Collections
-                </label>
+              <div className="space-y-2.5 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <label className="block font-semibold text-slate-700 text-xs">
+                    Collections
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddCollectionModal(true)}
+                    className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition cursor-pointer"
+                  >
+                    + New
+                  </button>
+                </div>
 
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 max-h-52 overflow-y-auto pr-1">
                   {availableCollections.map((col) => {
                     const isSelected = form.collections.includes(col.slug);
                     return (
@@ -1265,7 +1272,7 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
                         key={col._id}
                         type="button"
                         onClick={() => handleToggleCollection(col.slug)}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition cursor-pointer border ${
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition active:scale-[0.98] duration-75 cursor-pointer border ${
                           isSelected
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-semibold'
                             : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -1277,33 +1284,6 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
                     );
                   })}
                 </div>
-
-                <Input
-                  placeholder="+ Add new collection to database (press Enter)"
-                  value={customTagInput}
-                  onChange={(e) => setCustomTagInput(e.target.value)}
-                  onKeyDown={handleAddCustomTag}
-                />
-
-                {form.collections.length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {form.collections.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[10px] text-slate-700"
-                      >
-                        <span>{tag}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTag(tag)}
-                          className="hover:text-red-600 transition cursor-pointer"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -1385,6 +1365,62 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
                     Cancel
                   </Button>
                   <Button type="submit" variant="default" isLoading={isCreatingCategory}>
+                    Create
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Quick Add Collection Modal */}
+      {showAddCollectionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+          <Card className="w-full max-w-sm shadow-2xl">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Add Collection</CardTitle>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCollectionModal(false)}
+                  className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateCollection} className="space-y-4">
+                <Input
+                  label="Collection Title"
+                  required
+                  placeholder="e.g. Ramadan Edit, Modest Couture"
+                  value={newColTitle}
+                  onChange={(e) => setNewColTitle(e.target.value)}
+                />
+
+                <Input
+                  label="Description (Optional)"
+                  placeholder="Short collection description or subtitle..."
+                  value={newColDescription}
+                  onChange={(e) => setNewColDescription(e.target.value)}
+                />
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowAddCollectionModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="default"
+                    isLoading={isCreatingCollection}
+                    className="bg-[#076E46] text-white hover:bg-[#055C3A]"
+                  >
                     Create
                   </Button>
                 </div>
