@@ -104,10 +104,12 @@ In Bangladesh, real-world cellular networks (3G/4G) have packet jitter. Images c
 2. **Solid Neutral Curtain Base:**
    - Card image wrapper has a neutral solid background (`bg-zinc-100` or `#f8fafc` on light; `bg-zinc-900` on dark).
    - Never show stark empty white voids, transparent holes, or broken image icons.
-3. **Micro-Dissolve Unmasking:**
-   - While image is fetching: `opacity-0 scale-[1.02]`.
-   - On image load (`onLoad` or hydration): smoothly transitions to `opacity-100 scale-100` over `300ms ease-out`.
-   - *Senior Design Rationale:* The micro 2% scale-in creates an optical illusion of a high-end camera lens pulling into sharp optical focus, masking network latency.
+3. **Editorial Curtain Drop Reveal (Viewport Scroll & Load Gate):**
+   - Each card uses a lightweight `IntersectionObserver` (`rootMargin: '120px 0px'`).
+   - While image is fetching or outside the viewport: a clean neutral curtain layer (`bg-[#e4e4e7]` / `bg-zinc-800` on dark) sits at `translate-y-0 z-[5]`.
+   - As the card enters near the viewport and the image finishes decoding (`isInView && isImageLoaded`): the curtain slides smoothly downward (`translate-y-full`) over `600ms` via `cubic-bezier(0.16, 1, 0.3, 1)`, unveiling the high-resolution garment like an editorial fashion exhibition.
+   - Concurrently, top badges fade in smoothly (`transition-opacity duration-500`).
+   - **Bandwidth & CPU Preservation:** Products down the page never initiate lazy downloads until the user scrolls near them, preventing all pictures from loading simultaneously and eliminating browser memory choking.
 4. **Shimmer Blur Placeholder:**
    - Use Next.js `<Image placeholder="blur" blurDataURL="..." />` or inline SVG shimmer data URLs for instant visual feedback while network bytes stream in.
 5. **Next.js LCP Priority & Device Sizes Gate:**

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Check } from 'lucide-react';
@@ -69,6 +69,33 @@ export default function ProductCard({
 
   const [isJustAdded, setIsJustAdded] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '120px 0px', threshold: 0.01 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const isRevealed = isInView && isImageLoaded;
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -122,44 +149,55 @@ export default function ProductCard({
 
   return (
     <div
+      ref={cardRef}
       className={`group flex flex-col justify-between rounded-sm transition-all duration-300 ${
         darkSurface ? 'bg-zinc-900/90' : 'bg-white'
       }`}
     >
       <div>
-        {/* Clean 3:4 Portrait Image Container - Solid Neutral Curtain with Optical Focus Reveal */}
+        {/* Clean 3:4 Portrait Image Container */}
         <Link
           href={`/products/${product.slug}`}
           className="relative aspect-[3/4] w-full block overflow-hidden bg-zinc-100 mb-4 select-none touch-manipulation [-webkit-tap-highlight-color:transparent]"
         >
+          {/* Main Image with Smooth Subtle Scale on Hover */}
           <Image
             src={defaultImage}
             alt={product.title}
             fill
-            sizes="(max-width: 640px) 50vw, 25vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             onLoad={() => setIsImageLoaded(true)}
-            className={`object-cover object-center group-hover:scale-105 transition-all duration-500 ease-out ${
-              isImageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.02]'
-            }`}
+            className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
           />
 
-          {/* Badges (Top Left) */}
-          <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+          {/* Editorial Curtain Drop Layer (Unveils when in viewport & loaded) */}
+          <div
+            className={`absolute inset-0 pointer-events-none transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] z-[5] will-change-transform ${
+              darkSurface ? 'bg-zinc-800' : 'bg-[#e4e4e7]'
+            } ${isRevealed ? 'translate-y-full' : 'translate-y-0'}`}
+          />
+
+          {/* Badges (Top Left) - Smoothly reveals as curtain drops */}
+          <div
+            className={`absolute top-3 left-3 flex flex-col gap-1.5 z-10 transition-opacity duration-500 ${
+              isRevealed ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
             {discountPct > 0 && isAvailable && (
               <span
                 style={{ backgroundColor: accentColor }}
-                className="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white tracking-wide"
+                className="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white tracking-wide shadow-xs"
               >
                 -{discountPct}%
               </span>
             )}
             {isPreOrder && (
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-blue-600 text-white">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-blue-600 text-white shadow-xs">
                 PRE-ORDER
               </span>
             )}
             {!isAvailable && (
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-zinc-900/90 text-white backdrop-blur-xs">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-zinc-900/90 text-white backdrop-blur-xs shadow-xs">
                 SOLD OUT
               </span>
             )}
