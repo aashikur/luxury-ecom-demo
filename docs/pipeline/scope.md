@@ -283,3 +283,15 @@
   1. **Smart Entity Auto-Fill (`handleTargetSelection`):** Upon selecting a collection or category in the Add Block or Edit Block modals, automatically populates Section Title (e.g. "Cashmere & Pashmina Shawls"), Subtitle / Description ("Explore artisanal collection"), Button CTA Text ("EXPLORE COLLECTION" or "SHOP CATEGORY"), and Button Link Target (`/collections/${slug}` or `/shop?category=${slug}`).
   2. **Clean 16:9 Aspect-Video Image Preview:** Refactored `SectionImageField` to render an elegant 16:9 (`aspect-video`) card preview with a floating cross (`✕`) remove button and a prominent "Upload New" button.
   3. **Purged Clutter & Spec Hints:** Removed raw URL text string displays and eliminated noisy `💡 Spec Hint:` prefixes in favor of concise, locked token badges (`Ratio: 16:9 / 21:9 · Optimal: 1920 × 800px`). Set default button link target to `/shop`.
+
+### Task #34: Comprehensive Media & Taxonomy Image Synchronization Engine
+* **Files Modified/Created:** `scripts/sync-all-images.mjs`, `package.json`, `docs/pipeline/scope.md`.
+* **Changes:**
+  1. **Cross-Entity Image Mapping & Audit:** Mapped the 20 distinct high-resolution media assets already present in the database to 100% of all Categories, Brands, Collections, and StoreConfig home sections.
+  2. **Zero-Empty Taxonomy Guarantee:**
+     - **Categories (18/18 populated):** Mapped `Men` (`men`) to `1000198138.jpg`, `Kids` (`kids`) to `90F0999E-D22C-48ED-80DC-6A9E89022999-(1).webp`, `Classic Black Abayas` to authentic Dubai Black Abaya (`04A97825-EF41-48E4-972E-5243E7BD3839.webp`), and all remaining 15 categories to their exact garment matches.
+     - **Brands (4/4 populated):** Assigned `Aurem Modest Couture` to master brand logo (`branding/logo.png`), `Luxeurs Heritage` to `Lira_3pc_Luxeurs_Embroidered_Khaddar_Dress_5...`, `Flora & Grace` to `7563EC8B-DB00-4E05-A4AB-F2174A4B602F.webp`, and `Bari Textiles` to `Lyon2pcLuxeursEmbroideredKhaddarDress_1.webp`.
+     - **Collections (11/11 populated):** Replaced duplicate generic khaddar dress banners across `signature-abayas`, `modest-fashion`, `occasions`, and `luxury-gift-hampers` with rich, niche-accurate banners.
+     - **StoreConfig Home Sections & Favicon:** Populated previously empty `bannerImage` fields on `Signature Abayas`, `Sacred Festive & Gift Sets`, and `Cash On Delivery & Steadfast 1-Click Dispatch`. Set `branding.favicon` to master logo.
+  3. **Automated Maintenance Script:** Added `"db:sync-images": "node scripts/sync-all-images.mjs"` to `package.json`.
+  4. **Verification:** Verified with MongoDB Atlas inspection audit (`0 missing category images`, `0 missing brand logos`, `0 missing collection banners`). 100% of 18 integration tests passed in `test-user-flow.mjs` and production build passed with code 0.
