@@ -246,6 +246,7 @@ export default async function HomePage() {
                 themeStyle={isDarkBand ? 'DARK_BAND' : 'LIGHT'}
                 showTitle={section.showTitle !== false}
                 accentColor={branding.colors?.accent}
+                showAddToCart={config?.features?.showCardAddToCart}
               />
             );
           }
@@ -304,6 +305,7 @@ export default async function HomePage() {
                         key={String(p._id)}
                         product={p}
                         index={pIdx}
+                        showAddToCart={config?.features?.showCardAddToCart}
                       />
                     ))}
                   </div>

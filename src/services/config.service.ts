@@ -225,6 +225,7 @@ export function getDefaultStoreConfig(): Partial<IStoreConfig> {
       abandonedCartCapture: true,
       advanceDeliveryFeeEnabled: false,
       couponEnabled: true,
+      showCardAddToCart: false,
       codEnabled: true,
       manualBkashEnabled: true,
       manualNagadEnabled: true,

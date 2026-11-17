@@ -22,6 +22,7 @@ interface CollectionSectionProps {
   themeStyle?: 'LIGHT' | 'DARK_BAND';
   showTitle?: boolean;
   accentColor?: string;
+  showAddToCart?: boolean;
 }
 
 export default function CollectionSection({
@@ -33,6 +34,7 @@ export default function CollectionSection({
   themeStyle = 'LIGHT',
   showTitle = true,
   accentColor = '#B8860B',
+  showAddToCart = false,
 }: CollectionSectionProps) {
   const isDarkBand = themeStyle === 'DARK_BAND';
 
@@ -97,6 +99,7 @@ export default function CollectionSection({
               index={idx}
               accentColor={accentColor}
               darkSurface={isDarkBand}
+              showAddToCart={showAddToCart}
             />
           ))}
         </div>

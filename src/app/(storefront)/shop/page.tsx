@@ -140,6 +140,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 product={product}
                 index={idx}
                 accentColor={branding.colors?.accent || '#076E46'}
+                showAddToCart={config?.features?.showCardAddToCart}
               />
             ))}
           </div>

@@ -39,6 +39,32 @@ export default function FeaturesTab({ config, setConfig }: BaseTabProps) {
             </Select>
           </div>
 
+          {/* Catalog Card Add To Cart Button */}
+          <div className="p-3.5 rounded-md border border-slate-200 bg-white flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-semibold text-[#060d11]">Card Bottom Add to Cart Button</h4>
+              <p className="text-xs text-slate-500">
+                Displays a large full-width Add to Cart button beneath every card on the catalog grid. When disabled (default), cards maintain a minimal luxury aesthetic with a floating quick-add icon.
+              </p>
+            </div>
+            <Select
+              value={config.features?.showCardAddToCart ? 'true' : 'false'}
+              onChange={(e) =>
+                setConfig({
+                  ...config,
+                  features: {
+                    ...config.features,
+                    showCardAddToCart: e.target.value === 'true',
+                  },
+                })
+              }
+              className="w-32"
+            >
+              <option value="false">Hidden (Minimal)</option>
+              <option value="true">Visible (Full Width)</option>
+            </Select>
+          </div>
+
           {/* Abandoned Cart Lead Capture */}
           <div className="p-3.5 rounded-md border border-slate-200 bg-white flex items-center justify-between">
             <div>

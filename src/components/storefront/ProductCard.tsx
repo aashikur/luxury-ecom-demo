@@ -3,13 +3,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Check } from 'lucide-react';
+import { Check, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { StockStatus, IVariant } from '@/models/Product';
 import { getProductPrimaryImage } from '@/lib/utils';
 
 export interface ProductCardProps {
   product: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     _id: string | any;
     title: string;
     slug: string;
@@ -23,11 +24,13 @@ export interface ProductCardProps {
     totalStock?: number;
     media?: { url: string; key?: string; type?: string }[];
     images?: { url: string; key?: string }[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     variants?: (IVariant | any)[];
   };
   accentColor?: string;
   darkSurface?: boolean;
   index?: number;
+  showAddToCart?: boolean;
 }
 
 export default function ProductCard({
@@ -35,6 +38,7 @@ export default function ProductCard({
   accentColor = '#B8860B',
   darkSurface = false,
   index,
+  showAddToCart = false,
 }: ProductCardProps) {
   const { addToCart } = useCart();
 
@@ -166,37 +170,41 @@ export default function ProductCard({
       }`}
     >
       <div>
-        {/* Clean 3:4 Portrait Image Container */}
-        <Link
-          href={`/products/${product.slug}`}
-          className="relative aspect-[3/4] w-full block overflow-hidden bg-zinc-100 mb-4 select-none touch-manipulation [-webkit-tap-highlight-color:transparent]"
-        >
-          {/* Main Image with Smooth Subtle Scale on Hover */}
-          <Image
-            src={defaultImage}
-            alt={product.title}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            onLoad={() => setIsImageLoaded(true)}
-            className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-          />
+        {/* Clean 3:4 Portrait Image Container with Group Hover */}
+        <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-100 mb-3 select-none touch-manipulation [-webkit-tap-highlight-color:transparent]">
+          {/* Main PDP Link */}
+          <Link
+            href={`/products/${product.slug}`}
+            className="absolute inset-0 block z-0"
+            aria-label={product.title}
+          >
+            {/* Main Image with Smooth Subtle Scale on Hover */}
+            <Image
+              src={defaultImage}
+              alt={product.title}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              onLoad={() => setIsImageLoaded(true)}
+              className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+            />
 
-          {/* Editorial Curtain Drop Layer (Unveils when in viewport & loaded) */}
-          <div
-            style={{
-              transitionDelay: isRevealed && index !== undefined ? `${(index % 4) * 90}ms` : '0ms',
-            }}
-            className={`absolute inset-0 pointer-events-none transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] z-[5] will-change-transform ${
-              darkSurface ? 'bg-zinc-800' : 'bg-[#e4e4e7]'
-            } ${isRevealed ? 'translate-y-full' : 'translate-y-0'}`}
-          />
+            {/* Editorial Curtain Drop Layer (Unveils when in viewport & loaded) */}
+            <div
+              style={{
+                transitionDelay: isRevealed && index !== undefined ? `${(index % 4) * 90}ms` : '0ms',
+              }}
+              className={`absolute inset-0 pointer-events-none transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] z-[5] will-change-transform ${
+                darkSurface ? 'bg-zinc-800' : 'bg-[#e4e4e7]'
+              } ${isRevealed ? 'translate-y-full' : 'translate-y-0'}`}
+            />
+          </Link>
 
           {/* Badges (Top Left) - Smoothly reveals as curtain drops */}
           <div
             style={{
               transitionDelay: isRevealed && index !== undefined ? `${(index % 4) * 90 + 150}ms` : '150ms',
             }}
-            className={`absolute top-3 left-3 flex flex-col gap-1.5 z-10 transition-opacity duration-500 ${
+            className={`absolute top-3 left-3 flex flex-col gap-1.5 z-10 pointer-events-none transition-opacity duration-500 ${
               isRevealed ? 'opacity-100' : 'opacity-0'
             }`}
           >
@@ -219,10 +227,36 @@ export default function ProductCard({
               </span>
             )}
           </div>
-        </Link>
+
+          {/* Floating Luxury Quick-Add Cart Pill (Bottom Right) */}
+          {isAvailable && (
+            <button
+              type="button"
+              onClick={handleQuickAdd}
+              aria-label={`Quick add ${product.title} to cart`}
+              className={`absolute bottom-3 right-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wider uppercase transition-all duration-300 ease-out active:scale-95 cursor-pointer shadow-md select-none touch-manipulation sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 ${
+                isJustAdded
+                  ? 'bg-[#076E46] text-white ring-2 ring-white/90 scale-100 opacity-100 translate-y-0'
+                  : 'bg-white/95 text-zinc-900 hover:bg-zinc-950 hover:text-white backdrop-blur-xs border border-black/5'
+              }`}
+            >
+              {isJustAdded ? (
+                <>
+                  <Check className="w-3.5 h-3.5 animate-in zoom-in duration-150" />
+                  <span>ADDED</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <span>+ ADD</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
 
         {/* Centered Title & Clean Price Row */}
-        <div className="text-center px-2">
+        <div className="text-center px-2 pb-2">
           <Link
             href={`/products/${product.slug}`}
             className={`text-sm font-medium tracking-tight block transition-colors line-clamp-1 mb-1.5 ${
@@ -234,7 +268,7 @@ export default function ProductCard({
             {product.title}
           </Link>
 
-          <div className="flex items-center justify-center gap-2 mb-4">
+          <div className="flex items-center justify-center gap-2">
             {hasDiscount && (
               <span className="text-xs line-through text-zinc-400">
                 {product.basePrice.toLocaleString()}৳
@@ -252,43 +286,46 @@ export default function ProductCard({
         </div>
       </div>
 
-      {/* Full-Width Action Button with Tactile Feedback */}
-      <button
-        onClick={handleQuickAdd}
-        disabled={!isAvailable}
-        style={{
-          backgroundColor: isJustAdded
-            ? '#076E46'
-            : !isAvailable
-            ? '#A1A1AA'
-            : darkSurface
-            ? '#FFFFFF'
-            : accentColor,
-          color: isJustAdded
-            ? '#FFFFFF'
-            : !isAvailable
-            ? '#FFFFFF'
-            : darkSurface
-            ? '#09090B'
-            : '#FFFFFF',
-        }}
-        className={`w-full py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] transition active:scale-[0.98] duration-75 flex items-center justify-center gap-1.5 touch-manipulation [-webkit-tap-highlight-color:transparent] select-none ${
-          isAvailable ? 'hover:opacity-90 cursor-pointer' : 'cursor-not-allowed opacity-60'
-        }`}
-      >
-        {isJustAdded ? (
-          <>
-            <Check className="w-3.5 h-3.5 animate-in zoom-in duration-150" />
-            <span>ADDED TO CART</span>
-          </>
-        ) : !isAvailable ? (
-          'SOLD OUT'
-        ) : isPreOrder ? (
-          'PRE-ORDER'
-        ) : (
-          'ADD TO CART'
-        )}
-      </button>
+      {/* Full-Width Action Button (Conditionally rendered when showAddToCart is true) */}
+      {showAddToCart && (
+        <button
+          type="button"
+          onClick={handleQuickAdd}
+          disabled={!isAvailable}
+          style={{
+            backgroundColor: isJustAdded
+              ? '#076E46'
+              : !isAvailable
+              ? '#A1A1AA'
+              : darkSurface
+              ? '#FFFFFF'
+              : accentColor,
+            color: isJustAdded
+              ? '#FFFFFF'
+              : !isAvailable
+              ? '#FFFFFF'
+              : darkSurface
+              ? '#09090B'
+              : '#FFFFFF',
+          }}
+          className={`w-full py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] transition active:scale-[0.98] duration-75 flex items-center justify-center gap-1.5 touch-manipulation [-webkit-tap-highlight-color:transparent] select-none ${
+            isAvailable ? 'hover:opacity-90 cursor-pointer' : 'cursor-not-allowed opacity-60'
+          }`}
+        >
+          {isJustAdded ? (
+            <>
+              <Check className="w-3.5 h-3.5 animate-in zoom-in duration-150" />
+              <span>ADDED TO CART</span>
+            </>
+          ) : !isAvailable ? (
+            'SOLD OUT'
+          ) : isPreOrder ? (
+            'PRE-ORDER'
+          ) : (
+            'ADD TO CART'
+          )}
+        </button>
+      )}
     </div>
   );
 }

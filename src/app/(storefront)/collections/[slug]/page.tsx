@@ -290,6 +290,7 @@ export default async function CollectionPage({
                     product={product}
                     index={idx}
                     accentColor={branding.colors?.accent}
+                    showAddToCart={config?.features?.showCardAddToCart}
                   />
                 ))}
               </div>
@@ -339,6 +340,7 @@ export default async function CollectionPage({
                   product={product}
                   index={idx}
                   accentColor={branding.colors?.accent}
+                  showAddToCart={config?.features?.showCardAddToCart}
                 />
               ))}
             </div>

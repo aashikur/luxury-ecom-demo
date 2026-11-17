@@ -295,3 +295,11 @@
      - **StoreConfig Home Sections & Favicon:** Populated previously empty `bannerImage` fields on `Signature Abayas`, `Sacred Festive & Gift Sets`, and `Cash On Delivery & Steadfast 1-Click Dispatch`. Set `branding.favicon` to master logo.
   3. **Automated Maintenance Script:** Added `"db:sync-images": "node scripts/sync-all-images.mjs"` to `package.json`.
   4. **Verification:** Verified with MongoDB Atlas inspection audit (`0 missing category images`, `0 missing brand logos`, `0 missing collection banners`). 100% of 18 integration tests passed in `test-user-flow.mjs` and production build passed with code 0.
+
+### Task #35: Clean Luxury Catalog Card UX & Floating Quick-Add Cart Pill
+* **Files Modified/Created:** `src/models/StoreConfig.ts`, `src/services/config.service.ts`, `src/components/admin/settings/tabs/FeaturesTab.tsx`, `src/components/storefront/ProductCard.tsx`, `src/components/storefront/CollectionSection.tsx`, `src/app/(storefront)/page.tsx`, `src/app/(storefront)/shop/page.tsx`, `src/app/(storefront)/collections/[slug]/page.tsx`, `docs/pipeline/scope.md`.
+* **Changes:**
+  1. **Minimalist Luxury Card Aesthetic:** Eliminated the bulky, full-width bottom "ADD TO CART" button beneath the price row on catalog cards by default, letting garment photos, titles, and prices breathe in an unboxed luxury layout.
+  2. **Floating Quick-Add Cart Pill (`[ 🛍️ + ADD ]`):** Integrated a sleek floating quick-action pill at the bottom-right corner of the 3:4 portrait image frame. On desktop, smoothly reveals on hover (`sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0`); on mobile, provides persistent tap accessibility. Clicking immediately adds the item to the cart, provides instant emerald feedback (`[ ✓ ADDED ]`), and opens the slide-over CartDrawer.
+  3. **Configurable Admin Switch (`showCardAddToCart`):** Added `showCardAddToCart` (default: `false`) in `StoreConfig.features` schema and added a toggle switch in `/admin/settings` (`Features` tab) allowing merchants to optionally restore the static bottom button if desired.
+  4. **Verification:** Passed full TypeScript check (`tsc --noEmit`), 18/18 integration tests in `test-user-flow.mjs`, and production build (`npm run build`).

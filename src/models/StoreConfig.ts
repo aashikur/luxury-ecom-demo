@@ -211,6 +211,7 @@ export interface IStoreConfig extends Document {
     abandonedCartCapture: boolean;
     advanceDeliveryFeeEnabled: boolean;
     couponEnabled: boolean;
+    showCardAddToCart?: boolean;
     codEnabled?: boolean;
     manualBkashEnabled?: boolean;
     manualNagadEnabled?: boolean;
@@ -523,6 +524,7 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
       abandonedCartCapture: { type: Boolean, default: true },
       advanceDeliveryFeeEnabled: { type: Boolean, default: false },
       couponEnabled: { type: Boolean, default: true },
+      showCardAddToCart: { type: Boolean, default: false },
       codEnabled: { type: Boolean, default: true },
       manualBkashEnabled: { type: Boolean, default: true },
       manualNagadEnabled: { type: Boolean, default: true },
