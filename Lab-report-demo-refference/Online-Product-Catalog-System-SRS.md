@@ -94,6 +94,9 @@ The system provides two distinct environments:
 1. **Public Storefront Portal:** An open, unauthenticated, zero-friction discovery interface optimized for mobile and desktop visitors.
 2. **Administrative Management Studio:** A secured, authenticated dashboard enabling authorized staff to curate taxonomy trees, publish products, and attach rich technical media.
 
+![Figure 2.0: High-Level Cloud & Storage Architecture for Online Product Catalog System](./Section%202.1%20(Product%20Perspective).png)
+*Figure 2.0: High-Level Cloud & Storage Architecture for Online Product Catalog System*
+
 ### 2.2 Product Features
 The primary features of OPCS include:
 - **Taxonomy & Category Engine:** Allows administrators to establish multi-level category structures with parent-child relationships and breadcrumb navigation.
@@ -112,7 +115,8 @@ The primary features of OPCS include:
 | **Visitor / Consumer** | General public visitors browsing the digital catalog via smartphones, tablets, or desktop browsers to research specifications, view media, and compare products. | Read-Only (Public Catalog) |
 
 #### Use Case Diagram
-*(Note: Visual diagram to be inserted here. Depicts actors 'System Administrator', 'Catalog Manager', and 'Visitor' interacting with catalog management, media handling, and catalog search/view use cases.)*
+![Figure 2.1: Use Case Diagram for Online Product Catalog System](./Figure%202.1%20-%20Use%20Case%20Diagram%20for%20Online%20Product%20Catalog%20System.png)
+*Figure 2.1: Use Case Diagram for Online Product Catalog System*
 
 ### 2.4 Operating Environment
 - **Client Side:** Modern cross-platform web browsers (Google Chrome, Mozilla Firefox, Apple Safari, Microsoft Edge) on mobile (iOS, Android), tablet, and desktop viewports.
@@ -243,7 +247,8 @@ The database architecture is designed with clean relational integrity within a h
   - Embedded `specifications: [{ groupName, items: [{ label, value }] }]`
 - **`Users` Collection:** Stores administrative staff credentials (`_id`, `name`, `email`, `passwordHash`, `role: ADMIN | STAFF`).
 
-*(Note: Entity-Relationship Diagram visual to be inserted here.)*
+![Figure 6.1: Entity-Relationship Diagram (ERD) for Online Product Catalog System](./Section%206.1%20(Data%20Model).png)
+*Figure 6.1: Entity-Relationship Diagram (ERD) for Online Product Catalog System*
 
 ### 6.2 Data Flow Diagram (DFD)
 
@@ -260,4 +265,8 @@ The database architecture is designed with clean relational integrity within a h
 - **Process 4.0:** Retrieve Product Details & Specifications (Reads Products Data Store and delivers formatted PDP).
 - **Process 5.0:** Authenticate Staff & Control Sessions (Interacts with Users Data Store).
 
-*(Note: Level-0 and Level-1 DFD visuals to be inserted here.)*
+![Figure 6.2(a): Level-0 Context Data Flow Diagram](./Section%206.2%20(Data%20Flow%20Diagram%20-%20Level%200).png)
+*Figure 6.2(a): Level-0 Context Data Flow Diagram for Online Product Catalog System*
+
+![Figure 6.2(b): Level-1 Detailed Data Flow Diagram](./Section%206.2%20(Data%20Flow%20Diagram%20-%20Level%201).png)
+*Figure 6.2(b): Level-1 Detailed Data Flow Diagram for Online Product Catalog System*

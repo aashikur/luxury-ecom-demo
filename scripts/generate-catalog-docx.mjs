@@ -9,14 +9,20 @@ import {
   TableRow,
   TableCell,
   WidthType,
-  BorderStyle,
   Header,
   Footer,
   PageNumber,
-  NumberFormat,
-  convertInchesToTwip
+  convertInchesToTwip,
+  ImageRun
 } from 'docx';
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const labReportDir = path.resolve(__dirname, '../Lab-report-demo-refference');
+const outputPath = path.resolve(labReportDir, 'Online-Product-Catalog-System-SRS.docx');
 
 const FONT_FAMILY = 'Times New Roman';
 
@@ -107,28 +113,6 @@ function bulletPara(leadText, normalText) {
   });
 }
 
-function subBulletPara(leadText, normalText) {
-  return new Paragraph({
-    bullet: { level: 1 },
-    spacing: { after: 80, line: 276 },
-    children: [
-      new TextRun({
-        text: leadText ? leadText + ' ' : '',
-        font: FONT_FAMILY,
-        size: 24,
-        bold: !!leadText,
-        color: '000000'
-      }),
-      new TextRun({
-        text: normalText,
-        font: FONT_FAMILY,
-        size: 24,
-        color: '000000'
-      })
-    ]
-  });
-}
-
 function reqPara(reqId, reqDesc) {
   return new Paragraph({
     spacing: { before: 100, after: 120, line: 276 },
@@ -164,6 +148,66 @@ function noteBoxPara(text) {
       })
     ]
   });
+}
+
+function createImageBlock(filename, captionText, maxW = 540, maxH = 650) {
+  const fullPath = path.resolve(labReportDir, filename);
+  if (!fs.existsSync(fullPath)) {
+    console.warn(`Warning: Image file not found at ${fullPath}`);
+    return [noteBoxPara(captionText)];
+  }
+
+  const buffer = fs.readFileSync(fullPath);
+  const origW = buffer.readUInt32BE(16);
+  const origH = buffer.readUInt32BE(20);
+
+  let targetW = origW;
+  let targetH = origH;
+
+  // Scale down to fit maxW
+  if (targetW > maxW) {
+    const scale = maxW / targetW;
+    targetW = maxW;
+    targetH = Math.round(targetH * scale);
+  }
+
+  // Scale down to fit maxH if still exceeding
+  if (targetH > maxH) {
+    const scale = maxH / targetH;
+    targetH = maxH;
+    targetW = Math.round(targetW * scale);
+  }
+
+  const imageRun = new ImageRun({
+    data: buffer,
+    transformation: {
+      width: targetW,
+      height: targetH
+    }
+  });
+
+  const imagePara = new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 180, after: 80 },
+    children: [imageRun]
+  });
+
+  const captionPara = new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 60, after: 180 },
+    children: [
+      new TextRun({
+        text: captionText,
+        font: FONT_FAMILY,
+        size: 20, // 10pt
+        bold: true,
+        italics: true,
+        color: '333333'
+      })
+    ]
+  });
+
+  return [imagePara, captionPara];
 }
 
 function createTable(rowsData) {
@@ -320,6 +364,12 @@ const doc = new Document({
         bodyPara(
           'The OPCS operates as a standalone, cloud-native web application serving as the authoritative single source of truth for all product information. Developed on a modern decoupled architecture, it leverages Next.js 16 with TypeScript for high-speed Server-Side Rendering (SSR), MongoDB Atlas as the primary persistence layer, and Cloudflare R2 / CDN for high-throughput media asset delivery.'
         ),
+        ...createImageBlock(
+          'Section 2.1 (Product Perspective).png',
+          'Figure 2.0: High-Level Cloud & Storage Architecture for Online Product Catalog System',
+          540,
+          450
+        ),
 
         h2Para('2.2 Product Features'),
         bodyPara('The primary capabilities of OPCS include:'),
@@ -346,9 +396,12 @@ const doc = new Document({
           ]
         ]),
 
-        new Paragraph({ spacing: { before: 200, after: 100 } }),
-        noteBoxPara('Figure 2.1: Use Case Diagram for Online Product Catalog System'),
-        new Paragraph({ spacing: { before: 100, after: 200 } }),
+        ...createImageBlock(
+          'Figure 2.1 - Use Case Diagram for Online Product Catalog System.png',
+          'Figure 2.1: Use Case Diagram for Online Product Catalog System',
+          420,
+          650
+        ),
 
         h2Para('2.4 Operating Environment'),
         bodyPara(
@@ -462,26 +515,49 @@ const doc = new Document({
         bulletPara('Products:', 'Central catalog entity containing identification, pricing, description, highlights, media[], and specifications[].'),
         bulletPara('Users:', 'Stores administrative staff credentials (_id, name, email, passwordHash, role).'),
 
-        new Paragraph({ spacing: { before: 200, after: 100 } }),
-        noteBoxPara('Figure 6.1: Entity-Relationship Diagram (ERD) for Online Product Catalog System'),
-        new Paragraph({ spacing: { before: 100, after: 200 } }),
+        ...createImageBlock(
+          'Section 6.1 (Data Model).png',
+          'Figure 6.1: Entity-Relationship Diagram (ERD) for Online Product Catalog System',
+          480,
+          650
+        ),
 
         h2Para('6.2 Data Flow Diagram (DFD)'),
         bodyPara('The system data flow is organized into two primary levels:'),
         bulletPara('Level-0 DFD (Context Diagram):', 'Models external interactions between Visitor, Staff, Administrator, and the central Catalog System.'),
-        bulletPara('Level-1 DFD (Decomposition):', 'Decomposes the system into 5 discrete processes: 1.0 Manage Taxonomies, 2.0 Manage Products & Media, 3.0 Search & Filter Catalog, 4.0 Retrieve Details & Specifications, and 5.0 Authenticate Staff.'),
+        ...createImageBlock(
+          'Section 6.2 (Data Flow Diagram - Level 0).png',
+          'Figure 6.2(a): Level-0 Context Data Flow Diagram for Online Product Catalog System',
+          540,
+          300
+        ),
 
-        new Paragraph({ spacing: { before: 200, after: 100 } }),
-        noteBoxPara('Figure 6.2: Level-0 & Level-1 Data Flow Diagram (DFD) for Online Product Catalog System'),
-        new Paragraph({ spacing: { before: 100, after: 200 } })
+        bulletPara('Level-1 DFD (Decomposition):', 'Decomposes the system into 5 discrete processes: 1.0 Manage Taxonomies, 2.0 Manage Products & Media, 3.0 Search & Filter Catalog, 4.0 Retrieve Details & Specifications, and 5.0 Authenticate Staff.'),
+        ...createImageBlock(
+          'Section 6.2 (Data Flow Diagram - Level 1).png',
+          'Figure 6.2(b): Level-1 Detailed Data Flow Diagram for Online Product Catalog System',
+          540,
+          480
+        )
       ]
     }
   ]
 });
 
 // Write to file
-const outputPath = 'C:/WebDevs/luxury-ecom-demo/Lab-report-demo-refference/Online-Product-Catalog-System-SRS.docx';
 Packer.toBuffer(doc).then((buffer) => {
-  fs.writeFileSync(outputPath, buffer);
-  console.log('Successfully generated Word document at:', outputPath);
+  try {
+    fs.writeFileSync(outputPath, buffer);
+    console.log('Successfully generated Word document at:', outputPath);
+    console.log('File size:', (buffer.length / 1024 / 1024).toFixed(2), 'MB');
+  } catch (err) {
+    if (err.code === 'EBUSY') {
+      const fallbackPath = path.resolve(labReportDir, 'Online-Product-Catalog-System-SRS-Updated.docx');
+      fs.writeFileSync(fallbackPath, buffer);
+      console.warn(`[LOCKED] Original file is currently open in Microsoft Word. Saved to: ${fallbackPath}`);
+      console.log('File size:', (buffer.length / 1024 / 1024).toFixed(2), 'MB');
+    } else {
+      throw err;
+    }
+  }
 });
