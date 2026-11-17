@@ -17,6 +17,7 @@ import {
   FolderTree,
 } from 'lucide-react';
 import { optimizeImageRuleBased } from '@/lib/imageCompressor';
+import { getProductPrimaryImage } from '@/lib/utils';
 import {
   Button,
   Card,
@@ -575,7 +576,7 @@ export default function CollectionFormClient({
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {attachedProducts.map((prod) => {
-                          const thumb = prod.media?.[0]?.url || prod.images?.[0]?.url || '/placeholder.webp';
+                          const thumb = getProductPrimaryImage(prod);
                           return (
                             <tr key={prod._id} className="hover:bg-slate-50/70">
                               <td className="py-2.5 px-3 flex items-center gap-2.5">
@@ -714,7 +715,7 @@ export default function CollectionFormClient({
                 filteredModalProducts.map((prod) => {
                   const isAlreadyAttached = attachedProducts.some((p) => p._id === prod._id);
                   const isChecked = selectedProductIds.includes(prod._id);
-                  const thumb = prod.media?.[0]?.url || prod.images?.[0]?.url || '/placeholder.webp';
+                  const thumb = getProductPrimaryImage(prod);
 
                   return (
                     <label
