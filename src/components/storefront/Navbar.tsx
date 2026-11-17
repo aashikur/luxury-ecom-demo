@@ -443,20 +443,20 @@ export default function Navbar({
               <Search className="w-5 h-5" />
             </button>
 
-            {/* 1-Click Track Order Action (Icon Only) */}
+            {/* 1-Click Track Order Action (Icon Only - Hidden on Mobile, accessible in Hamburger Menu) */}
             <Link
               href="/track-order"
-              className="p-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded-full transition active:scale-[0.98] duration-75 cursor-pointer"
+              className="hidden sm:inline-flex p-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded-full transition active:scale-[0.98] duration-75 cursor-pointer"
               title="Track Order Status"
               aria-label="Track Order Status"
             >
               <Truck className="w-5 h-5 text-zinc-700" />
             </Link>
 
-            {/* Profile / Admin Icon */}
+            {/* Profile / Admin Icon (Hidden on Mobile, accessible in Hamburger Menu) */}
             <Link
               href="/admin"
-              className="p-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded-full transition active:scale-[0.98] duration-75 cursor-pointer"
+              className="hidden sm:inline-flex p-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded-full transition active:scale-[0.98] duration-75 cursor-pointer"
               title="Admin Portal"
               aria-label="Admin Portal"
             >
