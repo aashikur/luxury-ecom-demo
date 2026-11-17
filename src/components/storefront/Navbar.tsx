@@ -17,6 +17,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { getProductPrimaryImage } from '@/lib/utils';
 
 export interface CategoryItem {
   id: string;
@@ -523,7 +524,7 @@ export default function Navbar({
             <div className="max-h-96 overflow-y-auto divide-y divide-zinc-100 p-2">
               {searchResults.length > 0 ? (
                 searchResults.map((prod) => {
-                  const thumb = prod.media?.[0]?.url || prod.images?.[0]?.url || '/placeholder.webp';
+                  const thumb = getProductPrimaryImage(prod);
                   return (
                     <Link
                       key={prod._id}
