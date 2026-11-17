@@ -13,7 +13,7 @@ interface PromoCardProps {
 }
 
 export default function PromoCard({
-  subtitle = 'STEADFAST EXPRESS DISPATCH',
+  subtitle = 'NATIONWIDE EXPRESS DISPATCH',
   title = 'FREE EXPRESS SHIPPING ACROSS BANGLADESH',
   description = 'On all orders above 2,500 BDT • Inside Dhaka ৳70 (24-48 Hours) • Outside Dhaka ৳130 (3-5 Days)',
   buttonText = 'VIEW BAG & SHIPPING',

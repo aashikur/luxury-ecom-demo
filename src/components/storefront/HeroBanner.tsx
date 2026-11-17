@@ -48,37 +48,37 @@ export default function HeroBanner({
         {/* Soft 0.5 Opacity Overlay */}
         <div className="absolute inset-0 bg-black/50 pointer-events-none" />
 
-        {/* Hero Content - Staggered Micro-Reveal (Text Elements Only, Capped at 8px) */}
+        {/* Hero Content - Staggered Micro-Reveal (Smooth 0.6s Intervals after Image) */}
         <div className="relative z-10 w-full px-6 sm:px-16 py-20 max-w-3xl mx-auto">
-          {/* Eyebrow: 0ms delay */}
+          {/* Eyebrow: 300ms delay as image establishes */}
           <p
-            style={{ color: accentColor }}
+            style={{ color: accentColor, animationDelay: '300ms' }}
             className="text-xs font-bold uppercase tracking-[0.35em] mb-4 animate-micro-fade-in"
           >
             {eyebrowText}
           </p>
 
-          {/* Main Title: 100ms delay */}
+          {/* Main Title: ~0.6s interval after picture (600ms delay) */}
           <h1
-            style={{ animationDelay: '100ms' }}
+            style={{ animationDelay: '600ms' }}
             className="text-4xl sm:text-6xl font-black uppercase tracking-tight leading-[1.03] mb-4 text-white drop-shadow-sm animate-micro-fade-in"
           >
             {title}
           </h1>
 
-          {/* Description: 200ms delay */}
+          {/* Description: ~0.6s interval after title (1200ms delay) */}
           {description && (
             <p
-              style={{ animationDelay: '200ms' }}
+              style={{ animationDelay: '1200ms' }}
               className="text-sm sm:text-base text-zinc-200 tracking-wide mb-8 max-w-xl mx-auto drop-shadow-xs animate-micro-fade-in"
             >
               {description}
             </p>
           )}
 
-          {/* CTA: 300ms delay + Tactile Press Feedback */}
+          {/* CTA: ~0.6s interval after description (1800ms delay) + Tactile Press Feedback */}
           <div
-            style={{ animationDelay: '300ms' }}
+            style={{ animationDelay: '1800ms' }}
             className="flex justify-center animate-micro-fade-in"
           >
             <Link

@@ -110,26 +110,28 @@ html {
    Enforces: .gemini/rules/storefront-animation-and-interaction-rules.md
    ────────────────────────────────────────────────────────────────────────── */
 
-/* 1. Hero Banner Image Scale-Down (105% to 100% over 1000ms) */
+/* 1. Hero Banner Image Scale-Down (106% to 100% over 1400ms) */
 @keyframes heroScaleDown {
   from {
-    transform: scale(1.05);
+    transform: scale(1.06);
+    opacity: 0.6;
   }
   to {
     transform: scale(1);
+    opacity: 0.8;
   }
 }
 
 .animate-hero-scale-down {
-  animation: heroScaleDown 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform;
+  animation: heroScaleDown 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
 
-/* 2. Micro Fade-In Up (Capped at 8px displacement for instant luxury feel) */
+/* 2. Micro Fade-In Up (Smooth 0.8s luxury glide with 'both' to eliminate flashing/flipping) */
 @keyframes microFadeInUp {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -138,7 +140,7 @@ html {
 }
 
 .animate-micro-fade-in {
-  animation: microFadeInUp 0.4s ease-out forwards;
+  animation: microFadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
   will-change: opacity, transform;
 }
 

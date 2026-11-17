@@ -138,7 +138,7 @@ export default async function HomePage() {
             return (
               <PromoCard
                 key={section.id}
-                subtitle={`${config?.courier?.provider || 'STEADFAST'} EXPRESS DISPATCH`}
+                subtitle={section.subtitle || 'NATIONWIDE EXPRESS DISPATCH'}
                 title={section.title || 'FREE EXPRESS SHIPPING ACROSS BANGLADESH'}
                 description={
                   section.subtitle ||
