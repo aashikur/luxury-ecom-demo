@@ -748,7 +748,16 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Primary Content & Variants */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Card 1: General Details */}
+          {/* Card 1: Product Media & Gallery (Placed first as requested) */}
+          <MediaUploader
+            value={images}
+            onChange={handleImagesChange}
+            multiple={true}
+            maxFiles={8}
+            aspectRatio="3:4"
+          />
+
+          {/* Card 2: General Details */}
           <Card>
             <CardHeader bordered={false} className="pb-2">
               <CardTitle>General Information</CardTitle>
@@ -1140,15 +1149,6 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
               </CardContent>
             </Card>
           )}
-
-          {/* Card 3: Media Uploader */}
-          <MediaUploader
-            value={images}
-            onChange={handleImagesChange}
-            multiple={true}
-            maxFiles={8}
-            aspectRatio="3:4"
-          />
         </div>
 
         {/* Right Column: Organization */}
