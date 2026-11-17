@@ -16,6 +16,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useCart, getCartItemKey } from '@/context/CartContext';
+import { getSafeImageUrl } from '@/lib/utils';
 
 interface CartDrawerProps {
   insideDhakaFee?: number;
@@ -412,7 +413,7 @@ export default function CartDrawer({
                         className="py-3.5 flex items-center gap-3.5"
                       >
                         <img
-                          src={item.image || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80'}
+                          src={getSafeImageUrl(item.image)}
                           alt={item.title}
                           className="w-16 h-20 object-cover bg-zinc-100 shrink-0 border border-zinc-100 rounded"
                         />
