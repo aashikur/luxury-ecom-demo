@@ -7,6 +7,7 @@ import StoreConfig from '@/models/StoreConfig';
 import { DeliveryZone, OrderStatus, PaymentMethod } from '@/types/domain';
 import { upsertCustomerOnOrder, updateCustomerDeliveryMetrics } from './customer.service';
 import { validateCoupon, incrementCouponUsage } from './coupon.service';
+import { getProductPrimaryImage, getSafeImageUrl } from '@/lib/utils';
 
 interface CreateOrderInputCustomer {
   name: string;
@@ -274,7 +275,7 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderService
       variantId: variantDoc?._id || item.variantId || null,
       sku: variantDoc?.sku || item.sku || '',
       title: dbProduct.title,
-      image: dbProduct.media?.[0]?.url || item.image || '',
+      image: getProductPrimaryImage(dbProduct, getSafeImageUrl(item.image, '')),
       size: item.size || '',
       variantLabel: variantDoc?.title || item.variantLabel || item.size || '',
       attributes: item.attributes || [],
