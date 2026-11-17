@@ -231,7 +231,8 @@ export default function BrandsClient({
                 return (
                   <TableRow
                     key={b._id}
-                    className="hover:bg-slate-50/60 transition-colors border-b border-slate-100 last:border-none"
+                    onClick={() => router.push(`/admin/brands/${b._id}/edit`)}
+                    className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 last:border-none cursor-pointer"
                   >
                     {/* Index */}
                     <TableCell className="text-center text-[11px] font-mono text-slate-400">
@@ -268,6 +269,7 @@ export default function BrandsClient({
                                 href={b.website.startsWith('http') ? b.website : `https://${b.website}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
                                 className="text-slate-400 hover:text-slate-700 transition"
                                 title={b.website}
                               >
@@ -300,7 +302,10 @@ export default function BrandsClient({
                     </TableCell>
 
                     {/* 3-Dot Actions Menu */}
-                    <TableCell className="text-right relative">
+                    <TableCell
+                      className="text-right relative"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="flex items-center justify-end">
                         <button
                           type="button"

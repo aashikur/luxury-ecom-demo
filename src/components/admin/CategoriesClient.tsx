@@ -329,7 +329,8 @@ export default function CategoriesClient({
                 return (
                   <TableRow
                     key={cat._id}
-                    className="hover:bg-slate-50/60 transition-colors border-b border-slate-100 last:border-none"
+                    onClick={() => router.push(`/admin/categories/${cat._id}/edit`)}
+                    className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 last:border-none cursor-pointer"
                   >
                     {/* Index */}
                     <TableCell className="text-center text-[11px] font-mono text-slate-400">
@@ -407,7 +408,10 @@ export default function CategoriesClient({
                     </TableCell>
 
                     {/* 3-Dot Actions Menu */}
-                    <TableCell className="text-right relative">
+                    <TableCell
+                      className="text-right relative"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="flex items-center justify-end">
                         <button
                           type="button"
