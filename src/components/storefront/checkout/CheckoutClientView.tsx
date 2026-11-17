@@ -18,6 +18,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { useCart, getCartItemKey } from '@/context/CartContext';
+import { getSafeImageUrl } from '@/lib/utils';
 
 interface CheckoutClientViewProps {
   storeName?: string;
@@ -702,7 +703,7 @@ export default function CheckoutClientView({
                     <div className="relative w-14 h-18 bg-white rounded border border-zinc-200 overflow-hidden shrink-0">
                       {item.image ? (
                         <Image
-                          src={item.image}
+                          src={getSafeImageUrl(item.image)}
                           alt={item.title}
                           fill
                           sizes="56px"
