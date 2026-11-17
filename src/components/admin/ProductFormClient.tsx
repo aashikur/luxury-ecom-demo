@@ -36,6 +36,14 @@ interface CollectionItem {
   badgeText?: string;
 }
 
+interface BrandItem {
+  _id: string;
+  name: string;
+  slug: string;
+  logo?: { url: string; key: string };
+  description?: string;
+}
+
 interface OptionItem {
   label: string;
   meta?: string;
@@ -91,9 +99,10 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Categories & Collections state from DB
+  // Categories, Collections & Brands state from DB
   const [categoryTree, setCategoryTree] = useState<CategoryNode[]>([]);
   const [availableCollections, setAvailableCollections] = useState<CollectionItem[]>([]);
+  const [availableBrands, setAvailableBrands] = useState<BrandItem[]>([]);
   const [isLoadingTaxonomies, setIsLoadingTaxonomies] = useState(true);
 
   // Cascading Category selection states
@@ -112,6 +121,12 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
   const [newColTitle, setNewColTitle] = useState('');
   const [newColDescription, setNewColDescription] = useState('');
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
+
+  // Quick Add Brand Modal State
+  const [showAddBrandModal, setShowAddBrandModal] = useState(false);
+  const [newBrandName, setNewBrandName] = useState('');
+  const [newBrandDescription, setNewBrandDescription] = useState('');
+  const [isCreatingBrand, setIsCreatingBrand] = useState(false);
 
   // Media
   const productMediaList = (product?.media?.length > 0 ? product.media : product?.images) || [];
@@ -138,7 +153,9 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
     sku: product?.sku || '',
     stock: isEdit ? (product?.totalStock ?? (existingVariants.length > 0 ? variantsSumStock : 0)) : 0,
     stockStatus: (product?.stockStatus as StockStatus) || 'AUTO',
+    brandId: product?.brandId ? String(product.brandId) : '',
     brandName: product?.brandName || '',
+    brandSlug: product?.brandSlug || '',
     categoryId: product?.categoryId || '',
     categorySlug: product?.categorySlug || '',
     categoryPath: (product?.categoryPath as string[]) || [],
@@ -378,22 +395,43 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
     return variantRows.filter((r) => r.isActive).reduce((sum, r) => sum + (Number(r.stock) || 0), 0);
   }, [form.hasVariants, form.stock, variantRows]);
 
-  // Fetch Category Tree and Collections from Database
+  // Fetch Category Tree, Collections, and Brands from Database
   const fetchTaxonomies = async () => {
     try {
       setIsLoadingTaxonomies(true);
-      const [catRes, colRes] = await Promise.all([
+      const [catRes, colRes, brandRes] = await Promise.all([
         fetch('/api/categories?tree=true'),
         fetch('/api/collections'),
+        fetch('/api/brands'),
       ]);
       const catData = await catRes.json();
       const colData = await colRes.json();
+      const brandData = await brandRes.json();
 
       if (catData.success && Array.isArray(catData.data)) {
         setCategoryTree(catData.data);
       }
       if (colData.success && Array.isArray(colData.data)) {
         setAvailableCollections(colData.data);
+      }
+      if (brandData.success && Array.isArray(brandData.data)) {
+        setAvailableBrands(brandData.data);
+        // If product has brandName or brandSlug but no brandId, auto-resolve brandId
+        if (product && !product.brandId && (product.brandName || product.brandSlug)) {
+          const matched = brandData.data.find(
+            (b: BrandItem) =>
+              (product.brandSlug && b.slug === product.brandSlug) ||
+              (product.brandName && b.name.toLowerCase() === product.brandName.toLowerCase())
+          );
+          if (matched) {
+            setForm((prev) => ({
+              ...prev,
+              brandId: matched._id,
+              brandName: matched.name,
+              brandSlug: matched.slug,
+            }));
+          }
+        }
       }
     } catch (err) {
       console.error('Failed to load taxonomies:', err);
@@ -586,6 +624,51 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
     }
   };
 
+  const handleCreateBrand = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = newBrandName.trim();
+    if (!name) return;
+
+    setIsCreatingBrand(true);
+    try {
+      const res = await fetch('/api/brands', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          description: newBrandDescription.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.data) {
+        const createdBrand: BrandItem = data.data;
+        setAvailableBrands((prev) => {
+          if (prev.some((b) => b._id === createdBrand._id)) return prev;
+          return [...prev, createdBrand].sort((a, b) => a.name.localeCompare(b.name));
+        });
+        setForm((prev) => ({
+          ...prev,
+          brandId: createdBrand._id,
+          brandName: createdBrand.name,
+          brandSlug: createdBrand.slug,
+        }));
+        setShowAddBrandModal(false);
+        setNewBrandName('');
+        setNewBrandDescription('');
+        setToast(`Brand "${createdBrand.name}" created and assigned!`);
+        setTimeout(() => setToast(null), 3000);
+      } else {
+        alert(data.error || 'Failed to create brand');
+      }
+    } catch (err) {
+      console.error('Failed to create brand:', err);
+      alert('Error creating brand');
+    } finally {
+      setIsCreatingBrand(false);
+    }
+  };
+
   // Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -609,7 +692,9 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
         description: form.description,
         productType: form.productType,
         sku: form.sku.trim(),
-        brandName: form.brandName.trim(),
+        brandId: form.brandId || undefined,
+        brandName: form.brandName.trim() || undefined,
+        brandSlug: form.brandSlug || undefined,
         stockStatus: form.stockStatus,
         categoryId: form.categoryId || undefined,
         categorySlug: form.categorySlug || undefined,
@@ -1227,6 +1312,50 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
                 </Select>
               )}
 
+              {/* Brand Selector */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-700 block">Brand</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddBrandModal(true)}
+                    className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition cursor-pointer"
+                  >
+                    + New
+                  </button>
+                </div>
+                <Select
+                  value={form.brandId}
+                  disabled={isLoadingTaxonomies}
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    const foundBrand = availableBrands.find((b) => b._id === selectedId);
+                    if (foundBrand) {
+                      setForm((prev) => ({
+                        ...prev,
+                        brandId: foundBrand._id,
+                        brandName: foundBrand.name,
+                        brandSlug: foundBrand.slug,
+                      }));
+                    } else {
+                      setForm((prev) => ({
+                        ...prev,
+                        brandId: '',
+                        brandName: '',
+                        brandSlug: '',
+                      }));
+                    }
+                  }}
+                >
+                  <option value="">No Brand / In-House</option>
+                  {availableBrands.map((b) => (
+                    <option key={b._id} value={b._id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
               {/* Status Dropdown */}
               <Select
                 label="Status"
@@ -1419,6 +1548,62 @@ export default function ProductFormClient({ mode, product }: ProductFormProps) {
                     type="submit"
                     variant="default"
                     isLoading={isCreatingCollection}
+                    className="bg-[#076E46] text-white hover:bg-[#055C3A]"
+                  >
+                    Create
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Quick Add Brand Modal */}
+      {showAddBrandModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+          <Card className="w-full max-w-sm shadow-2xl">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Add Brand</CardTitle>
+                <button
+                  type="button"
+                  onClick={() => setShowAddBrandModal(false)}
+                  className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateBrand} className="space-y-4">
+                <Input
+                  label="Brand Name"
+                  required
+                  placeholder="e.g. Aurem Couture, Noor Paris"
+                  value={newBrandName}
+                  onChange={(e) => setNewBrandName(e.target.value)}
+                />
+
+                <Input
+                  label="Description (Optional)"
+                  placeholder="Short brand summary or heritage..."
+                  value={newBrandDescription}
+                  onChange={(e) => setNewBrandDescription(e.target.value)}
+                />
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowAddBrandModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="default"
+                    isLoading={isCreatingBrand}
                     className="bg-[#076E46] text-white hover:bg-[#055C3A]"
                   >
                     Create

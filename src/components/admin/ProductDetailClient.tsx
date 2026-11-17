@@ -118,8 +118,8 @@ export default function ProductDetailClient({ product }: { product: any }) {
                 </p>
               </div>
 
-              {/* Status, Category & Created Row */}
-              <div className="grid grid-cols-3 gap-4 pt-3 border-t border-slate-100">
+              {/* Status, Category, Brand & Created Row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-3 border-t border-slate-100">
                 <div>
                   <label className="text-[11px] font-semibold text-slate-400 block mb-1.5">
                     Status
@@ -153,6 +153,20 @@ export default function ProductDetailClient({ product }: { product: any }) {
                       {product.productType || 'CLOTHING'}
                     </span>
                   </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1.5">
+                    Brand
+                  </label>
+                  <span className="text-xs font-semibold text-[#060d11] block">
+                    {product.brandName || 'In-House'}
+                  </span>
+                  {product.brandSlug && (
+                    <span className="text-[10px] font-mono text-slate-400">
+                      @{product.brandSlug}
+                    </span>
+                  )}
                 </div>
 
                 <div>

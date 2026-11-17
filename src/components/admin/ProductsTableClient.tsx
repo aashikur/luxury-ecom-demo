@@ -42,6 +42,9 @@ interface ProductItem {
   slug: string;
   description: string;
   categoryName?: string;
+  brandId?: string;
+  brandName?: string;
+  brandSlug?: string;
   productType?: string;
   hasVariants?: boolean;
   stockStatus?: string;
@@ -144,7 +147,8 @@ export default function ProductsTableClient({
         const q = searchQuery.toLowerCase();
         const matchesTitle = p.title.toLowerCase().includes(q);
         const matchesCat = catName?.toLowerCase().includes(q);
-        if (!matchesTitle && !matchesCat) return false;
+        const matchesBrand = p.brandName?.toLowerCase().includes(q);
+        if (!matchesTitle && !matchesCat && !matchesBrand) return false;
       }
 
       return true;
@@ -512,11 +516,18 @@ export default function ProductsTableClient({
                       </div>
                     </TableCell>
 
-                    {/* Category Pill */}
+                    {/* Category & Brand */}
                     <TableCell>
-                      <Badge variant="secondary">
-                        {product.categoryName || 'General'}
-                      </Badge>
+                      <div className="flex flex-col items-start gap-1">
+                        <Badge variant="secondary">
+                          {product.categoryName || 'General'}
+                        </Badge>
+                        {product.brandName && (
+                          <span className="text-[10px] font-medium text-slate-500 truncate max-w-[120px]">
+                            {product.brandName}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
 
                     {/* Status Pill (Active Green / Draft Orange matching Image 2) */}
