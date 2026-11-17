@@ -5,20 +5,25 @@ export interface CategoryOption {
   _id: string;
   name: string;
   slug: string;
+  description?: string;
   parentId?: string | null;
+  image?: { url: string; key?: string };
 }
 
 export interface CollectionOption {
   _id: string;
   title: string;
   slug: string;
+  description?: string;
   badgeText?: string;
+  bannerImage?: { url: string; key?: string };
 }
 
 export interface BrandOption {
   _id: string;
   name: string;
   slug: string;
+  description?: string;
 }
 
 export interface BaseTabProps {

@@ -270,6 +270,78 @@ export default function HomepageLayoutTab({
     isActive: true,
   });
 
+  const handleTargetSelection = (
+    selectedSlug: string,
+    currentSection: Partial<IHomeSection>,
+    updateFn: (updated: Partial<IHomeSection>) => void
+  ) => {
+    if (!selectedSlug) {
+      updateFn({
+        ...currentSection,
+        collectionSlug: '',
+      });
+      return;
+    }
+
+    // 1. Try Collection match
+    const matchedCol = collections.find((c) => c.slug === selectedSlug);
+    if (matchedCol) {
+      updateFn({
+        ...currentSection,
+        collectionSlug: matchedCol.slug,
+        title: matchedCol.title,
+        subtitle: matchedCol.description || `Explore our exclusive ${matchedCol.title} collection`,
+        buttonLink: `/collections/${matchedCol.slug}`,
+        buttonText: currentSection.buttonText || 'SHOP NOW',
+        bannerImage:
+          matchedCol.bannerImage?.url && !currentSection.bannerImage?.url
+            ? { url: matchedCol.bannerImage.url, key: matchedCol.bannerImage.key || '' }
+            : currentSection.bannerImage,
+      });
+      return;
+    }
+
+    // 2. Try Category match
+    const matchedCat = categories.find((c) => c.slug === selectedSlug);
+    if (matchedCat) {
+      updateFn({
+        ...currentSection,
+        collectionSlug: matchedCat.slug,
+        title: matchedCat.name,
+        subtitle:
+          matchedCat.description || `Curated ${matchedCat.name} for minimal luxury`,
+        buttonLink: `/shop?category=${matchedCat.slug}`,
+        buttonText: currentSection.buttonText || 'SHOP NOW',
+        bannerImage:
+          matchedCat.image?.url && !currentSection.bannerImage?.url
+            ? { url: matchedCat.image.url, key: matchedCat.image.key || '' }
+            : currentSection.bannerImage,
+      });
+      return;
+    }
+
+    // 3. Try Brand match
+    const matchedBrand = brands.find((b) => b.slug === selectedSlug);
+    if (matchedBrand) {
+      updateFn({
+        ...currentSection,
+        collectionSlug: matchedBrand.slug,
+        title: matchedBrand.name,
+        subtitle:
+          matchedBrand.description || `Official ${matchedBrand.name} collection drop`,
+        buttonLink: `/shop?brand=${matchedBrand.slug}`,
+        buttonText: currentSection.buttonText || 'DISCOVER BRAND',
+      });
+      return;
+    }
+
+    // Fallback for custom slug
+    updateFn({
+      ...currentSection,
+      collectionSlug: selectedSlug,
+    });
+  };
+
   const moveSectionOrder = (id: string, direction: 'up' | 'down') => {
     const sorted: IHomeSection[] = [...(config.homeSections || [])].sort((a, b) => a.order - b.order);
     const idx = sorted.findIndex((s) => s.id === id);
@@ -523,7 +595,9 @@ export default function HomepageLayoutTab({
                   </>
                 )}
 
-                {(newSection.type === 'COLLECTION_SECTION' || newSection.type === 'SPLIT_SHOWCASE') && (
+                {(newSection.type === 'COLLECTION_SECTION' ||
+                  newSection.type === 'SPLIT_SHOWCASE' ||
+                  newSection.type === 'PROMO_CTA_CARD') && (
                   <div className="space-y-1">
                     <label className="text-[11px] font-semibold text-slate-600 block">
                       Target Collection / Category
@@ -531,7 +605,7 @@ export default function HomepageLayoutTab({
                     <Select
                       value={newSection.collectionSlug || ''}
                       onChange={(e) =>
-                        setNewSection({ ...newSection, collectionSlug: e.target.value })
+                        handleTargetSelection(e.target.value, newSection, setNewSection)
                       }
                     >
                       <option value="">-- All Products / Custom --</option>
@@ -756,15 +830,41 @@ export default function HomepageLayoutTab({
 
                 <div className="space-y-1">
                   <label className="text-[11px] font-semibold text-slate-600 block">
-                    Target Collection / Category Slug
+                    Target Collection / Category
                   </label>
-                  <Input
+                  <Select
                     value={editingSection.collectionSlug || ''}
                     onChange={(e) =>
-                      setEditingSection({ ...editingSection, collectionSlug: e.target.value })
+                      handleTargetSelection(e.target.value, editingSection, (updated) =>
+                        setEditingSection(updated as IHomeSection)
+                      )
                     }
-                    placeholder="hoodies or t-shirts"
-                  />
+                  >
+                    <option value="">-- All Products / Custom --</option>
+                    <optgroup label="Collections">
+                      {collections.map((col) => (
+                        <option key={col._id} value={col.slug}>
+                          {col.title}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Categories">
+                      {categories.map((cat) => (
+                        <option key={cat._id} value={cat.slug}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                    {brands.length > 0 && (
+                      <optgroup label="Brands">
+                        {brands.map((b) => (
+                          <option key={b._id} value={b.slug}>
+                            {b.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </Select>
                 </div>
 
                 <div className="space-y-1">

@@ -20,9 +20,9 @@ export default async function SettingsPage() {
 
   const [rawConfig, rawCategories, rawCollections, rawBrands] = await Promise.all([
     StoreConfig.findOne({ isActive: true }).lean(),
-    Category.find({}).select('name slug parentId').lean(),
-    Collection.find({}).select('title slug').lean(),
-    Brand.find({}).select('name slug').lean(),
+    Category.find({}).select('name slug description parentId image').lean(),
+    Collection.find({}).select('title slug description bannerImage').lean(),
+    Brand.find({}).select('name slug description').lean(),
   ]);
 
   const fallback = getDefaultStoreConfig();
