@@ -68,6 +68,17 @@ async function testUserFlow() {
   await checkRoute('Admin Store Settings (/admin/settings)', 'http://localhost:3000/admin/settings');
   await checkRoute('Admin Config API (Full with admin=true)', 'http://localhost:3000/api/config?admin=true');
 
+  // 4b. Unified Authentication Verification
+  console.log('\n--- 4b. Unified Auth Portals & Flow ---');
+  await checkRoute('Auth Login Portal (/auth/login)', 'http://localhost:3000/auth/login');
+  await checkRoute('Auth Register Portal (/auth/register)', 'http://localhost:3000/auth/register');
+  await checkRoute('Legacy Admin Login Portal (/admin/login)', 'http://localhost:3000/admin/login');
+  await checkRoute('Better Auth Credentials Validation', 'http://localhost:3000/api/auth/sign-in/email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Origin': 'http://localhost:3000' },
+    body: JSON.stringify({ email: 'admin@aurem.com', password: 'AdminPassword123!' }),
+  });
+
   // 5. Checkout Lead Capture Simulation
   console.log('\n--- 5. Guest Checkout & Lead Capture Simulation ---');
   const leadRes = await checkRoute('Abandoned Cart Lead Capture', 'http://localhost:3000/api/orders/lead', {

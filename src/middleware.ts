@@ -2,27 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Next.js Edge Middleware for Administrative Route Shielding
- * NOTE: Temporarily bypassed upon request so frontend & backend admin operations
- * work without mandatory authentication.
+ *
+ * NOTE: Auth guard is temporarily toggled OFF (permissive mode) per development request.
+ * Set ENABLE_AUTH_GUARD='true' in .env.local to activate edge-level credential protection.
  */
+const AUTH_GUARD_ENABLED = process.env.ENABLE_AUTH_GUARD === 'true';
+
 export async function middleware(request: NextRequest) {
-  // --- TEMPORARILY DISABLED AUTH GUARD ---
-  // To re-enable Better Auth edge shielding, uncomment the block below:
-  /*
+  // If Edge Auth enforcement is inactive, allow seamless access to operations
+  if (!AUTH_GUARD_ENABLED) {
+    return NextResponse.next();
+  }
+
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+  // Protect administrative dashboard routes
+  if (pathname.startsWith('/admin')) {
     const sessionCookie =
       request.cookies.get('better-auth.session_token') ||
       request.cookies.get('__Secure-better-auth.session_token');
 
     if (!sessionCookie || !sessionCookie.value) {
-      const loginUrl = new URL('/admin/login', request.url);
+      const loginUrl = new URL('/auth/login', request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }
   }
-  */
 
   return NextResponse.next();
 }

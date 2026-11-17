@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { signOut, useSession } from '@/lib/auth-client';
 import {
   Menu,
   X,
@@ -29,6 +30,28 @@ export default function AdminShellClient({
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  const userName = session?.user?.name || 'Ashikur Rahaman';
+  const userRole = (session?.user as { role?: string } | undefined)?.role || 'Super Admin';
+  const userInitials = userName
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'AS';
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      console.error('Sign out error:', err);
+    }
+    router.push('/auth/login');
+    router.refresh();
+  };
 
   // Close mobile drawer whenever route changes
   useEffect(() => {
@@ -218,18 +241,19 @@ export default function AdminShellClient({
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 rounded-full bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-400 shrink-0">
-            AS
+            {userInitials}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-white truncate">Ashikur Rahaman</p>
-            <p className="text-[10px] text-zinc-500 truncate">Super Admin</p>
+            <p className="text-xs font-semibold text-white truncate">{userName}</p>
+            <p className="text-[10px] text-zinc-500 truncate">{userRole}</p>
           </div>
         </div>
 
         <button
           type="button"
-          title="Sign out"
-          className="p-1.5 text-zinc-500 hover:text-zinc-300 transition rounded"
+          onClick={handleSignOut}
+          title="Sign out of Aurem operations"
+          className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-zinc-900 transition rounded cursor-pointer active:scale-[0.95]"
         >
           <LogOut className="w-3.5 h-3.5" />
         </button>
@@ -333,8 +357,11 @@ export default function AdminShellClient({
               <span className="w-2 h-2 rounded-full bg-red-500 absolute top-1.5 right-1.5 ring-2 ring-white" />
             </button>
 
-            <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center shrink-0">
-              AS
+            <div
+              className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center shrink-0"
+              title={`${userName} (${userRole})`}
+            >
+              {userInitials}
             </div>
           </div>
         </header>
