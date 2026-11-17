@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { getPublicStoreConfig } from '@/services/config.service';
 import { getProductBySlug, getProductsList } from '@/services/product.service';
 import ProductDetailView from '@/components/storefront/ProductDetailView';
+import { getProductPrimaryImage } from '@/lib/utils';
 
 // Incremental Static Regeneration (ISR) - 60s fallback window paired with dual cache invalidation (Rule #7 & #21)
 export const revalidate = 60;
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     };
   }
 
-  const primaryImage = product.media?.[0]?.url || 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=1200&auto=format&fit=crop';
+  const primaryImage = getProductPrimaryImage(product);
   const priceBDT = product.discountPrice ?? product.basePrice;
 
   return {
@@ -99,7 +100,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   // Structured Data (Schema.org JSON-LD) for Google Merchant & Rich Snippets
   const priceBDT = product.discountPrice ?? product.basePrice;
-  const primaryImage = product.media?.[0]?.url || '';
+  const primaryImage = getProductPrimaryImage(product);
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
