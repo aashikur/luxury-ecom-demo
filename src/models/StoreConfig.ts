@@ -537,6 +537,11 @@ const StoreConfigSchema = new Schema<IStoreConfig>(
   }
 );
 
+// In development, delete cached model to allow schema & enum HMR updates
+if (process.env.NODE_ENV === 'development') {
+  delete mongoose.models.StoreConfig;
+}
+
 export const StoreConfig: Model<IStoreConfig> =
   mongoose.models.StoreConfig || mongoose.model<IStoreConfig>('StoreConfig', StoreConfigSchema);
 

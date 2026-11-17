@@ -35,6 +35,7 @@ import {
   TableCell,
   TablePagination,
 } from '@/components/ui';
+import { getProductPrimaryImage } from '@/lib/utils';
 
 interface ProductItem {
   _id: string;
@@ -451,10 +452,7 @@ export default function ProductsTableClient({
             ) : (
               paginatedProducts.map((product) => {
                 const rowStock = product.totalStock ?? (product.variants?.reduce((s, v) => s + (v.stock || 0), 0) || 0);
-                const thumb =
-                  product.media?.[0]?.url ||
-                  (product as any).images?.[0]?.url ||
-                  'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80';
+                const thumb = getProductPrimaryImage(product);
                 const isMenuOpen = activeMenuId === product._id;
                 const isEditingStock = editingStockId === product._id;
                 const isPublished = product.status === 'PUBLISHED' || (!product.status && product.isActive);

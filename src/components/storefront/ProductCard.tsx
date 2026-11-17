@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Check } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { StockStatus, IVariant } from '@/models/Product';
+import { getProductPrimaryImage } from '@/lib/utils';
 
 export interface ProductCardProps {
   product: {
@@ -53,10 +54,7 @@ export default function ProductCard({
     product.maxPrice && product.maxPrice > activePrice
   );
 
-  const defaultImage =
-    product.media?.[0]?.url ||
-    (product as any).images?.[0]?.url ||
-    'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80';
+  const defaultImage = getProductPrimaryImage(product);
 
   // Default Variant Selection
   const activeVariants = (product.variants || []).filter((v) => v.isActive !== false);
