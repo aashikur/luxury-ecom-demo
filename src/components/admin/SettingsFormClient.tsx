@@ -137,6 +137,15 @@ export default function SettingsFormClient({
   const [editingBadgeId, setEditingBadgeId] = useState<string | null>(null);
   const [tempBadgeText, setTempBadgeText] = useState<string>('');
 
+  // Mobile collapsed sub-links state
+  const [collapsedLinks, setCollapsedLinks] = useState<Record<string, boolean>>({});
+  const toggleCollapse = (id: string) => {
+    setCollapsedLinks((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
   const startEditingBadge = (id: string, currentBadge: string = '') => {
     setEditingBadgeId(id);
     setTempBadgeText(currentBadge || '');
@@ -832,7 +841,7 @@ export default function SettingsFormClient({
 
           {/* Header Quick Links (Rule 1.1) */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3">
               <div>
                 <CardTitle>Header Quick Links</CardTitle>
                 <CardDescription>
@@ -995,16 +1004,17 @@ export default function SettingsFormClient({
                   .map((link: IHeaderNavLink, idx: number) => (
                     <div
                       key={link.id}
-                      className="group p-3 rounded-md border border-slate-200 bg-white space-y-2 hover:border-slate-300 transition"
+                      className="group p-3 rounded-lg border border-slate-200 bg-white space-y-2.5 hover:border-slate-300 transition shadow-2xs"
                     >
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <span className="w-6 h-6 rounded bg-slate-100 border border-slate-200 text-[#060d11] text-xs font-bold flex items-center justify-center shrink-0">
+                      {/* Top Bar: Order + Title + Badge + URL (desktop) + Top-Right Mobile Actions */}
+                      <div className="flex items-start sm:items-center justify-between gap-2.5 sm:gap-4">
+                        <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                          <span className="w-6 h-6 rounded bg-slate-100 border border-slate-200 text-[#060d11] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
                             {link.order || idx + 1}
                           </span>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-[#060d11]">{link.label}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold text-[#060d11] truncate">{link.label}</span>
 
                               {/* Primary Link Inline Badge Editor */}
                               {editingBadgeId === link.id ? (
@@ -1060,11 +1070,16 @@ export default function SettingsFormClient({
                                 </button>
                               )}
                             </div>
-                            <span className="text-xs font-mono text-slate-500">{link.href}</span>
+
+                            {/* URL: hidden on mobile to prevent layout blowouts; visible on desktop */}
+                            <span className="hidden sm:inline-block text-xs font-mono text-slate-500 truncate max-w-[280px]">
+                              {link.href}
+                            </span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        {/* Desktop All-in-One Actions Bar */}
+                        <div className="hidden sm:flex items-center gap-2 shrink-0">
                           <button
                             type="button"
                             onClick={() => openSubLinkModal(link.id)}
@@ -1114,22 +1129,101 @@ export default function SettingsFormClient({
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
+
+                        {/* Mobile Top-Right Quick Status Actions */}
+                        <div className="flex sm:hidden items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => toggleNavLink(link.id)}
+                            className={`p-1.5 rounded border transition cursor-pointer ${
+                              link.isActive
+                                ? 'bg-emerald-50 text-[#076E46] border-emerald-200'
+                                : 'bg-slate-50 text-slate-400 border-slate-200'
+                            }`}
+                            title={link.isActive ? 'Active on Storefront' : 'Hidden'}
+                          >
+                            {link.isActive ? (
+                              <Eye className="w-3.5 h-3.5 text-[#076E46]" />
+                            ) : (
+                              <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => deleteNavLink(link.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                            title="Delete link"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Mobile Bottom Actions Toolbar */}
+                      <div className="flex sm:hidden items-center justify-between pt-1.5 border-t border-slate-100 text-xs">
+                        {/* Sub-links counter pill or expander */}
+                        {link.children && link.children.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => toggleCollapse(link.id)}
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 px-2 py-1 rounded cursor-pointer"
+                          >
+                            <span>{link.children.length} sub-links</span>
+                            {collapsedLinks[link.id] ? (
+                              <ChevronRight className="w-3 h-3 text-slate-400" />
+                            ) : (
+                              <ChevronDown className="w-3 h-3 text-slate-400" />
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 italic">No sub-links</span>
+                        )}
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openSubLinkModal(link.id)}
+                            className="px-2 py-1 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 transition cursor-pointer"
+                          >
+                            + Sub-Link
+                          </button>
+
+                          <div className="flex items-center border border-slate-200 rounded">
+                            <button
+                              type="button"
+                              onClick={() => moveNavLinkOrder(link.id, 'up')}
+                              disabled={idx === 0}
+                              className="p-1 text-slate-500 hover:text-[#060d11] disabled:opacity-30 cursor-pointer"
+                            >
+                              <ChevronUp className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveNavLinkOrder(link.id, 'down')}
+                              disabled={idx === config.headerNavLinks.length - 1}
+                              className="p-1 text-slate-500 hover:text-[#060d11] disabled:opacity-30 cursor-pointer border-l border-slate-200"
+                            >
+                              <ChevronDown className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Nested Sub-Links: Clean unboxed layout with inline badge editing */}
-                      {link.children && link.children.length > 0 && (
-                        <div className="pl-9 pt-1 space-y-0.5 border-t border-slate-100/70">
+                      {link.children && link.children.length > 0 && !collapsedLinks[link.id] && (
+                        <div className="pl-3 sm:pl-9 pt-1.5 sm:pt-1 space-y-1 sm:space-y-0.5 border-l-2 sm:border-l-0 sm:border-t border-emerald-500/30 sm:border-slate-100/70 ml-1.5 sm:ml-0">
                           {link.children.map((sub: IHeaderNavLink, subIdx: number) => (
                             <div
                               key={sub.id}
-                              className="group/sub flex items-center justify-between py-1 px-2 rounded-md hover:bg-slate-50 transition text-xs opacity-70 hover:opacity-100"
+                              className="group/sub flex items-center justify-between py-1.5 sm:py-1 px-2 rounded-md hover:bg-slate-50 transition text-xs opacity-90 sm:opacity-70 hover:opacity-100 gap-2"
                             >
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-slate-800">↳ {sub.label}</span>
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <span className="font-medium text-slate-800 truncate">↳ {sub.label}</span>
 
                                 {/* Sub-Link Inline Badge Editor */}
                                 {editingBadgeId === sub.id ? (
-                                  <div className="flex items-center gap-1 animate-in fade-in duration-100">
+                                  <div className="flex items-center gap-1 animate-in fade-in duration-100 shrink-0">
                                     <input
                                       type="text"
                                       autoFocus
@@ -1163,7 +1257,7 @@ export default function SettingsFormClient({
                                   <button
                                     type="button"
                                     onClick={() => startEditingBadge(sub.id, sub.badgeText)}
-                                    className="group/subbadge inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 border border-slate-200 transition cursor-pointer"
+                                    className="group/subbadge inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 border border-slate-200 transition cursor-pointer shrink-0"
                                     title="Click to edit badge"
                                   >
                                     <span>{sub.badgeText}</span>
@@ -1173,7 +1267,7 @@ export default function SettingsFormClient({
                                   <button
                                     type="button"
                                     onClick={() => startEditingBadge(sub.id, '')}
-                                    className="opacity-0 group-hover/sub:opacity-100 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-medium uppercase tracking-wider text-slate-400 hover:text-[#076E46] hover:bg-slate-100 border border-dashed border-slate-200 hover:border-[#076E46] transition cursor-pointer"
+                                    className="opacity-0 group-hover/sub:opacity-100 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-medium uppercase tracking-wider text-slate-400 hover:text-[#076E46] hover:bg-slate-100 border border-dashed border-slate-200 hover:border-[#076E46] transition cursor-pointer shrink-0"
                                     title="Add badge"
                                   >
                                     <Plus className="w-2 h-2" />
@@ -1181,10 +1275,13 @@ export default function SettingsFormClient({
                                   </button>
                                 )}
 
-                                <span className="text-slate-400 font-mono text-[11px]">{sub.href}</span>
+                                {/* URL hidden on mobile, visible on desktop */}
+                                <span className="hidden sm:inline-block text-slate-400 font-mono text-[11px] truncate max-w-[200px]">
+                                  {sub.href}
+                                </span>
                               </div>
 
-                              <div className="flex items-center gap-1 opacity-40 group-hover/sub:opacity-100 transition">
+                              <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 opacity-100 sm:opacity-40 sm:group-hover/sub:opacity-100 transition">
                                 <button
                                   type="button"
                                   onClick={() => moveSubLinkOrder(link.id, sub.id, 'up')}
