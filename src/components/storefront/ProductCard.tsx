@@ -171,7 +171,7 @@ export default function ProductCard({
     >
       <div>
         {/* Clean 3:4 Portrait Image Container with Group Hover */}
-        <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-100 mb-3 select-none touch-manipulation [-webkit-tap-highlight-color:transparent]">
+        <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-100 mb-3 select-none touch-manipulation active:scale-[0.99] active:opacity-95 transition-all duration-75">
           {/* Main PDP Link */}
           <Link
             href={`/products/${product.slug}`}
@@ -234,7 +234,7 @@ export default function ProductCard({
               type="button"
               onClick={handleQuickAdd}
               aria-label={`Quick add ${product.title} to cart`}
-              className={`absolute bottom-3 right-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wider uppercase transition-all duration-300 ease-out active:scale-95 cursor-pointer shadow-md select-none touch-manipulation sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 ${
+              className={`absolute bottom-3 right-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wider uppercase transition-all duration-150 ease-out active:scale-90 active:bg-zinc-200 active:text-zinc-950 cursor-pointer shadow-md select-none touch-manipulation sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 ${
                 isJustAdded
                   ? 'bg-[#076E46] text-white ring-2 ring-white/90 scale-100 opacity-100 translate-y-0'
                   : 'bg-white/95 text-zinc-900 hover:bg-zinc-950 hover:text-white backdrop-blur-xs border border-black/5'
@@ -259,7 +259,7 @@ export default function ProductCard({
         <div className="text-center px-2 pb-2">
           <Link
             href={`/products/${product.slug}`}
-            className={`text-sm font-medium tracking-tight block transition-colors line-clamp-1 mb-1.5 ${
+            className={`text-sm font-medium tracking-tight block transition-colors line-clamp-1 mb-1.5 active:opacity-60 active:underline ${
               darkSurface
                 ? 'text-zinc-100 group-hover:text-white'
                 : 'text-zinc-900 group-hover:opacity-75'
@@ -308,7 +308,7 @@ export default function ProductCard({
               ? '#09090B'
               : '#FFFFFF',
           }}
-          className={`w-full py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] transition active:scale-[0.98] duration-75 flex items-center justify-center gap-1.5 touch-manipulation [-webkit-tap-highlight-color:transparent] select-none ${
+          className={`w-full py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] transition active:scale-[0.97] active:brightness-90 duration-75 flex items-center justify-center gap-1.5 touch-manipulation select-none ${
             isAvailable ? 'hover:opacity-90 cursor-pointer' : 'cursor-not-allowed opacity-60'
           }`}
         >

@@ -163,10 +163,10 @@ export default function AdminShellClient({
                 key={item.href}
                 href={item.href}
                 onClick={onItemClick}
-                className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition font-medium ${
+                className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition font-medium touch-manipulation select-none active:scale-[0.98] duration-75 ${
                   isActive
-                    ? 'bg-zinc-800 text-white font-semibold shadow-xs'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-900/60'
+                    ? 'bg-zinc-800 text-white font-semibold shadow-xs active:bg-zinc-700'
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-900/60 active:bg-zinc-800/80 active:text-white'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -195,7 +195,7 @@ export default function AdminShellClient({
       <Link
         href="/"
         onClick={() => setIsMobileMenuOpen(false)}
-        className="flex items-center gap-3 group"
+        className="flex items-center gap-3 group active:scale-95 duration-75 touch-manipulation select-none"
       >
         <div className="w-8 h-8 rounded-lg bg-[#076E46] flex items-center justify-center shrink-0 shadow-sm">
           <span className="text-sm font-black text-white font-serif tracking-wider">A</span>
@@ -214,7 +214,7 @@ export default function AdminShellClient({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(false)}
-          className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-lg transition cursor-pointer"
+          className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-900 active:bg-zinc-800 active:scale-90 rounded-lg transition duration-75 cursor-pointer touch-manipulation select-none"
           aria-label="Close menu"
         >
           <X className="w-5 h-5" />
@@ -229,7 +229,7 @@ export default function AdminShellClient({
         href="/"
         target="_blank"
         onClick={onItemClick}
-        className="flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-900/60 hover:bg-zinc-900 text-zinc-400 hover:text-white text-xs transition border border-zinc-800"
+        className="flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-900/60 hover:bg-zinc-900 active:bg-zinc-800 active:scale-[0.98] text-zinc-400 hover:text-white text-xs transition duration-75 border border-zinc-800 touch-manipulation select-none"
       >
         <div className="flex items-center gap-2">
           <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
@@ -253,7 +253,7 @@ export default function AdminShellClient({
           type="button"
           onClick={handleSignOut}
           title="Sign out of Aurem operations"
-          className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-zinc-900 transition rounded cursor-pointer active:scale-[0.95]"
+          className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-zinc-900 active:bg-zinc-800 active:scale-90 duration-75 transition rounded cursor-pointer touch-manipulation select-none"
         >
           <LogOut className="w-3.5 h-3.5" />
         </button>
@@ -302,7 +302,7 @@ export default function AdminShellClient({
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition lg:hidden cursor-pointer"
+              className="p-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:bg-slate-200 active:scale-90 rounded-lg transition duration-75 lg:hidden cursor-pointer touch-manipulation select-none"
               aria-label="Open navigation menu"
             >
               <Menu className="w-5 h-5" />
@@ -326,7 +326,7 @@ export default function AdminShellClient({
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/admin/orders/new"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#076E46] hover:bg-[#055C3A] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#076E46] hover:bg-[#055C3A] active:bg-[#04482D] active:scale-[0.97] text-white text-xs font-semibold shadow-xs transition duration-75 cursor-pointer touch-manipulation select-none"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>New Order</span>
@@ -334,7 +334,7 @@ export default function AdminShellClient({
 
             <button
               type="button"
-              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:bg-slate-200 active:scale-90 rounded-lg transition duration-75 cursor-pointer touch-manipulation select-none"
               title="Toggle theme"
             >
               <Moon className="w-4 h-4" />
@@ -342,7 +342,7 @@ export default function AdminShellClient({
 
             <button
               type="button"
-              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:bg-slate-200 active:scale-90 rounded-lg transition duration-75 cursor-pointer touch-manipulation select-none"
               title="Customize palette"
             >
               <Palette className="w-4 h-4" />
@@ -350,7 +350,7 @@ export default function AdminShellClient({
 
             <button
               type="button"
-              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition relative cursor-pointer"
+              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:bg-slate-200 active:scale-90 rounded-lg transition duration-75 relative cursor-pointer touch-manipulation select-none"
               title="Notifications"
             >
               <Bell className="w-4 h-4" />

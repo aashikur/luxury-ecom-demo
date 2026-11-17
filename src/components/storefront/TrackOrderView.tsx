@@ -293,7 +293,7 @@ export default function TrackOrderView({
               type="submit"
               disabled={isLoading}
               style={{ backgroundColor: accentColor }}
-              className="w-full py-3.5 px-4 text-white rounded text-xs font-bold uppercase tracking-[0.18em] transition hover:opacity-95 active:scale-[0.98] duration-75 disabled:opacity-50 cursor-pointer shadow-xs flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-4 text-white rounded text-xs font-bold uppercase tracking-[0.18em] transition hover:opacity-95 active:scale-[0.97] active:brightness-90 duration-75 disabled:opacity-50 cursor-pointer shadow-xs flex items-center justify-center gap-2 touch-manipulation select-none"
             >
               {isLoading ? (
                 <>
@@ -553,7 +553,7 @@ export default function TrackOrderView({
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-950 transition active:scale-[0.98] duration-75 cursor-pointer py-2 px-4"
+                  className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-950 transition active:scale-95 active:opacity-75 duration-75 cursor-pointer py-2 px-4 touch-manipulation select-none"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Track Another Order</span>
@@ -585,13 +585,13 @@ export default function TrackOrderView({
           <div className="flex items-center gap-2">
             <a
               href={`tel:${supportPhone.replace(/\s+/g, '')}`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-950 text-white rounded text-xs font-bold tracking-wider uppercase hover:bg-zinc-800 transition active:scale-[0.98] duration-75"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-950 text-white rounded text-xs font-bold tracking-wider uppercase hover:bg-zinc-800 transition active:scale-[0.97] active:bg-zinc-800 duration-75 touch-manipulation select-none"
             >
               Concierge Call
             </a>
             <Link
               href="/shop"
-              className="inline-flex items-center gap-1.5 px-4 py-2 border border-zinc-300 text-zinc-900 rounded text-xs font-bold tracking-wider uppercase hover:border-zinc-950 transition active:scale-[0.98] duration-75"
+              className="inline-flex items-center gap-1.5 px-4 py-2 border border-zinc-300 text-zinc-900 rounded text-xs font-bold tracking-wider uppercase hover:border-zinc-950 transition active:scale-[0.97] active:bg-zinc-100 duration-75 touch-manipulation select-none"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Explore</span>

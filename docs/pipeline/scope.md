@@ -303,3 +303,46 @@
   2. **Floating Quick-Add Cart Pill (`[ 🛍️ + ADD ]`):** Integrated a sleek floating quick-action pill at the bottom-right corner of the 3:4 portrait image frame. On desktop, smoothly reveals on hover (`sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0`); on mobile, provides persistent tap accessibility. Clicking immediately adds the item to the cart, provides instant emerald feedback (`[ ✓ ADDED ]`), and opens the slide-over CartDrawer.
   3. **Configurable Admin Switch (`showCardAddToCart`):** Added `showCardAddToCart` (default: `false`) in `StoreConfig.features` schema and added a toggle switch in `/admin/settings` (`Features` tab) allowing merchants to optionally restore the static bottom button if desired.
   4. **Verification:** Passed full TypeScript check (`tsc --noEmit`), 18/18 integration tests in `test-user-flow.mjs`, and production build (`npm run build`).
+
+### Task #36: Universal Mobile Tactile Touch & Instant Tap Feedback Architecture
+* **Files Modified/Created:**
+  - `src/app/layout.tsx`
+  - `src/app/globals.css`
+  - `src/components/ui/button.tsx`
+  - `src/components/storefront/Navbar.tsx`
+  - `src/components/storefront/ProductCard.tsx`
+  - `src/components/storefront/HeroBanner.tsx`
+  - `src/components/storefront/CategoryPillsSection.tsx`
+  - `src/components/storefront/CollectionSection.tsx`
+  - `src/components/storefront/PromoCard.tsx`
+  - `src/components/storefront/CollectionSiblingPills.tsx`
+  - `src/components/storefront/ProductDetailView.tsx`
+  - `src/components/storefront/CartDrawer.tsx`
+  - `src/components/storefront/checkout/CheckoutClientView.tsx`
+  - `src/components/storefront/TrackOrderView.tsx`
+  - `src/components/admin/AdminShellClient.tsx`
+  - `.gemini/rules/storefront-animation-and-interaction-rules.md`
+  - `docs/14-storefront-micro-animations-and-perceived-performance.md`
+  - `docs/pipeline/scope.md`
+* **Changes:**
+  1. **Audit & Root-Cause Resolution for Mobile "Dead Click" Perception:**
+     - Investigated why mobile touch felt unresponsive compared to native apps and WordPress: Apple WebKit (iOS Safari) completely disables `:active` pseudo-classes on buttons/links unless a `touchstart` listener exists on `document`/`body`.
+     - Setting `-webkit-tap-highlight-color: transparent` globally silenced the browser's native tap indicator.
+     - Sub-pixel transforms (`active:scale-[0.99]`) were completely invisible under a user's 40–50px thumb.
+     - Inline dynamic colors (`style={{ backgroundColor: accentColor }}`) had CSS specificity (1-0-0-0) that blocked utility hover/active background classes.
+  2. **Global iOS WebKit `:active` Activation:**
+     - Added an inline passive touchstart registration script in `src/app/layout.tsx` `<head>` and `onTouchStart={() => {}}` on `<body>` to activate instant pseudo-class responsiveness across all iOS devices.
+  3. **High-Contrast Visible Mobile Tap Highlight & Brightness Compression:**
+     - Updated `src/app/globals.css` to replace pure transparent tap highlights with subtle, luxury tap feedback: `rgba(0, 0, 0, 0.06)` for light surfaces and `rgba(255, 255, 255, 0.08)` for dark modes.
+     - Integrated `active:brightness-90` (and `active:brightness-95`) across all dynamic accent color CTAs (Add to Cart, Order Now, Checkout Complete, Track Consignment), providing immediate contrast feedback regardless of custom merchant hex codes.
+  4. **Universal Touch-Feedback Component Upgrades:**
+     - **Navbar & Navigation Drawer:** Upgraded logo, search, track, profile, cart, and hamburger icon buttons with `active:bg-zinc-200 active:scale-95 touch-manipulation select-none`. Drawer navigation items have full-row active backgrounds (`active:bg-zinc-100`).
+     - **Buttons & Design System:** Upgraded `Button` primitive to `active:scale-[0.97]` with explicit variant active colors and `duration-75`.
+     - **Catalog & Product Cards:** Upgraded floating `[ 🛍️ + ADD ]` quick-add pill (`active:scale-90 active:bg-zinc-200`), card thumbnail press (`active:scale-[0.99] active:opacity-95`), and title links (`active:opacity-60`).
+     - **Hero & Promotional Media:** Upgraded hero carousel CTA buttons, slider chevrons (`active:scale-90`), and promo banners.
+     - **Taxonomies & Sibling Pills:** Upgraded Category circle/square pills (`active:scale-90 active:opacity-85`) and collection sibling pills (`active:scale-95 active:bg-zinc-100`).
+     - **Product Detail View (PDP):** Upgraded thumbnail selection (`active:scale-95`), size pills (`active:scale-95 active:bg-zinc-100`), color swatches (`active:scale-90 active:ring-2`), quantity steppers (`active:scale-90 active:bg-zinc-200`), and both `ADD TO CART` and `ORDER NOW` primary action buttons.
+     - **Cart Slide-Over & Checkout:** Upgraded 3-zone shipping cards (`active:scale-[0.98] active:bg-zinc-100`), payment selection cards (`active:scale-[0.98]`), quantity steppers, bKash copy button (`active:scale-95 active:bg-zinc-200`), and primary desktop & mobile `COMPLETE ORDER` buttons (`active:scale-[0.97] active:brightness-90`).
+     - **Admin Shell:** Upgraded mobile hamburger trigger, sidebar nav links, brand link, close button, theme and notification buttons.
+  5. **Standardization & Documentation Sync:**
+     - Codified the new mobile tactile touch feedback rules in `.gemini/rules/storefront-animation-and-interaction-rules.md` and `docs/14-storefront-micro-animations-and-perceived-performance.md`.

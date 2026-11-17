@@ -45,10 +45,10 @@ export default function PromoCard({
     <button
       type="button"
       onClick={handleButtonClick}
-      className={`px-8 py-3.5 text-xs font-bold uppercase tracking-[0.2em] transition active:scale-[0.98] duration-75 ease-out touch-manipulation [-webkit-tap-highlight-color:transparent] select-none shrink-0 cursor-pointer shadow-md ${
+      className={`px-8 py-3.5 text-xs font-bold uppercase tracking-[0.2em] transition active:scale-95 duration-75 ease-out touch-manipulation select-none shrink-0 cursor-pointer shadow-md ${
         hasPhoto
-          ? 'bg-white text-zinc-950 hover:bg-zinc-200'
-          : 'bg-[#076E46] text-white hover:bg-[#055C3A]'
+          ? 'bg-white text-zinc-950 hover:bg-zinc-200 active:bg-zinc-300'
+          : 'bg-[#076E46] text-white hover:bg-[#055C3A] active:bg-[#04482D] active:brightness-95'
       }`}
     >
       {buttonText}
@@ -56,10 +56,10 @@ export default function PromoCard({
   ) : (
     <Link
       href={buttonLink}
-      className={`inline-block px-8 py-3.5 text-xs font-bold uppercase tracking-[0.2em] transition active:scale-[0.98] duration-75 ease-out touch-manipulation [-webkit-tap-highlight-color:transparent] select-none shrink-0 cursor-pointer shadow-md ${
+      className={`inline-block px-8 py-3.5 text-xs font-bold uppercase tracking-[0.2em] transition active:scale-95 duration-75 ease-out touch-manipulation select-none shrink-0 cursor-pointer shadow-md ${
         hasPhoto
-          ? 'bg-white text-zinc-950 hover:bg-zinc-200'
-          : 'bg-[#076E46] text-white hover:bg-[#055C3A]'
+          ? 'bg-white text-zinc-950 hover:bg-zinc-200 active:bg-zinc-300'
+          : 'bg-[#076E46] text-white hover:bg-[#055C3A] active:bg-[#04482D] active:brightness-95'
       }`}
     >
       {buttonText}

@@ -441,7 +441,7 @@ export default function CartDrawer({
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.productId, item.variantId || item.size || '', -1)}
-                            className="p-1.5 text-zinc-500 hover:text-zinc-950 transition cursor-pointer"
+                            className="p-1.5 text-zinc-500 hover:text-zinc-950 active:bg-zinc-200 active:scale-90 transition duration-75 cursor-pointer touch-manipulation select-none"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
@@ -451,7 +451,7 @@ export default function CartDrawer({
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.productId, item.variantId || item.size || '', 1)}
-                            className="p-1.5 text-zinc-500 hover:text-zinc-950 transition cursor-pointer"
+                            className="p-1.5 text-zinc-500 hover:text-zinc-950 active:bg-zinc-200 active:scale-90 transition duration-75 cursor-pointer touch-manipulation select-none"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
@@ -473,7 +473,7 @@ export default function CartDrawer({
                         <button
                           type="button"
                           onClick={() => setDeliveryZone('INSIDE_DHAKA')}
-                          className={`p-2.5 border text-left text-xs cursor-pointer transition ${
+                          className={`p-2.5 border text-left text-xs cursor-pointer transition active:scale-[0.98] active:bg-zinc-100 touch-manipulation select-none ${
                             deliveryZone === 'INSIDE_DHAKA'
                               ? 'border-zinc-950 bg-zinc-50 font-bold'
                               : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
@@ -487,7 +487,7 @@ export default function CartDrawer({
                         <button
                           type="button"
                           onClick={() => setDeliveryZone('DHAKA_SUBURBS')}
-                          className={`p-2.5 border text-left text-xs cursor-pointer transition ${
+                          className={`p-2.5 border text-left text-xs cursor-pointer transition active:scale-[0.98] active:bg-zinc-100 touch-manipulation select-none ${
                             deliveryZone === 'DHAKA_SUBURBS'
                               ? 'border-zinc-950 bg-zinc-50 font-bold'
                               : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
@@ -501,7 +501,7 @@ export default function CartDrawer({
                         <button
                           type="button"
                           onClick={() => setDeliveryZone('OUTSIDE_DHAKA')}
-                          className={`p-2.5 border text-left text-xs cursor-pointer transition ${
+                          className={`p-2.5 border text-left text-xs cursor-pointer transition active:scale-[0.98] active:bg-zinc-100 touch-manipulation select-none ${
                             deliveryZone === 'OUTSIDE_DHAKA'
                               ? 'border-zinc-950 bg-zinc-50 font-bold'
                               : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
@@ -607,10 +607,10 @@ export default function CartDrawer({
                           <button
                             type="button"
                             onClick={() => setPaymentMethod('COD')}
-                            className={`py-2.5 px-2 border text-[11px] font-bold cursor-pointer transition ${
+                            className={`py-2.5 px-2 border text-[11px] font-bold cursor-pointer transition active:scale-[0.98] active:brightness-95 touch-manipulation select-none ${
                               paymentMethod === 'COD'
                                 ? 'border-zinc-950 bg-zinc-950 text-white'
-                                : 'border-zinc-200 text-zinc-700 hover:border-zinc-400'
+                                : 'border-zinc-200 text-zinc-700 hover:border-zinc-400 active:bg-zinc-100'
                             }`}
                           >
                             Cash on Delivery
@@ -618,10 +618,10 @@ export default function CartDrawer({
                           <button
                             type="button"
                             onClick={() => setPaymentMethod('MANUAL_BKASH')}
-                            className={`py-2.5 px-2 border text-[11px] font-bold cursor-pointer transition ${
+                            className={`py-2.5 px-2 border text-[11px] font-bold cursor-pointer transition active:scale-[0.98] active:brightness-95 touch-manipulation select-none ${
                               paymentMethod === 'MANUAL_BKASH'
                                 ? 'border-pink-600 bg-pink-600 text-white'
-                                : 'border-zinc-200 text-zinc-700 hover:border-zinc-400'
+                                : 'border-zinc-200 text-zinc-700 hover:border-zinc-400 active:bg-zinc-100'
                             }`}
                           >
                             bKash Send Money
@@ -635,7 +635,7 @@ export default function CartDrawer({
                               <button
                                 type="button"
                                 onClick={copyBkashNumber}
-                                className="inline-flex items-center gap-1 font-mono font-bold text-zinc-900 cursor-pointer"
+                                className="inline-flex items-center gap-1 font-mono font-bold text-zinc-900 cursor-pointer active:scale-95 active:bg-zinc-200 px-2 py-1 rounded transition duration-75 touch-manipulation select-none"
                               >
                                 <span>{manualBkashNumber}</span>
                                 {copiedPhone ? (
@@ -699,7 +699,7 @@ export default function CartDrawer({
                     form="checkout-form"
                     disabled={isSubmitting}
                     style={{ backgroundColor: accentColor }}
-                    className="w-full py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white cursor-pointer hover:opacity-95 transition disabled:opacity-50"
+                    className="w-full py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white cursor-pointer hover:opacity-95 active:scale-[0.97] active:brightness-90 transition duration-75 disabled:opacity-50 touch-manipulation select-none shadow-md"
                   >
                     {isSubmitting
                       ? 'PLACING ORDER...'
@@ -725,7 +725,7 @@ export default function CartDrawer({
                     href="/checkout"
                     onClick={() => setIsCartOpen(false)}
                     style={{ backgroundColor: accentColor }}
-                    className="w-full py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white cursor-pointer hover:opacity-95 transition flex items-center justify-center gap-2 shadow-xs active:scale-[0.98] duration-75 text-center"
+                    className="w-full py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white cursor-pointer hover:opacity-95 active:scale-[0.97] active:brightness-90 transition duration-75 flex items-center justify-center gap-2 shadow-xs text-center touch-manipulation select-none"
                   >
                     <span>CONTINUE TO CHECKOUT</span>
                     <ArrowRight className="w-4 h-4" />
@@ -734,7 +734,7 @@ export default function CartDrawer({
                   <button
                     type="button"
                     onClick={() => setIsCartOpen(false)}
-                    className="w-full text-center text-xs font-semibold text-zinc-500 hover:text-zinc-900 transition py-1 cursor-pointer uppercase tracking-wider"
+                    className="w-full text-center text-xs font-semibold text-zinc-500 hover:text-zinc-900 active:text-zinc-950 active:bg-zinc-100 transition duration-75 py-2 rounded cursor-pointer uppercase tracking-wider touch-manipulation select-none"
                   >
                     Continue Shopping
                   </button>

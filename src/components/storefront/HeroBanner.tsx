@@ -132,7 +132,7 @@ export default function HeroBanner({
             >
               <Link
                 href={activeHref}
-                className="inline-block px-8 py-3.5 bg-white text-zinc-950 text-xs font-bold uppercase tracking-[0.2em] hover:bg-zinc-200 shadow-lg cursor-pointer select-none active:scale-[0.98] transition-transform duration-75 ease-out touch-manipulation [-webkit-tap-highlight-color:transparent]"
+                className="inline-block px-8 py-3.5 bg-white text-zinc-950 text-xs font-bold uppercase tracking-[0.2em] hover:bg-zinc-200 active:bg-zinc-300 active:scale-95 shadow-lg cursor-pointer select-none transition duration-75 ease-out touch-manipulation"
               >
                 {activeBtn}
               </Link>
@@ -205,7 +205,7 @@ export default function HeroBanner({
           <div className="flex justify-center mt-6 animate-micro-fade-in">
             <Link
               href={slideHref}
-              className="inline-block px-8 py-3.5 bg-white text-zinc-950 text-xs font-bold uppercase tracking-[0.2em] hover:bg-zinc-200 shadow-lg cursor-pointer select-none active:scale-[0.98] transition-transform duration-75 ease-out touch-manipulation [-webkit-tap-highlight-color:transparent]"
+              className="inline-block px-8 py-3.5 bg-white text-zinc-950 text-xs font-bold uppercase tracking-[0.2em] hover:bg-zinc-200 active:bg-zinc-300 active:scale-95 shadow-lg cursor-pointer select-none transition duration-75 ease-out touch-manipulation"
             >
               {slideBtn}
             </Link>
@@ -217,7 +217,7 @@ export default function HeroBanner({
           type="button"
           onClick={prevSlide}
           aria-label="Previous slide"
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/60 backdrop-blur-xs text-white border border-white/20 flex items-center justify-center transition active:scale-90 cursor-pointer [-webkit-tap-highlight-color:transparent]"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/60 active:bg-black/80 backdrop-blur-xs text-white border border-white/20 flex items-center justify-center transition active:scale-90 cursor-pointer touch-manipulation"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -226,7 +226,7 @@ export default function HeroBanner({
           type="button"
           onClick={nextSlide}
           aria-label="Next slide"
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/60 backdrop-blur-xs text-white border border-white/20 flex items-center justify-center transition active:scale-90 cursor-pointer [-webkit-tap-highlight-color:transparent]"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/60 active:bg-black/80 backdrop-blur-xs text-white border border-white/20 flex items-center justify-center transition active:scale-90 cursor-pointer touch-manipulation"
         >
           <ChevronRight className="w-5 h-5" />
         </button>

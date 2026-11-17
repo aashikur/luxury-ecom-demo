@@ -402,7 +402,7 @@ export default function Navbar({
             <button
               type="button"
               onClick={() => setIsDrawerOpen(true)}
-              className="p-2 -ml-2 text-zinc-900 hover:text-zinc-600 transition active:scale-[0.98] duration-75 cursor-pointer"
+              className="p-2 -ml-2 text-zinc-900 hover:text-zinc-600 hover:bg-zinc-100 active:bg-zinc-200 active:scale-95 rounded-lg transition duration-75 cursor-pointer touch-manipulation select-none"
               aria-label="Open Navigation Menu"
             >
               <Menu className="w-5 h-5 text-zinc-950" />
@@ -413,7 +413,7 @@ export default function Navbar({
           <div className="flex items-center shrink-0">
             <Link
               href="/"
-              className="inline-flex items-center group transition active:scale-[0.98] duration-75"
+              className="inline-flex items-center group transition active:opacity-70 active:scale-[0.97] duration-75 touch-manipulation select-none"
             >
               <span
                 style={{ color: accentColor }}
@@ -437,7 +437,7 @@ export default function Navbar({
             <button
               type="button"
               onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded-full transition active:scale-[0.98] duration-75 cursor-pointer"
+              className="p-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 active:bg-zinc-200 active:scale-95 rounded-full transition duration-75 cursor-pointer touch-manipulation select-none"
               title="Search Catalog"
               aria-label="Search Catalog"
             >
@@ -447,7 +447,7 @@ export default function Navbar({
             {/* 1-Click Track Order Action (Icon Only - Hidden on Mobile, accessible in Hamburger Menu) */}
             <Link
               href="/track-order"
-              className="hidden sm:inline-flex p-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded-full transition active:scale-[0.98] duration-75 cursor-pointer"
+              className="hidden sm:inline-flex p-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 active:bg-zinc-200 active:scale-95 rounded-full transition duration-75 cursor-pointer touch-manipulation select-none"
               title="Track Order Status"
               aria-label="Track Order Status"
             >
@@ -457,7 +457,7 @@ export default function Navbar({
             {/* Profile / Admin Icon (Hidden on Mobile, accessible in Hamburger Menu) */}
             <Link
               href="/admin"
-              className="hidden sm:inline-flex p-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded-full transition active:scale-[0.98] duration-75 cursor-pointer"
+              className="hidden sm:inline-flex p-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 active:bg-zinc-200 active:scale-95 rounded-full transition duration-75 cursor-pointer touch-manipulation select-none"
               title="Admin Portal"
               aria-label="Admin Portal"
             >
@@ -468,7 +468,7 @@ export default function Navbar({
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="p-2 text-zinc-900 hover:text-zinc-600 transition active:scale-[0.98] duration-75 cursor-pointer"
+              className="p-2 text-zinc-900 hover:text-zinc-600 hover:bg-zinc-100 active:bg-zinc-200 active:scale-95 rounded-full transition duration-75 cursor-pointer touch-manipulation select-none"
               aria-label="Open Shopping Bag"
             >
               <div className="relative">
@@ -584,7 +584,7 @@ export default function Navbar({
               <button
                 type="button"
                 onClick={() => setIsDrawerOpen(false)}
-                className="p-2 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-100 rounded-md transition active:scale-[0.98] duration-75 cursor-pointer"
+                className="p-2 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-100 active:bg-zinc-200 active:scale-95 rounded-md transition duration-75 cursor-pointer touch-manipulation select-none"
                 aria-label="Close Menu"
               >
                 <X className="w-5 h-5" />
@@ -592,11 +592,11 @@ export default function Navbar({
             </div>
 
             {/* Navlinks & Sub-Collections Accordion */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-2">
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-1">
               <Link
                 href="/"
                 onClick={() => setIsDrawerOpen(false)}
-                className="block text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 py-2.5 border-b border-zinc-100 transition active:scale-[0.98] duration-75"
+                className="block text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 active:bg-zinc-100 active:text-zinc-950 py-2.5 px-3 -mx-3 rounded border-b border-zinc-100 transition duration-75 touch-manipulation select-none"
               >
                 HOME
               </Link>
@@ -604,7 +604,7 @@ export default function Navbar({
               <Link
                 href="/shop"
                 onClick={() => setIsDrawerOpen(false)}
-                className="block text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 py-2.5 border-b border-zinc-100 transition active:scale-[0.98] duration-75"
+                className="block text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 active:bg-zinc-100 active:text-zinc-950 py-2.5 px-3 -mx-3 rounded border-b border-zinc-100 transition duration-75 touch-manipulation select-none"
               >
                 ALL GARMENTS (CATALOG)
               </Link>
@@ -620,7 +620,7 @@ export default function Navbar({
                       key={item.id}
                       href={item.href}
                       onClick={() => setIsDrawerOpen(false)}
-                      className="flex items-center justify-between text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 py-2.5 border-b border-zinc-100 transition active:scale-[0.98] duration-75"
+                      className="flex items-center justify-between text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 active:bg-zinc-100 active:text-zinc-950 py-2.5 px-3 -mx-3 rounded border-b border-zinc-100 transition duration-75 touch-manipulation select-none"
                     >
                       <span>{item.label}</span>
                       {item.badgeText && (
@@ -640,7 +640,7 @@ export default function Navbar({
                     <button
                       type="button"
                       onClick={() => toggleAccordion(item.id)}
-                      className="w-full flex items-center justify-between py-2.5 text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 transition active:scale-[0.98] duration-75 cursor-pointer"
+                      className="w-full flex items-center justify-between py-2.5 px-3 -mx-3 rounded text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 active:bg-zinc-100 active:text-zinc-950 transition duration-75 cursor-pointer touch-manipulation select-none"
                     >
                       <div className="flex items-center gap-2">
                         <span>{item.label}</span>
@@ -674,7 +674,7 @@ export default function Navbar({
                                     key={leaf.id}
                                     href={leaf.href}
                                     onClick={() => setIsDrawerOpen(false)}
-                                    className="flex items-center justify-between text-sm font-normal text-zinc-600 hover:text-zinc-950 py-1.5 transition"
+                                    className="flex items-center justify-between text-sm font-normal text-zinc-600 hover:text-zinc-950 active:bg-zinc-100 active:text-zinc-950 py-1.5 px-2 -mx-2 rounded transition duration-75 touch-manipulation select-none"
                                   >
                                     <span>{leaf.label}</span>
                                     {leaf.badgeText && (
@@ -694,7 +694,7 @@ export default function Navbar({
                               key={sub.id}
                               href={sub.href}
                               onClick={() => setIsDrawerOpen(false)}
-                              className="flex items-center justify-between text-sm font-normal text-zinc-600 hover:text-zinc-950 py-1.5 transition active:scale-[0.98] duration-75"
+                              className="flex items-center justify-between text-sm font-normal text-zinc-600 hover:text-zinc-950 active:bg-zinc-100 active:text-zinc-950 py-1.5 px-2 -mx-2 rounded transition duration-75 touch-manipulation select-none"
                             >
                               <span>{sub.label}</span>
                               {sub.badgeText && (
@@ -715,7 +715,7 @@ export default function Navbar({
                             href={item.href}
                             onClick={() => setIsDrawerOpen(false)}
                             style={{ backgroundColor: accentColor }}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-white text-xs font-semibold shadow-xs hover:opacity-95 transition active:scale-[0.98] duration-75"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-white text-xs font-semibold shadow-xs hover:opacity-95 active:scale-95 active:brightness-90 transition duration-75 touch-manipulation select-none"
                           >
                             <span>View all {item.label}</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -731,7 +731,7 @@ export default function Navbar({
               <Link
                 href="/track-order"
                 onClick={() => setIsDrawerOpen(false)}
-                className="w-full flex items-center justify-between text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 py-3 border-b border-zinc-100 transition active:scale-[0.98] duration-75 text-left cursor-pointer"
+                className="w-full flex items-center justify-between text-sm font-bold uppercase tracking-wider text-zinc-900 hover:text-zinc-600 active:bg-zinc-100 active:text-zinc-950 py-3 px-3 -mx-3 rounded border-b border-zinc-100 transition duration-75 text-left cursor-pointer touch-manipulation select-none"
               >
                 <span className="flex items-center gap-2">
                   <Truck className="w-4 h-4 text-zinc-700" />
@@ -745,7 +745,7 @@ export default function Navbar({
                 <Link
                   href="/admin"
                   onClick={() => setIsDrawerOpen(false)}
-                  className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-zinc-900 bg-zinc-100 p-3 rounded-lg border border-zinc-200 hover:bg-zinc-200 transition active:scale-[0.98] duration-75"
+                  className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-zinc-900 bg-zinc-100 p-3 rounded-lg border border-zinc-200 hover:bg-zinc-200 active:bg-zinc-300 active:scale-[0.98] transition duration-75 touch-manipulation select-none"
                 >
                   <span>ADMIN MANAGEMENT</span>
                   <ArrowRight className="w-4 h-4" />

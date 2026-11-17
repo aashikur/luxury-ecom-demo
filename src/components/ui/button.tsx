@@ -21,15 +21,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 cursor-pointer active:scale-[0.99] select-none';
+      'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-xs font-semibold transition-all duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 cursor-pointer active:scale-[0.97] touch-manipulation select-none';
 
     const variantStyles = {
-      default: 'bg-[#076E46] text-white hover:bg-[#055C3A] shadow-xs',
+      default: 'bg-[#076E46] text-white hover:bg-[#055C3A] active:bg-[#04482D] active:brightness-95 shadow-xs',
       outline:
-        'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 shadow-2xs',
-      secondary: 'bg-slate-100 text-slate-800 hover:bg-slate-200 shadow-2xs',
-      ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
-      destructive: 'bg-red-600 text-white hover:bg-red-700 shadow-xs',
+        'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 active:bg-slate-100 active:border-slate-300 shadow-2xs',
+      secondary: 'bg-slate-100 text-slate-800 hover:bg-slate-200 active:bg-slate-300 shadow-2xs',
+      ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200',
+      destructive: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-xs',
     }[variant];
 
     const sizeStyles = {

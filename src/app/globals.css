@@ -90,6 +90,12 @@ html {
 * {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.06);
+}
+
+/* Subtle light tap feedback on dark surfaces */
+.dark, [data-theme="dark"], .bg-zinc-950, .bg-zinc-900 {
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0.08);
 }
 
 @keyframes slideInLeft {
@@ -163,11 +169,33 @@ html {
 
 /* 4. Universal Tactile Press & Touch Optimization */
 .tactile-press {
-  transition: transform 75ms ease-out, opacity 75ms ease-out;
+  transition: transform 75ms ease-out, opacity 75ms ease-out, filter 75ms ease-out, background-color 75ms ease-out;
   touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.06);
   user-select: none;
 }
 .tactile-press:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
+  filter: brightness(0.92);
+}
+
+/* Tactile Button Feedback */
+.touch-btn {
+  touch-action: manipulation;
+  user-select: none;
+  transition: transform 75ms ease-out, filter 75ms ease-out, background-color 75ms ease-out;
+}
+.touch-btn:active {
+  transform: scale(0.97);
+  filter: brightness(0.92);
+}
+
+/* Tactile Row / Link Feedback (For Drawer, Navbars, Cards) */
+.touch-row {
+  touch-action: manipulation;
+  user-select: none;
+  transition: background-color 75ms ease-out, opacity 75ms ease-out;
+}
+.touch-row:active {
+  background-color: rgba(0, 0, 0, 0.05);
 }

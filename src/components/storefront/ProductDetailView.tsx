@@ -596,7 +596,7 @@ export default function ProductDetailView({
                   <button
                     key={i}
                     onClick={() => setActiveGalleryIdx(i)}
-                    className={`relative w-20 aspect-[3/4] border overflow-hidden cursor-pointer shrink-0 transition active:scale-[0.98] duration-75 ${
+                    className={`relative w-20 aspect-[3/4] border overflow-hidden cursor-pointer shrink-0 transition active:scale-95 duration-75 touch-manipulation select-none ${
                       activeGalleryIdx === i ? 'border-zinc-900 ring-1 ring-zinc-900' : 'border-zinc-200 opacity-60 hover:opacity-100'
                     }`}
                   >
@@ -701,12 +701,12 @@ export default function ProductDetailView({
                               key={val.label}
                               type="button"
                               onClick={() => handleOptionSelect(group.name, val.label)}
-                              className={`group flex items-center gap-2 px-3.5 py-2 rounded-sm border text-xs font-medium transition active:scale-[0.98] duration-75 cursor-pointer ${
+                              className={`group flex items-center gap-2 px-3.5 py-2 rounded-sm border text-xs font-medium transition active:scale-95 duration-75 cursor-pointer touch-manipulation select-none ${
                                 isSelected
                                   ? 'border-zinc-950 bg-zinc-950 text-white shadow-xs'
                                   : !isAvailable
                                   ? 'border-zinc-200 bg-zinc-50 text-zinc-400 opacity-60'
-                                  : 'border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400'
+                                  : 'border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400 active:bg-zinc-100 active:border-zinc-950'
                               }`}
                             >
                               <span
@@ -732,12 +732,12 @@ export default function ProductDetailView({
                               key={val.label}
                               type="button"
                               onClick={() => handleOptionSelect(group.name, val.label)}
-                              className={`min-w-11 px-3.5 h-10 rounded-sm text-xs font-semibold border transition active:scale-[0.98] duration-75 cursor-pointer flex items-center justify-center ${
+                              className={`min-w-11 px-3.5 h-10 rounded-sm text-xs font-semibold border transition active:scale-95 duration-75 cursor-pointer flex items-center justify-center touch-manipulation select-none ${
                                 isSelected
                                   ? 'bg-zinc-950 text-white border-zinc-950 shadow-xs'
                                   : !isAvailable
                                   ? 'bg-zinc-50 text-zinc-300 border-zinc-200 line-through'
-                                  : 'bg-white text-zinc-800 border-zinc-300 hover:border-zinc-950'
+                                  : 'bg-white text-zinc-800 border-zinc-300 hover:border-zinc-950 active:bg-zinc-100 active:border-zinc-950'
                               }`}
                             >
                               {val.label}
@@ -837,14 +837,14 @@ export default function ProductDetailView({
             <div className="flex items-center border border-zinc-300 bg-white">
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="px-3 py-3 text-zinc-600 hover:text-zinc-950 transition active:scale-[0.98] duration-75 cursor-pointer"
+                className="px-3 py-3 text-zinc-600 hover:text-zinc-950 active:bg-zinc-200 active:scale-90 transition duration-75 cursor-pointer touch-manipulation select-none"
               >
                 <Minus className="w-3.5 h-3.5" />
               </button>
               <span className="w-10 text-center text-xs font-bold">{quantity}</span>
               <button
                 onClick={() => setQuantity((q) => q + 1)}
-                className="px-3 py-3 text-zinc-600 hover:text-zinc-950 transition active:scale-[0.98] duration-75 cursor-pointer"
+                className="px-3 py-3 text-zinc-600 hover:text-zinc-950 active:bg-zinc-200 active:scale-90 transition duration-75 cursor-pointer touch-manipulation select-none"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -853,7 +853,7 @@ export default function ProductDetailView({
             <button
               onClick={() => handleAdd(false)}
               disabled={isOutOfStock}
-              className={`flex-1 py-3.5 px-6 text-xs font-bold uppercase tracking-[0.18em] transition active:scale-[0.98] duration-75 cursor-pointer disabled:opacity-40 flex items-center justify-center gap-2 ${
+              className={`flex-1 py-3.5 px-6 text-xs font-bold uppercase tracking-[0.18em] transition active:scale-[0.97] active:bg-stone-300 active:brightness-95 duration-75 cursor-pointer disabled:opacity-40 flex items-center justify-center gap-2 touch-manipulation select-none ${
                 isJustAdded
                   ? 'bg-emerald-700 text-white'
                   : 'bg-stone-100 hover:bg-stone-200 text-zinc-900'
@@ -879,7 +879,7 @@ export default function ProductDetailView({
             onClick={() => handleAdd(true)}
             disabled={isOutOfStock}
             style={{ backgroundColor: isOutOfStock ? '#A1A1AA' : accentColor }}
-            className="w-full py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white transition active:scale-[0.98] duration-75 hover:opacity-95 cursor-pointer disabled:opacity-40 mb-5"
+            className="w-full py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white transition active:scale-[0.97] active:brightness-90 duration-75 hover:opacity-95 cursor-pointer disabled:opacity-40 mb-5 touch-manipulation select-none"
           >
             {isOutOfStock ? 'OUT OF STOCK' : isPreOrder ? 'PRE-ORDER NOW' : 'ORDER NOW'}
           </button>

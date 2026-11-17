@@ -34,6 +34,14 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} h-full antialiased`}
     >
+      <head>
+        {/* Unlocks CSS :active pseudo-class on all iOS WebKit devices */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `document.addEventListener('touchstart',function(){},{passive:true});`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-white text-zinc-900 font-sans">
         <CartProvider>{children}</CartProvider>
       </body>

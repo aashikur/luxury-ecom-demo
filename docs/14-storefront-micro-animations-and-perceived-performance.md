@@ -53,11 +53,11 @@ When an image pops into the DOM abruptly, it creates visual flash. If it fades i
 
 | Interaction Type | Permitted Pattern | Strictly Prohibited Pattern |
 | :--- | :--- | :--- |
-| **Touch / Click Down** | `active:scale-[0.98] duration-75 ease-out` + `touch-manipulation` | Default Android grey tap box, delayed responses |
+| **Touch / Click Down** | `active:scale-[0.97]` / `active:scale-95` + `active:brightness-90` or `active:bg-zinc-200` + `duration-75` + `touch-manipulation` + global WebKit `touchstart` listener | Default Android grey tap box, silenced tap feedback (`transparent`), sub-pixel invisible compression |
 | **Hero Banner** | Image ONLY: `scale-105` $\rightarrow$ `scale-100` over `1000ms`. Text: `translate-y-2` $\rightarrow$ `0` stagger | Animating whole hero section, infinite looping zooms |
 | **Image Loading** | Locked `3:4` container + `#f8fafc` curtain + 300ms micro-dissolve (`scale-[1.02]` $\rightarrow$ `scale-100`) | Layout jumping (CLS > 0), blank white gaps, raw pop-in |
-| **Catalog Cards** | Stationary card frame; internal image hover `scale-100` $\rightarrow$ `scale-105` over `700ms` | Floating card jumps (`translate-y-[-8px]`), heavy shadows |
-| **Add to Cart** | Tactile button press + 150ms icon swap to checkmark + Navbar cart badge bump bounce | Modal alerts, page redirects, full-screen loaders |
+| **Catalog Cards** | Stationary card frame; internal image hover `scale-100` $\rightarrow$ `scale-105` over `700ms`; `active:scale-[0.99] active:opacity-95` | Floating card jumps (`translate-y-[-8px]`), heavy shadows |
+| **Add to Cart** | Tactile button press (`active:scale-[0.97] active:brightness-90`) + 150ms icon swap to checkmark + Navbar cart badge bump bounce | Modal alerts, page redirects, full-screen loaders |
 | **Drawers / Modals** | 200ms backdrop blur + 250ms slide (`cubic-bezier(0.16, 1, 0.3, 1)`) + `scrollbar-gutter: stable` | Bouncy rubber-band oscillations, layout scroll shift |
 
 ---

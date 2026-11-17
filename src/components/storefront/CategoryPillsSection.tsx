@@ -56,9 +56,9 @@ export default function CategoryPillsSection({
                 <Link
                   key={item.id}
                   href={item.href}
-                  className="group flex flex-col items-center gap-2.5 shrink-0 active:scale-95 transition-transform duration-75 ease-out touch-manipulation [-webkit-tap-highlight-color:transparent]"
+                  className="group flex flex-col items-center gap-2.5 shrink-0 active:scale-90 active:opacity-85 transition-all duration-75 ease-out touch-manipulation select-none"
                 >
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[2px] border-2 border-slate-200 group-hover:border-[#076E46] transition-colors duration-200 bg-white">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[2px] border-2 border-slate-200 group-hover:border-[#076E46] group-active:border-[#076E46] transition-colors duration-200 bg-white">
                     <div className="relative w-full h-full rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
                       {hasImage ? (
                         <Image
@@ -69,13 +69,13 @@ export default function CategoryPillsSection({
                           className="object-cover object-center group-hover:scale-105 transition-transform duration-300 ease-out"
                         />
                       ) : (
-                        <span className="text-base font-bold text-slate-400 group-hover:text-[#076E46] transition-colors">
+                        <span className="text-base font-bold text-slate-400 group-hover:text-[#076E46] group-active:text-[#076E46] transition-colors">
                           {fallbackInitial}
                         </span>
                       )}
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-slate-800 tracking-tight text-center max-w-[80px] sm:max-w-[96px] truncate group-hover:text-[#076E46] transition-colors">
+                  <span className="text-xs font-semibold text-slate-800 tracking-tight text-center max-w-[80px] sm:max-w-[96px] truncate group-hover:text-[#076E46] group-active:text-[#076E46] transition-colors">
                     {item.title}
                   </span>
                 </Link>
@@ -88,9 +88,9 @@ export default function CategoryPillsSection({
                 <Link
                   key={item.id}
                   href={item.href}
-                  className="group flex flex-col items-center gap-2 shrink-0 active:scale-95 transition-transform duration-75 ease-out touch-manipulation [-webkit-tap-highlight-color:transparent]"
+                  className="group flex flex-col items-center gap-2 shrink-0 active:scale-90 active:opacity-85 transition-all duration-75 ease-out touch-manipulation select-none"
                 >
-                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border border-slate-200 group-hover:border-[#076E46] group-hover:shadow-md transition-all duration-200 bg-slate-50 flex items-center justify-center">
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border border-slate-200 group-hover:border-[#076E46] group-active:border-[#076E46] group-hover:shadow-md transition-all duration-200 bg-slate-50 flex items-center justify-center">
                     {hasImage ? (
                       <Image
                         src={item.imageUrl!}
@@ -105,7 +105,7 @@ export default function CategoryPillsSection({
                       </span>
                     )}
                   </div>
-                  <span className="text-xs font-semibold text-slate-800 tracking-tight text-center max-w-[96px] sm:max-w-[112px] truncate group-hover:text-[#076E46] transition-colors">
+                  <span className="text-xs font-semibold text-slate-800 tracking-tight text-center max-w-[96px] sm:max-w-[112px] truncate group-hover:text-[#076E46] group-active:text-[#076E46] transition-colors">
                     {item.title}
                   </span>
                 </Link>
@@ -117,9 +117,9 @@ export default function CategoryPillsSection({
               <Link
                 key={item.id}
                 href={item.href}
-                className="group flex flex-col items-center gap-2 shrink-0 active:scale-95 transition-transform duration-75 ease-out touch-manipulation [-webkit-tap-highlight-color:transparent]"
+                className="group flex flex-col items-center gap-2 shrink-0 active:scale-90 active:opacity-85 transition-all duration-75 ease-out touch-manipulation select-none"
               >
-                <div className="relative w-24 sm:w-32 aspect-[3/4] rounded-xl overflow-hidden border border-slate-200 group-hover:border-[#076E46] group-hover:shadow-md transition-all duration-200 bg-slate-50 flex items-center justify-center">
+                <div className="relative w-24 sm:w-32 aspect-[3/4] rounded-xl overflow-hidden border border-slate-200 group-hover:border-[#076E46] group-active:border-[#076E46] group-hover:shadow-md transition-all duration-200 bg-slate-50 flex items-center justify-center">
                   {hasImage ? (
                     <Image
                       src={item.imageUrl!}
@@ -134,7 +134,7 @@ export default function CategoryPillsSection({
                     </span>
                   )}
                 </div>
-                <span className="text-xs font-semibold text-slate-800 tracking-tight text-center max-w-[96px] sm:max-w-[128px] truncate group-hover:text-[#076E46] transition-colors">
+                <span className="text-xs font-semibold text-slate-800 tracking-tight text-center max-w-[96px] sm:max-w-[128px] truncate group-hover:text-[#076E46] group-active:text-[#076E46] transition-colors">
                   {item.title}
                 </span>
               </Link>

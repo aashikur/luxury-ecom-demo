@@ -417,7 +417,7 @@ export default function CheckoutClientView({
                   {/* Inside Dhaka */}
                   <label
                     onClick={() => setDeliveryZone('INSIDE_DHAKA')}
-                    className={`p-3.5 border rounded-lg cursor-pointer transition flex flex-col justify-between ${
+                    className={`p-3.5 border rounded-lg cursor-pointer transition active:scale-[0.98] active:bg-zinc-100 duration-75 touch-manipulation select-none flex flex-col justify-between ${
                       deliveryZone === 'INSIDE_DHAKA'
                         ? 'border-zinc-950 bg-zinc-50/80 ring-1 ring-zinc-950'
                         : 'border-zinc-200 hover:border-zinc-400 bg-white'
@@ -453,7 +453,7 @@ export default function CheckoutClientView({
                   {/* Dhaka Suburbs */}
                   <label
                     onClick={() => setDeliveryZone('DHAKA_SUBURBS')}
-                    className={`p-3.5 border rounded-lg cursor-pointer transition flex flex-col justify-between ${
+                    className={`p-3.5 border rounded-lg cursor-pointer transition active:scale-[0.98] active:bg-zinc-100 duration-75 touch-manipulation select-none flex flex-col justify-between ${
                       deliveryZone === 'DHAKA_SUBURBS'
                         ? 'border-zinc-950 bg-zinc-50/80 ring-1 ring-zinc-950'
                         : 'border-zinc-200 hover:border-zinc-400 bg-white'
@@ -489,7 +489,7 @@ export default function CheckoutClientView({
                   {/* Outside Dhaka */}
                   <label
                     onClick={() => setDeliveryZone('OUTSIDE_DHAKA')}
-                    className={`p-3.5 border rounded-lg cursor-pointer transition flex flex-col justify-between ${
+                    className={`p-3.5 border rounded-lg cursor-pointer transition active:scale-[0.98] active:bg-zinc-100 duration-75 touch-manipulation select-none flex flex-col justify-between ${
                       deliveryZone === 'OUTSIDE_DHAKA'
                         ? 'border-zinc-950 bg-zinc-50/80 ring-1 ring-zinc-950'
                         : 'border-zinc-200 hover:border-zinc-400 bg-white'
@@ -536,7 +536,7 @@ export default function CheckoutClientView({
                   {/* COD Option */}
                   <label
                     onClick={() => setPaymentMethod('COD')}
-                    className={`p-4 border rounded-lg cursor-pointer transition block ${
+                    className={`p-4 border rounded-lg cursor-pointer transition active:scale-[0.98] active:bg-zinc-100 duration-75 touch-manipulation select-none block ${
                       paymentMethod === 'COD'
                         ? 'border-zinc-950 bg-zinc-50/50 ring-1 ring-zinc-950'
                         : 'border-zinc-200 hover:border-zinc-400 bg-white'
@@ -567,7 +567,7 @@ export default function CheckoutClientView({
                   {/* Manual bKash Option */}
                   <label
                     onClick={() => setPaymentMethod('MANUAL_BKASH')}
-                    className={`p-4 border rounded-lg cursor-pointer transition block ${
+                    className={`p-4 border rounded-lg cursor-pointer transition active:scale-[0.98] active:bg-zinc-100 duration-75 touch-manipulation select-none block ${
                       paymentMethod === 'MANUAL_BKASH'
                         ? 'border-zinc-950 bg-zinc-50/50 ring-1 ring-zinc-950'
                         : 'border-zinc-200 hover:border-zinc-400 bg-white'
@@ -605,7 +605,7 @@ export default function CheckoutClientView({
                           <button
                             type="button"
                             onClick={copyBkashNumber}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-zinc-300 rounded hover:border-zinc-950 text-xs font-semibold cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-zinc-300 rounded hover:border-zinc-950 active:bg-zinc-200 active:scale-95 text-xs font-semibold cursor-pointer transition duration-75 touch-manipulation select-none"
                           >
                             {copiedPhone ? (
                               <>
@@ -652,7 +652,7 @@ export default function CheckoutClientView({
                   form="main-checkout-form"
                   disabled={isSubmitting}
                   style={{ backgroundColor: accentColor }}
-                  className="w-full py-4 px-6 text-white text-xs font-bold uppercase tracking-[0.2em] rounded transition hover:opacity-95 active:scale-[0.98] duration-75 disabled:opacity-50 cursor-pointer shadow-md flex items-center justify-center gap-2"
+                  className="w-full py-4 px-6 text-white text-xs font-bold uppercase tracking-[0.2em] rounded transition hover:opacity-95 active:scale-[0.97] active:brightness-90 duration-75 disabled:opacity-50 cursor-pointer shadow-md flex items-center justify-center gap-2 touch-manipulation select-none"
                 >
                   {isSubmitting ? (
                     <>
@@ -687,7 +687,7 @@ export default function CheckoutClientView({
               <button
                 type="button"
                 onClick={() => setIsCartOpen(true)}
-                className="text-xs text-zinc-600 hover:text-zinc-950 font-semibold underline underline-offset-4 cursor-pointer transition active:scale-[0.98] duration-75"
+                className="text-xs text-zinc-600 hover:text-zinc-950 font-semibold underline underline-offset-4 cursor-pointer transition active:scale-95 active:opacity-60 duration-75 touch-manipulation select-none"
               >
                 Edit Bag
               </button>
@@ -839,7 +839,7 @@ export default function CheckoutClientView({
                 form="main-checkout-form"
                 disabled={isSubmitting}
                 style={{ backgroundColor: accentColor }}
-                className="w-full py-4 px-6 text-white text-xs font-bold uppercase tracking-[0.2em] rounded transition hover:opacity-95 active:scale-[0.98] duration-75 disabled:opacity-50 cursor-pointer shadow-md flex items-center justify-center gap-2"
+                className="w-full py-4 px-6 text-white text-xs font-bold uppercase tracking-[0.2em] rounded transition hover:opacity-95 active:scale-[0.97] active:brightness-90 duration-75 disabled:opacity-50 cursor-pointer shadow-md flex items-center justify-center gap-2 touch-manipulation select-none"
               >
                 {isSubmitting ? (
                   <>

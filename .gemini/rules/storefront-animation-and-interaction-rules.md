@@ -21,22 +21,22 @@ Human perception thresholds dictate the feeling of speed:
 
 ## 2. Universal Click & Touch Behavior (Android & iOS Parity)
 
-Every interactive element—including CTA buttons, navigation pills, links, product cards, filter chips, accordion headers, and tab selectors—MUST enforce:
+Every interactive element—including CTA buttons, navigation pills, links, product cards, filter chips, accordion headers, and tab selectors—MUST enforce tactile touch feedback that is clearly visible under a finger on both Android Chrome and iOS Safari:
 
 ```html
 <!-- Authoritative Tailwind Token Pattern -->
-className="... active:scale-[0.98] transition-transform duration-75 ease-out select-none cursor-pointer [-webkit-tap-highlight-color:transparent] touch-manipulation"
+className="... active:scale-[0.97] active:brightness-90 transition duration-75 ease-out select-none cursor-pointer touch-manipulation"
 ```
 
-1. **Instant Active Micro-Scale:**
-   - `active:scale-[0.98] transition-transform duration-75 ease-out`
-   - On finger press or mouse click down, the element micro-compresses by 2% within 75ms.
-   - On release, snaps back smoothly (`duration-150`).
-2. **Android Tap Highlight Elimination:**
-   - `[-webkit-tap-highlight-color:transparent]` (or `-webkit-tap-highlight-color: transparent;` in CSS).
-   - Eliminates the sluggish default grey/blue translucent rectangle Android Chrome overlays on tapped elements.
-3. **Immediate Surface Feedback:**
-   - Provide instant tactile lighting: `active:bg-black/5` or `active:bg-slate-100` (on light surfaces); `active:bg-white/10` (on dark surfaces).
+1. **iOS WebKit Active State Activation:**
+   - Apple iOS Safari ignores `:active` pseudo-classes on buttons and links unless a `touchstart` listener is registered. An inline listener in `<head>` and `onTouchStart={() => {}}` on `<body>` is globally established in `src/app/layout.tsx`.
+2. **Instant Active Micro-Scale & Contrast Drop:**
+   - Sub-pixel scale transforms (`active:scale-[0.99]`) are obscured by a 40–50px thumb. Real touch perception requires visible contrast or luminance changes combined with a responsive scale (`active:scale-[0.97]` on buttons, `active:scale-95` to `active:scale-90` on icon buttons and pills).
+   - Dynamic accent buttons (which use inline `style={{ backgroundColor: accentColor }}`) must use `active:brightness-90` or `active:brightness-95` to bypass inline style specificity.
+   - Light surfaces must use `active:bg-zinc-200` or `active:bg-zinc-100`.
+3. **Subtle Luxury Tap Highlight (No Invisible Silencing):**
+   - Pure `[-webkit-tap-highlight-color:transparent]` completely silences tap feedback on mobile devices.
+   - Instead, `src/app/globals.css` defines a subtle, non-intrusive tap highlight: `rgba(0, 0, 0, 0.06)` for light surfaces and `rgba(255, 255, 255, 0.08)` for dark themes.
 4. **Double-Tap Zoom Delay Elimination:**
    - `touch-manipulation` (`touch-action: manipulation`) prevents the mobile browser from introducing a 300ms tap delay to wait for a hypothetical double-tap.
 5. **Selection Hygiene:**

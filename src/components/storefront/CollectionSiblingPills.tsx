@@ -37,10 +37,10 @@ export default function CollectionSiblingPills({
             <Link
               href={`/collections/${parentSlug}`}
               prefetch={true}
-              className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition active:scale-[0.98] duration-75 shrink-0 ${
+              className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition active:scale-95 duration-75 shrink-0 touch-manipulation select-none ${
                 isParentActive
                   ? 'bg-zinc-950 text-white shadow-xs'
-                  : 'bg-white text-zinc-700 border border-zinc-300 hover:border-zinc-900 hover:text-zinc-950'
+                  : 'bg-white text-zinc-700 border border-zinc-300 hover:border-zinc-900 hover:text-zinc-950 active:bg-zinc-100 active:border-zinc-900'
               }`}
             >
               All {parentTitle}
@@ -55,10 +55,10 @@ export default function CollectionSiblingPills({
                 key={pill.slug}
                 href={`/collections/${pill.slug}`}
                 prefetch={true}
-                className={`relative px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition active:scale-[0.98] duration-75 shrink-0 flex items-center gap-1.5 ${
+                className={`relative px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition active:scale-95 duration-75 shrink-0 flex items-center gap-1.5 touch-manipulation select-none ${
                   isActive
                     ? 'bg-zinc-950 text-white shadow-xs'
-                    : 'bg-white text-zinc-700 border border-zinc-300 hover:border-zinc-900 hover:text-zinc-950'
+                    : 'bg-white text-zinc-700 border border-zinc-300 hover:border-zinc-900 hover:text-zinc-950 active:bg-zinc-100 active:border-zinc-900'
                 }`}
               >
                 <span>{pill.title}</span>
