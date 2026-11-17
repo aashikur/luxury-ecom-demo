@@ -12,7 +12,7 @@ export default function TrackingTab({ config, setConfig, showSecrets, toggleSecr
   return (
     <div className="space-y-6">
       {/* 1. Meta (Facebook) Pixel & CAPI */}
-      <Card id="section-tracking-meta">
+      <Card id="tracking-meta" className="scroll-mt-16">
         <CardHeader>
           <CardTitle>Meta (Facebook) Pixel & CAPI</CardTitle>
           <CardDescription>
@@ -80,7 +80,7 @@ export default function TrackingTab({ config, setConfig, showSecrets, toggleSecr
       </Card>
 
       {/* 2. Google Analytics & GTM */}
-      <Card id="section-tracking-google">
+      <Card id="tracking-gtm" className="scroll-mt-16">
         <CardHeader>
           <CardTitle>Google Analytics & Tag Manager</CardTitle>
           <CardDescription>
@@ -138,7 +138,7 @@ export default function TrackingTab({ config, setConfig, showSecrets, toggleSecr
       </Card>
 
       {/* 3. TikTok Pixel */}
-      <Card id="section-tracking-tiktok">
+      <Card id="tracking-tiktok" className="scroll-mt-16">
         <CardHeader>
           <CardTitle>TikTok Pixel</CardTitle>
           <CardDescription>TikTok ad campaign tracking and Events API token.</CardDescription>

@@ -6,7 +6,7 @@ export default function LogisticsTab({ config, setConfig }: BaseTabProps) {
   return (
     <div className="space-y-6">
       {/* 1. Regional Delivery Rates */}
-      <Card id="section-logistics-rates">
+      <Card id="logistics-tariffs" className="scroll-mt-16">
         <CardHeader>
           <CardTitle>Delivery Rates (Bangladesh)</CardTitle>
           <CardDescription>
@@ -146,7 +146,7 @@ export default function LogisticsTab({ config, setConfig }: BaseTabProps) {
       </Card>
 
       {/* 2. Customer Contacts & Helpdesk */}
-      <Card id="section-logistics-contacts">
+      <Card id="logistics-contacts" className="scroll-mt-16">
         <CardHeader>
           <CardTitle>Customer Contacts & Helpdesk</CardTitle>
           <CardDescription>

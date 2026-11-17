@@ -5,7 +5,7 @@ import { BaseTabProps } from '../types';
 export default function FeaturesTab({ config, setConfig }: BaseTabProps) {
   return (
     <div className="space-y-6">
-      <Card id="section-features-master">
+      <Card id="features-switches" className="scroll-mt-16">
         <CardHeader>
           <CardTitle>Global Feature Switches</CardTitle>
           <CardDescription>

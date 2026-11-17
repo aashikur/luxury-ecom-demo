@@ -223,7 +223,7 @@ export default function BrandingTab({
   return (
     <div className="space-y-6">
       {/* Brand Identity */}
-      <Card id="brand-identity">
+      <Card id="brand-identity" className="scroll-mt-16">
         <CardHeader>
           <CardTitle>Brand Identity</CardTitle>
           <CardDescription>
@@ -376,7 +376,7 @@ export default function BrandingTab({
       </Card>
 
       {/* Theme & Announcement */}
-      <Card id="theme-announcement">
+      <Card id="theme-announcement" className="scroll-mt-16">
         <CardHeader>
           <CardTitle>Theme & Announcement</CardTitle>
           <CardDescription>
@@ -519,7 +519,7 @@ export default function BrandingTab({
       </Card>
 
       {/* Header Quick Links */}
-      <Card id="header-quick-links">
+      <Card id="header-quick-links" className="scroll-mt-16">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3">
           <div>
             <CardTitle>Header Quick Links</CardTitle>

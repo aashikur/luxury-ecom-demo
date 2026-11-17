@@ -170,18 +170,51 @@ export default function SettingsShell({
 
   const scrollToSubSection = (id: string) => {
     const el = document.getElementById(id);
-    if (el) {
-      const offset = 80; // account for sticky header
-      const bodyRect = document.body.getBoundingClientRect().top;
-      const elementRect = el.getBoundingClientRect().top;
-      const elementPosition = elementRect - bodyRect;
-      const offsetPosition = elementPosition - offset;
+    if (!el) {
+      console.warn(`[SettingsShell] Element with id "${id}" not found.`);
+      return;
+    }
 
-      window.scrollTo({
-        top: offsetPosition,
+    // Find the true scrolling container (in AdminShellClient, <main className="flex-1 overflow-y-auto...">)
+    let scrollParent: HTMLElement | null = el.parentElement;
+    let foundScrollContainer: HTMLElement | null = null;
+
+    while (scrollParent) {
+      const style = window.getComputedStyle(scrollParent);
+      const isScrollable =
+        (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
+        scrollParent.scrollHeight > scrollParent.clientHeight;
+
+      if (isScrollable) {
+        foundScrollContainer = scrollParent;
+        break;
+      }
+      scrollParent = scrollParent.parentElement;
+    }
+
+    if (foundScrollContainer) {
+      const containerRect = foundScrollContainer.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const relativeTop = elRect.top - containerRect.top + foundScrollContainer.scrollTop;
+      // 24px breathing room above the card
+      const targetScroll = Math.max(0, relativeTop - 24);
+
+      foundScrollContainer.scrollTo({
+        top: targetScroll,
         behavior: 'smooth',
       });
+    } else {
+      el.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
     }
+
+    // Tactile glow highlight on target card
+    el.classList.add('ring-2', 'ring-[#076E46]', 'transition-all', 'duration-300');
+    setTimeout(() => {
+      el.classList.remove('ring-2', 'ring-[#076E46]');
+    }, 1200);
   };
 
   const currentTabDef = TAB_DEFINITIONS.find((t) => t.id === activeTab) || TAB_DEFINITIONS[0];
@@ -310,10 +343,10 @@ export default function SettingsShell({
         </aside>
 
         {/* Content Workspace */}
-        <main className="lg:col-span-9 space-y-6">
+        <div className="lg:col-span-9 space-y-6">
           {/* Sticky Top Sub-Section Anchor Jump Pills */}
           {currentTabDef.subSections && currentTabDef.subSections.length > 1 && (
-            <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur-xs py-2.5 px-3 rounded-lg border border-slate-200/80 flex items-center gap-2 overflow-x-auto no-scrollbar shadow-2xs">
+            <div className="sticky top-0 z-20 bg-[#F8FAFC]/95 backdrop-blur-md py-2.5 px-3 rounded-lg border border-slate-200/80 flex items-center gap-2 overflow-x-auto no-scrollbar shadow-2xs">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 shrink-0 mr-1">
                 Jump to:
               </span>
@@ -322,7 +355,7 @@ export default function SettingsShell({
                   key={sub.id}
                   type="button"
                   onClick={() => scrollToSubSection(sub.id)}
-                  className="shrink-0 px-3 py-1 text-xs font-medium rounded-md bg-white border border-slate-200 text-slate-700 hover:border-[#076E46] hover:text-[#076E46] hover:bg-emerald-50/30 transition cursor-pointer shadow-2xs"
+                  className="shrink-0 px-3 py-1 text-xs font-medium rounded-md bg-white border border-slate-200 text-slate-700 hover:border-[#076E46] hover:text-[#076E46] hover:bg-emerald-50/30 transition cursor-pointer shadow-2xs active:scale-[0.98] duration-75"
                 >
                   {sub.label}
                 </button>
@@ -418,7 +451,7 @@ export default function SettingsShell({
               )}
             </Button>
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );

@@ -394,7 +394,7 @@ export default function HomepageLayoutTab({
 
   return (
     <div className="space-y-6">
-      <Card id="homepage-blocks">
+      <Card id="homepage-blocks" className="scroll-mt-16">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
             <CardTitle>Homepage Layout Blocks</CardTitle>

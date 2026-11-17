@@ -22,7 +22,7 @@ export default function CourierTab({
   return (
     <div className="space-y-6">
       {/* Courier Gateway */}
-      <Card id="courier-gateway">
+      <Card id="courier-gateway" className="scroll-mt-16">
         <CardHeader>
           <CardTitle>Courier Gateway Integration</CardTitle>
           <CardDescription>
@@ -251,7 +251,7 @@ export default function CourierTab({
       </Card>
 
       {/* Customer Return Fraud Shield */}
-      <Card id="courier-fraud">
+      <Card id="courier-fraud" className="scroll-mt-16">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
             <CardTitle>Customer Return Fraud Shield</CardTitle>
@@ -328,7 +328,7 @@ export default function CourierTab({
       </Card>
 
       {/* Advance Delivery Fee Protection */}
-      <Card id="courier-advance">
+      <Card id="courier-advance" className="scroll-mt-16">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
             <CardTitle>Advance Delivery Fee Protection</CardTitle>

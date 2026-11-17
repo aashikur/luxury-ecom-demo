@@ -22,7 +22,7 @@ export default function PaymentTab({
   return (
     <div className="space-y-6">
       {/* Cash on Delivery */}
-      <Card id="payment-cod">
+      <Card id="payment-cod" className="scroll-mt-16">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
             <CardTitle>Cash on Delivery (COD)</CardTitle>
@@ -70,7 +70,7 @@ export default function PaymentTab({
       </Card>
 
       {/* Manual bKash */}
-      <Card id="payment-bkash-manual">
+      <Card id="payment-bkash-manual" className="scroll-mt-16">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
             <CardTitle>Manual bKash Send Money</CardTitle>
@@ -172,7 +172,7 @@ export default function PaymentTab({
       </Card>
 
       {/* Manual Nagad */}
-      <Card id="payment-nagad-manual">
+      <Card id="payment-nagad-manual" className="scroll-mt-16">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
             <CardTitle>Manual Nagad Send Money</CardTitle>
@@ -274,7 +274,7 @@ export default function PaymentTab({
       </Card>
 
       {/* Manual Rocket */}
-      <Card id="payment-rocket-manual">
+      <Card id="payment-rocket-manual" className="scroll-mt-16">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
             <CardTitle>Manual Rocket Send Money</CardTitle>
@@ -376,7 +376,7 @@ export default function PaymentTab({
       </Card>
 
       {/* bKash PGW (Direct API) */}
-      <Card id="payment-bkash-pgw">
+      <Card id="payment-bkash-pgw" className="scroll-mt-16">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
             <CardTitle>bKash PGW (Direct API)</CardTitle>
@@ -539,7 +539,7 @@ export default function PaymentTab({
       </Card>
 
       {/* SSLCommerz Gateway */}
-      <Card id="payment-sslcommerz">
+      <Card id="payment-sslcommerz" className="scroll-mt-16">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
             <CardTitle>SSLCommerz Gateway</CardTitle>
