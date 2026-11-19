@@ -19,6 +19,19 @@
 
 ## 0. Launch decision --- read this first
 
+> **AUREM PRODUCTION AUDIT VERDICT (1M Followers · 100–200 Daily Orders):**  
+> **Status: ❌ NOT READY FOR PUBLIC LAUNCH TODAY**  
+> The software codebase is ~85% ready (Next.js 16 compiles with 0 errors, guest 3-field checkout and atomic stock locking are verified).  
+> However, **5 critical launch blockers** remain before driving traffic from 1M followers:  
+> 1. **Database:** Atlas Free M0 cluster must be upgraded to **Atlas M10+ (Dedicated, Singapore ap-southeast-1)** to prevent connection pool exhaustion crashes during campaign spikes.  
+> 2. **Tracking:** Meta Pixel and **Server-Side Meta Conversions API (CAPI)** must be wired to prevent blinding Facebook Ads ROAS on iOS devices.  
+> 3. **Logistics:** Transactional **SMS Gateway** (Greenweb/BulkSMSBD) must be connected to prevent 30%+ COD Return-To-Origin (RTO) losses.  
+> 4. **Credentials:** Live Steadfast Courier API and Payment Gateway merchant credentials must replace sandbox simulation defaults.  
+> 5. **Security:** Checkout IP/Phone rate limiting must be deployed to prevent cart-locking spam bots.  
+>  
+> 👉 **For the comprehensive 14-day launch roadmap, work breakdown, and non-engineering department hiring guide (Call Center, Fulfillment, Creative, Marketing, Legal), see:**  
+> **[docs/15-aurem-production-launch-and-operational-readiness-checklist.md](./15-aurem-production-launch-and-operational-readiness-checklist.md)**
+
 ### Current stack risks
 
 -   [ ] **BLOCKER --- Database tier decision:** Confirm the exact Atlas

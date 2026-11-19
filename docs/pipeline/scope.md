@@ -346,3 +346,23 @@
      - **Admin Shell:** Upgraded mobile hamburger trigger, sidebar nav links, brand link, close button, theme and notification buttons.
   5. **Standardization & Documentation Sync:**
      - Codified the new mobile tactile touch feedback rules in `.gemini/rules/storefront-animation-and-interaction-rules.md` and `docs/14-storefront-micro-animations-and-perceived-performance.md`.
+
+
+### Task #37: Production Launch Audit & Operational Readiness Checklist for Aurem (1M Follower Scale)
+* **Files Modified/Created:**
+  - `docs/15-aurem-production-launch-and-operational-readiness-checklist.md`
+  - `docs/PRODUCTION_CHECKLIST.md`
+  - `docs/00-how-to-notes.md`
+  - `docs/pipeline/scope.md`
+* **Changes:**
+  1. **Production Readiness Audit for Aurem Brand (1M Followers · 100–200 Daily Orders):**
+     - Conducted a full senior-level infrastructure audit covering Next.js 16 App Router build health (0 errors), database scaling boundaries, checkout reliability, tracking attribution, and courier integration.
+     - Documented formal Launch Decision Verdict: System is ~85% ready in software architecture, but NOT ready for official commercial traffic due to 5 critical operational blockers (Atlas M0 connection crash risk under viral bursts, missing Meta CAPI server-side tracking, unintegrated SMS gateway causing high COD returns, unconfigured live Steadfast API keys, and missing checkout bot rate limiting).
+  2. **4-Pillar Commercial Operational Roadmap:**
+     - Formulated comprehensive deliverables across Software Engineering (CAPI, SMS, Rate Limiting, SEO), Cloud Infrastructure (MongoDB Atlas M10 Singapore, Cloudflare CDN/DNS with BDIX, R2 custom domain), Commercial Credentials (Steadfast live account, bKash Merchant, corporate email), and Physical Operations (thermal shipping printer, luxury packaging, catalog upload).
+  3. **12–14 Day Timeline & Phase-by-Phase Work Breakdown:**
+     - Established an engineering and operational schedule spanning 2 weeks: Phase 1 Critical Code & Tracking (4 days), Phase 2 Cloud & DB DevOps (2 days), Phase 3 Merchant Onboarding & Catalog (3 days), Phase 4 Live Courier Webhook & Drills (2 days), Phase 5 Soft Launch & Verification (2 days).
+  4. **Cross-Department Workforce & Service Provider Architecture:**
+     - Defined non-engineering hiring requirements and operational mandates: Order Confirmation Call Agents (1–2 staff for 15-minute phone verification to cut RTO), Warehouse & Packaging Staff (1–2 staff for 15–25 parcels/hour with 4-inch thermal label printer), Creative Photography & Video Studio (3:4 portrait model and macro gadget media), Performance Marketing / Media Buyer (Meta dynamic catalog and ROAS optimization), and Legal & Commercial Advisor (Trade License, TIN, BIN, and DBID from Ministry of Commerce).
+  5. **Documentation Synchronization:**
+     - Published exhaustive audit and runbook at `docs/15-aurem-production-launch-and-operational-readiness-checklist.md`, linked in `docs/PRODUCTION_CHECKLIST.md` Section 0, and indexed in `docs/00-how-to-notes.md` under Tier 5.

@@ -37,6 +37,7 @@ To prevent confusion between **CR-Locked Production Rules**, **Domain Specificat
 * `docs/server-guide.md` (Traffic math, Cloudflare CDN, & Upstash rate-limiting guide)
 
 ### Tier 5: Production Hardening & Launch Sign-Off
+* `docs/15-aurem-production-launch-and-operational-readiness-checklist.md` — Aurem 1M followers & 100–200 daily orders comprehensive launch audit, 14-day roadmap, and cross-department operational readiness guide.
 * `docs/PRODUCTION_CHECKLIST.md` — Pre-launch Step 7 verification checklist & AI review format.
 
 ---

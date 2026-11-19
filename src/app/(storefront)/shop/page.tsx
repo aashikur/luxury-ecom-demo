@@ -61,7 +61,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       stockStatus: stockStatus || undefined,
       q,
       page: page ? parseInt(page, 10) : 1,
-      limit: 48,
+      limit: 24,
     }),
   ]);
 
